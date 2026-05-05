@@ -1,14 +1,18 @@
+
 import React, { useState, useEffect } from 'react';
 import { SafeAreaView, StatusBar, StyleSheet, View, Text } from 'react-native';
 import { useThemeStore } from 'src/store/useThemeStore';
 import { COLORS } from 'src/constants/theme';
 import { HeaderSwitch } from 'src/components/common/HeaderSwitch';
 import { WelcomeScreen } from 'src/features/auth/screens/WelcomeScreen';
+import { LoginScreen } from 'src/features/auth/screens/LoginScreen';
+import { useAuthStore } from 'src/store/useAuthStore';
 
 const App = () => {
   const { mode } = useThemeStore();
   const theme = mode === 'dark' ? COLORS.dark : COLORS.light;
   const [isReady, setIsReady] = useState(false);
+  const { session, isLoading } = useAuthStore();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -20,6 +24,15 @@ const App = () => {
 
   if (!isReady) {
     return <WelcomeScreen />;
+  }
+
+  if (isLoading) {
+    // You can return a loading indicator here if you want
+    return null;
+  }
+
+  if (!session) {
+    return <LoginScreen />;
   }
 
   return (
@@ -37,7 +50,7 @@ const App = () => {
       <View style={styles.content}>
         <Text style={[styles.title, { color: theme.text }]}>QuillaMap</Text>
         <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-          Modo actual: {mode === 'dark' ? 'Oscuro 🌙' : 'Claro ☀️'}
+          Ya estás dentro
         </Text>
       </View>
     </SafeAreaView>
