@@ -1,20 +1,34 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { SafeAreaView, StatusBar, StyleSheet, View, Text } from 'react-native';
 import { useThemeStore } from 'src/store/useThemeStore';
 import { COLORS } from 'src/constants/theme';
 import { HeaderSwitch } from 'src/components/common/HeaderSwitch';
+import { WelcomeScreen } from 'src/features/auth/screens/WelcomeScreen';
 
 const App = () => {
   const { mode } = useThemeStore();
   const theme = mode === 'dark' ? COLORS.dark : COLORS.light;
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsReady(true);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!isReady) {
+    return <WelcomeScreen />;
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <StatusBar 
-        barStyle={mode === 'dark' ? 'light-content' : 'dark-content'} 
+      <StatusBar
+        barStyle={mode === 'dark' ? 'light-content' : 'dark-content'}
         backgroundColor={theme.background}
       />
-      
+
       {/* Header con el Switch */}
       <View style={styles.header}>
         <HeaderSwitch />
