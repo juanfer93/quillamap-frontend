@@ -1,7 +1,8 @@
-import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import { useThemeStore } from 'src/store/useThemeStore';
 import { COLORS, SPACING, BORDER_RADIUS } from 'src/constants/theme';
 import { useState } from 'react';
+import { HeaderSwitch } from 'src/components/common/HeaderSwitch';
 
 export const LoginScreen = () => {
   const { mode } = useThemeStore();
@@ -15,32 +16,44 @@ export const LoginScreen = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <HeaderSwitch />
       <Text style={[styles.title, { color: theme.text }]}>Iniciar Sesión</Text>
 
-      <TextInput
-        style={[styles.input, { color: theme.text, borderColor: theme.border }]}
-        placeholder="Email"
-        placeholderTextColor={theme.textSecondary}
-        value={email}
-        onChangeText={setEmail}
-        accessibilityLabel="Campo de entrada de correo electrónico"
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
+      <View style={[styles.inputContainer, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+        <TextInput
+          style={[styles.input, { color: theme.text }]}
+          placeholder="Email"
+          placeholderTextColor={theme.textSecondary}
+          value={email}
+          onChangeText={setEmail}
+          accessibilityLabel="Campo de entrada de correo electrónico"
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+      </View>
 
-      <TextInput
-        style={[styles.input, { color: theme.text, borderColor: theme.border }]}
-        placeholder="Contraseña"
-        placeholderTextColor={theme.textSecondary}
-        value={password}
-        onChangeText={setPassword}
-        accessibilityLabel="Campo de entrada de contraseña"
-        secureTextEntry
-      />
+      <View style={[styles.inputContainer, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+        <TextInput
+          style={[styles.input, { color: theme.text }]}
+          placeholder="Contraseña"
+          placeholderTextColor={theme.textSecondary}
+          value={password}
+          onChangeText={setPassword}
+          accessibilityLabel="Campo de entrada de contraseña"
+          secureTextEntry
+        />
+      </View>
 
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Iniciar Sesión</Text>
       </TouchableOpacity>
+
+      <View style={styles.footer}>
+        <Text style={{ color: theme.textSecondary }}>¿No tienes una cuenta? </Text>
+        <TouchableOpacity>
+          <Text style={{ color: COLORS.sandGold, fontWeight: 'bold' }}>Regístrate</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -57,12 +70,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: SPACING.xl,
   },
+  inputContainer: {
+    borderRadius: BORDER_RADIUS.m,
+    borderWidth: 1,
+    marginBottom: SPACING.m,
+  },
   input: {
     height: 50,
-    borderWidth: 1,
-    borderRadius: BORDER_RADIUS.m,
     paddingHorizontal: SPACING.m,
-    marginBottom: SPACING.m,
     fontSize: 16,
   },
   button: {
@@ -70,10 +85,17 @@ const styles = StyleSheet.create({
     padding: SPACING.m,
     borderRadius: BORDER_RADIUS.m,
     alignItems: 'center',
+    marginTop: SPACING.m,
+    marginBottom: SPACING.xl,
   },
   buttonText: {
     color: COLORS.sharkBlue,
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
