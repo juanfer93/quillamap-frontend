@@ -22,31 +22,32 @@ const RegisterScreen = () => {
   const [formData, setFormData] = useState<RegisterRequest>({
     name: '',
     email: '',
-    vehicleType: 'peaton',
+    password: '',
+    mobility_type: 'PEATON',
   });
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const handleVehicleTypeSelect = (type: 'peaton' | 'turista' | 'moto' | 'carro') => {
-    setFormData(prev => ({ ...prev, vehicleType: type, carType: undefined, plate: undefined }));
-    if (type === 'peaton' || type === 'turista') {
+  const handleVehicleTypeSelect = (type: 'PEATON' | 'TURISTA' | 'MOTO' | 'CARRO') => {
+    setFormData(prev => ({ ...prev, mobility_type: type, vehicle_type: undefined, license_plate: undefined }));
+    if (type === 'PEATON' || type === 'TURISTA') {
       setCurrentStep(4);
-    } else if (type === 'moto') {
+    } else if (type === 'MOTO') {
       setCurrentStep(3);
     } else {
       setCurrentStep(2);
     }
   };
 
-  const handleCarTypeSelect = (type: 'particular' | 'taxi') => {
-    setFormData(prev => ({ ...prev, carType: type }));
+  const handleCarTypeSelect = (type: 'PARTICULAR' | 'TAXI') => {
+    setFormData(prev => ({ ...prev, vehicle_type: type }));
     setCurrentStep(3);
   };
 
   const setPlate = (plate: string) => {
-    setFormData(prev => ({ ...prev, plate: plate.toUpperCase() }));
+    setFormData(prev => ({ ...prev, license_plate: plate.toUpperCase() }));
   };
 
   const handleRegister = async () => {
@@ -85,7 +86,7 @@ const RegisterScreen = () => {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.successContainer}>
-                <Text style={styles.successText}>Bienvenido {formData.name}, estás en modo {formData.vehicleType}</Text>
+                <Text style={styles.successText}>Bienvenido {formData.name}, estás en modo {formData.mobility_type}</Text>
             </View>
         </SafeAreaView>
     )
@@ -97,19 +98,19 @@ const RegisterScreen = () => {
         {currentStep === 1 && (
           <View style={styles.stepContainer}>
             <Text style={styles.questionText}>¿Cómo te mueves por la ciudad?</Text>
-            <TouchableOpacity style={styles.card} onPress={() => handleVehicleTypeSelect('peaton')}>
+            <TouchableOpacity style={styles.card} onPress={() => handleVehicleTypeSelect('PEATON')}>
                 <FontAwesome name="male" size={40} color={isDarkMode ? corporateColors.gold : corporateColors.shark} />
               <Text style={styles.cardText}>Peatón</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.card} onPress={() => handleVehicleTypeSelect('turista')}>
+            <TouchableOpacity style={styles.card} onPress={() => handleVehicleTypeSelect('TURISTA')}>
             <FontAwesome name="user-circle" size={40} color={isDarkMode ? corporateColors.gold : corporateColors.shark} />
               <Text style={styles.cardText}>Turista</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.card} onPress={() => handleVehicleTypeSelect('moto')}>
+            <TouchableOpacity style={styles.card} onPress={() => handleVehicleTypeSelect('MOTO')}>
             <FontAwesome name="motorcycle" size={40} color={isDarkMode ? corporateColors.gold : corporateColors.shark} />
               <Text style={styles.cardText}>Moto</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.card} onPress={() => handleVehicleTypeSelect('carro')}>
+            <TouchableOpacity style={styles.card} onPress={() => handleVehicleTypeSelect('CARRO')}>
             <FontAwesome name="car" size={40} color={isDarkMode ? corporateColors.gold : corporateColors.shark} />
               <Text style={styles.cardText}>Carro</Text>
             </TouchableOpacity>
@@ -119,11 +120,11 @@ const RegisterScreen = () => {
         {currentStep === 2 && (
           <View style={styles.stepContainer}>
             <Text style={styles.questionText}>¿Qué tipo de carro conduces?</Text>
-            <TouchableOpacity style={styles.card} onPress={() => handleCarTypeSelect('particular')}>
+            <TouchableOpacity style={styles.card} onPress={() => handleCarTypeSelect('PARTICULAR')}>
             <FontAwesome name="circle-o" size={24} color={isDarkMode ? corporateColors.gold : corporateColors.shark} />
               <Text style={styles.cardText}>Particular</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.card} onPress={() => handleCarTypeSelect('taxi')}>
+            <TouchableOpacity style={styles.card} onPress={() => handleCarTypeSelect('TAXI')}>
             <FontAwesome name="circle-o" size={24} color={isDarkMode ? corporateColors.gold : corporateColors.shark} />
               <Text style={styles.cardText}>Taxi</Text>
             </TouchableOpacity>
@@ -132,13 +133,13 @@ const RegisterScreen = () => {
 
         {currentStep === 3 && (
           <View style={styles.stepContainer}>
-            <View style={[styles.plate, {backgroundColor: formData.carType === 'taxi' ? corporateColors.white : '#FFD700'}]}>
-                 <Text style={[styles.plateText, {color: corporateColors.black}]}>{formData.plate?.toUpperCase()}</Text>
+            <View style={[styles.plate, {backgroundColor: formData.vehicle_type === 'TAXI' ? corporateColors.white : '#FFD700'}]}>
+                 <Text style={[styles.plateText, {color: corporateColors.black}]}>{formData.license_plate?.toUpperCase()}</Text>
             </View>
             <TextInput
               style={styles.input}
               placeholder="Placa del vehículo"
-              value={formData.plate}
+              value={formData.license_plate}
               onChangeText={setPlate}
               autoCapitalize="characters"
               placeholderTextColor={isDarkMode ? corporateColors.lightGray : corporateColors.darkGray}
@@ -165,6 +166,14 @@ const RegisterScreen = () => {
               onChangeText={(email) => setFormData(prev => ({...prev, email}))}
               keyboardType="email-address"
               autoCapitalize="none"
+              placeholderTextColor={isDarkMode ? corporateColors.lightGray : corporateColors.darkGray}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Contraseña"
+              value={formData.password}
+              onChangeText={(password) => setFormData(prev => ({...prev, password}))}
+              secureTextEntry
               placeholderTextColor={isDarkMode ? corporateColors.lightGray : corporateColors.darkGray}
             />
             <TouchableOpacity style={[styles.button, { backgroundColor: corporateColors.gold }]} onPress={handleRegister} disabled={isLoading}>

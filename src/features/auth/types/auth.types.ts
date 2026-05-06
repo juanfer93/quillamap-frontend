@@ -1,9 +1,10 @@
 export interface RegisterRequest {
     name: string;
     email: string;
-    vehicleType: 'peaton' | 'turista' | 'moto' | 'carro';
-    carType?: 'particular' | 'taxi';
-    plate?: string;
+    password?: string;
+    mobility_type: 'PEATON' | 'TURISTA' | 'MOTO' | 'CARRO';
+    vehicle_type?: 'PARTICULAR' | 'TAXI';
+    license_plate?: string;
   }
   
   export interface RegisterResponse {
@@ -13,9 +14,9 @@ export interface RegisterRequest {
       id: number;
       name: string;
       email: string;
-      vehicleType: 'peaton' | 'turista' | 'moto' | 'carro';
-      carType?: 'particular' | 'taxi';
-      plate?: string;
+      mobility_type: 'PEATON' | 'TURISTA' | 'MOTO' | 'CARRO';
+      vehicle_type?: 'PARTICULAR' | 'TAXI';
+      license_plate?: string;
     };
   }
   
