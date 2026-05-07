@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, useColorScheme, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, useColorScheme } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { RegisterRequest, RegisterResponse } from '@/features/auth/types/auth.types';
 import { corporateColors } from '@/constants/theme';
 import MobilityStep from '@/features/auth/components/register/MobilityStep';

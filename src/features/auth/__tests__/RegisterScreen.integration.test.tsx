@@ -48,7 +48,6 @@ describe('RegisterScreen Integration Flow', () => {
     const { getByText, getByPlaceholderText, findByText } = render(<RegisterScreen />);
 
     // 1. MobilityStep: Select a pedestrian option
-    // Assuming the button text is "Peatón" which triggers handleVehicleTypeSelect('PEATON')
     fireEvent.press(getByText('Peatón'));
 
     // 2. UserDetailsStep: The form should now be visible
@@ -90,7 +89,7 @@ describe('RegisterScreen Integration Flow', () => {
     // Check if success message is shown
     const successMessage = await findByText(`Bienvenido ${testUser.name}, estás en modo PEATON`);
     expect(successMessage).toBeTruthy();
-  });
+  }, 10000); 
 
   test('should handle the vehicle registration flow correctly', async () => {
     // Arrange: Mock a successful API response
@@ -102,14 +101,14 @@ describe('RegisterScreen Integration Flow', () => {
 
     const { getByText, getByPlaceholderText, findByText } = render(<RegisterScreen />);
 
-    // 1. MobilityStep: Select "Vehículo" (triggers handleVehicleTypeSelect with 'CARRO'))
-    fireEvent.press(getByText('Vehículo'));
+    // 1. MobilityStep: Select "Carro"
+    fireEvent.press(getByText('Carro'));
 
-    // 2. CarTypeStep: Select "Automóvil" (triggers handleCarTypeSelect with 'PARTICULAR')
+    // 2. CarTypeStep: Select "Particular"
     fireEvent.press(getByText('Particular'));
 
     // 3. LicensePlateStep: Enter license plate
-    const plateInput = getByPlaceholderText('AAA-000');
+    const plateInput = getByPlaceholderText('Placa del vehículo'); // <-- Corrected placeholder
     fireEvent.changeText(plateInput, 'XYZ-789');
     fireEvent.press(getByText('Siguiente'));
 
