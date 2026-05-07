@@ -9,4 +9,9 @@ module.exports = {
   transformIgnorePatterns: [
     'node_modules/(?!(jest-)?react-native|@react-native|@react-navigation|expo|@expo/.*|expo-router|expo-modules-core)',
   ],
+  // LA LLAVE MAESTRA:
+  moduleNameMapper: {
+    '^expo/src/winter/runtime\\.native\\.ts$': '<rootDir>/emptyMock.js',
+    '^expo/src/winter/installGlobal\\.ts$': '<rootDir>/emptyMock.js'
+  }
 };

@@ -1,2 +1,1 @@
-jest.mock('expo/src/winter/runtime.native.ts', () => ({}));
-jest.mock('expo/src/winter/installGlobal.ts', () => ({}));
+process.env.EXPO_OS = 'ios';
