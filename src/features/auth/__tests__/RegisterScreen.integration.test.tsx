@@ -3,6 +3,10 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import RegisterScreen from '../screens/RegisterScreen';
 
+// Mocks para evitar el error de importación dinámica interna de Expo
+jest.mock('expo/src/winter/runtime.native.ts', () => ({}));
+jest.mock('expo/src/winter/installGlobal.ts', () => ({}));
+
 // Set up environment variables
 process.env.EXPO_PUBLIC_API_URL = 'http://localhost:3000';
 
