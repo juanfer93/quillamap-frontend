@@ -1,31 +1,35 @@
-export const COLORS = {
-  // Colores de Marca
-  sharkBlue: '#004574', 
-  sandGold: '#D4AF37',  
-  
-  // Modo Oscuro (OLED Friendly)
-  dark: {
-    background: '#001A2C', 
-    surface: '#002B47',    
-    text: '#FFFFFF',
-    textSecondary: '#A0AEC0',
-    border: '#004574',
-  },
-  
-  // Modo Claro
-  light: {
-    background: '#F4F7F9',
-    surface: '#FFFFFF',    
-    text: '#001A2C',
-    textSecondary: '#4A5568',
-    border: '#E2E8F0',
-  },
+export const corporateColors = {
+  gold: '#D4AF37',
+  sandGold: '#c7ad8c',
+  sharkBlue: '#004574',
+  white: '#FFFFFF',
+  black: '#000000',
+  lightGray: '#f2f2f2',
+  mediumGray: '#e0e0e0',
+  darkGray: '#333333',
+};
 
-  plate: {
-    yellow: '#FFD700',
-    white: '#FFFFFF',
-    text: '#000000'
-  }
+export const COLORS = {
+  light: {
+    background: corporateColors.lightGray,
+    surface: corporateColors.white,
+    text: corporateColors.black,
+    textSecondary: corporateColors.darkGray,
+    primary: corporateColors.sharkBlue,
+    secondary: corporateColors.sandGold,
+    border: corporateColors.mediumGray,
+  },
+  dark: {
+    background: corporateColors.black,
+    surface: corporateColors.darkGray,
+    text: corporateColors.white,
+    textSecondary: corporateColors.lightGray,
+    primary: corporateColors.sandGold,
+    secondary: corporateColors.sharkBlue,
+    border: corporateColors.darkGray,
+  },
+  sandGold: corporateColors.sandGold,
+  sharkBlue: corporateColors.sharkBlue,
 };
 
 export const SPACING = {
@@ -33,11 +37,12 @@ export const SPACING = {
   s: 8,
   m: 16,
   l: 24,
-  xl: 32,
+  xl: 40,
 };
 
 export const BORDER_RADIUS = {
-  s: 8,
-  m: 12,
-  l: 20, 
+  s: 4,
+  m: 10,
+  l: 25,
+  xl: 75,
 };

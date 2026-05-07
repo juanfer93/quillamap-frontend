@@ -2,14 +2,12 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    "esModuleInterop": true,
     "baseUrl": ".",
     "paths": {
-      "src/*": ["src/*"]
+      "@/*": [
+        "./src/*"
+      ]
     }
-  },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    "jest.d.ts"
-  ]
+  }
 }

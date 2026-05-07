@@ -1,8 +1,8 @@
 import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
-import { useThemeStore } from 'src/store/useThemeStore';
-import { COLORS, SPACING, BORDER_RADIUS } from 'src/constants/theme';
+import { useThemeStore } from '@/store/useThemeStore';
+import { COLORS, SPACING, BORDER_RADIUS } from '@/constants/theme';
 import { useState } from 'react';
-import { HeaderSwitch } from 'src/components/common/HeaderSwitch';
+import { HeaderSwitch } from '@/components/common/HeaderSwitch';
 
 export const LoginScreen = () => {
   const { mode } = useThemeStore();

@@ -1,6 +1,6 @@
 import { Animated, View, StyleSheet, Image } from 'react-native';
-import { useThemeStore } from 'src/store/useThemeStore';
-import { COLORS } from 'src/constants/theme';
+import { useThemeStore } from '@/store/useThemeStore';
+import { COLORS } from '@/constants/theme';
 import { useEffect, useRef } from 'react';
 
 const LOGO_SIZE = 250;

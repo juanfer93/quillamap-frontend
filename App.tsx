@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
-import { WelcomeScreen } from 'src/features/auth/screens/WelcomeScreen';
-import { LoginScreen } from 'src/features/auth/screens/LoginScreen';
-import { useAuthStore } from 'src/store/useAuthStore';
-import { useThemeStore } from 'src/store/useThemeStore';
-import { COLORS } from 'src/constants/theme';
+import { WelcomeScreen } from '@/features/auth/screens/WelcomeScreen';
+import { LoginScreen } from '@/features/auth/screens/LoginScreen';
+import { useAuthStore } from '@/store/useAuthStore';
+import { useThemeStore } from '@/store/useThemeStore';
+import { COLORS } from '@/constants/theme';
 
 const App = () => {
   const [isAppReady, setIsAppReady] = useState(false);

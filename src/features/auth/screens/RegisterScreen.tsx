@@ -1,18 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, useColorScheme, SafeAreaView, ActivityIndicator } from 'react-native';
-import { RegisterRequest, RegisterResponse } from '../types/auth.types';
-import { FontAwesome } from '@expo/vector-icons';
-
-
-// Colores corporativos
-const corporateColors = {
-  gold: '#D4AF37',
-  shark: '#004574',
-  white: '#FFFFFF',
-  black: '#000000',
-  lightGray: '#f2f2f2',
-  darkGray: '#333333',
-};
+import { View, Text, StyleSheet, useColorScheme, SafeAreaView } from 'react-native';
+import { RegisterRequest, RegisterResponse } from '@/features/auth/types/auth.types';
+import { corporateColors } from '@/constants/theme';
+import MobilityStep from '@/features/auth/components/register/MobilityStep';
+import CarTypeStep from '@/features/auth/components/register/CarTypeStep';
+import LicensePlateStep from '@/features/auth/components/register/LicensePlateStep';
+import UserDetailsStep from '@/features/auth/components/register/UserDetailsStep';
 
 const RegisterScreen = () => {
   const colorScheme = useColorScheme();
@@ -92,96 +85,25 @@ const RegisterScreen = () => {
     )
   }
 
+  const renderStep = () => {
+    switch (currentStep) {
+      case 1:
+        return <MobilityStep handleVehicleTypeSelect={handleVehicleTypeSelect} />;
+      case 2:
+        return <CarTypeStep handleCarTypeSelect={handleCarTypeSelect} />;
+      case 3:
+        return <LicensePlateStep formData={formData} setPlate={setPlate} setCurrentStep={setCurrentStep} />;
+      case 4:
+        return <UserDetailsStep formData={formData} setFormData={setFormData} handleRegister={handleRegister} isLoading={isLoading} error={error} />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.wizardContainer}>
-        {currentStep === 1 && (
-          <View style={styles.stepContainer}>
-            <Text style={styles.questionText}>¿Cómo te mueves por la ciudad?</Text>
-            <TouchableOpacity style={styles.card} onPress={() => handleVehicleTypeSelect('PEATON')}>
-                <FontAwesome name="male" size={40} color={isDarkMode ? corporateColors.gold : corporateColors.shark} />
-              <Text style={styles.cardText}>Peatón</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.card} onPress={() => handleVehicleTypeSelect('TURISTA')}>
-            <FontAwesome name="user-circle" size={40} color={isDarkMode ? corporateColors.gold : corporateColors.shark} />
-              <Text style={styles.cardText}>Turista</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.card} onPress={() => handleVehicleTypeSelect('MOTO')}>
-            <FontAwesome name="motorcycle" size={40} color={isDarkMode ? corporateColors.gold : corporateColors.shark} />
-              <Text style={styles.cardText}>Moto</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.card} onPress={() => handleVehicleTypeSelect('CARRO')}>
-            <FontAwesome name="car" size={40} color={isDarkMode ? corporateColors.gold : corporateColors.shark} />
-              <Text style={styles.cardText}>Carro</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {currentStep === 2 && (
-          <View style={styles.stepContainer}>
-            <Text style={styles.questionText}>¿Qué tipo de carro conduces?</Text>
-            <TouchableOpacity style={styles.card} onPress={() => handleCarTypeSelect('PARTICULAR')}>
-            <FontAwesome name="circle-o" size={24} color={isDarkMode ? corporateColors.gold : corporateColors.shark} />
-              <Text style={styles.cardText}>Particular</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.card} onPress={() => handleCarTypeSelect('TAXI')}>
-            <FontAwesome name="circle-o" size={24} color={isDarkMode ? corporateColors.gold : corporateColors.shark} />
-              <Text style={styles.cardText}>Taxi</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {currentStep === 3 && (
-          <View style={styles.stepContainer}>
-            <View style={[styles.plate, {backgroundColor: formData.vehicle_type === 'TAXI' ? corporateColors.white : '#FFD700'}]}>
-                 <Text style={[styles.plateText, {color: corporateColors.black}]}>{formData.license_plate?.toUpperCase()}</Text>
-            </View>
-            <TextInput
-              style={styles.input}
-              placeholder="Placa del vehículo"
-              value={formData.license_plate}
-              onChangeText={setPlate}
-              autoCapitalize="characters"
-              placeholderTextColor={isDarkMode ? corporateColors.lightGray : corporateColors.darkGray}
-            />
-             <TouchableOpacity style={styles.button} onPress={() => setCurrentStep(4)}>
-                <Text style={styles.buttonText}>Siguiente</Text>
-             </TouchableOpacity>
-          </View>
-        )}
-
-        {currentStep === 4 && (
-          <View style={styles.stepContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Nombre completo"
-              value={formData.name}
-              onChangeText={(name) => setFormData(prev => ({...prev, name}))}
-              placeholderTextColor={isDarkMode ? corporateColors.lightGray : corporateColors.darkGray}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Correo electrónico"
-              value={formData.email}
-              onChangeText={(email) => setFormData(prev => ({...prev, email}))}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              placeholderTextColor={isDarkMode ? corporateColors.lightGray : corporateColors.darkGray}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Contraseña"
-              value={formData.password}
-              onChangeText={(password) => setFormData(prev => ({...prev, password}))}
-              secureTextEntry
-              placeholderTextColor={isDarkMode ? corporateColors.lightGray : corporateColors.darkGray}
-            />
-            <TouchableOpacity style={[styles.button, { backgroundColor: corporateColors.gold }]} onPress={handleRegister} disabled={isLoading}>
-              {isLoading ? <ActivityIndicator color={corporateColors.white} /> : <Text style={styles.buttonText}>Finalizar Registro</Text>}
-            </TouchableOpacity>
-            {error && <Text style={styles.errorText}>{error}</Text>}
-          </View>
-        )}
+        {renderStep()}
       </View>
     </SafeAreaView>
   );
@@ -197,78 +119,6 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     justifyContent: 'center',
     padding: 20,
   },
-  stepContainer: {
-    alignItems: 'center',
-  },
-  questionText: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 30,
-    color: isDarkMode ? corporateColors.white : corporateColors.shark,
-    textAlign: 'center',
-  },
-  card: {
-    backgroundColor: isDarkMode ? corporateColors.darkGray : corporateColors.white,
-    padding: 20,
-    borderRadius: 15,
-    marginBottom: 15,
-    width: '100%',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  cardText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: isDarkMode ? corporateColors.white : corporateColors.shark,
-    marginLeft: 15,
-  },
-  plate: {
-      width: '80%',
-      height: 100,
-      justifyContent: 'center',
-      alignItems: 'center',
-      borderRadius: 10,
-      borderWidth: 2,
-      borderColor: corporateColors.shark,
-      marginBottom: 30,
-  },
-  plateText: {
-      fontSize: 40,
-      fontWeight: 'bold',
-      letterSpacing: 5
-  },
-  input: {
-    width: '100%',
-    backgroundColor: isDarkMode ? corporateColors.darkGray : corporateColors.white,
-    padding: 15,
-    borderRadius: 10,
-    fontSize: 16,
-    marginBottom: 15,
-    color: isDarkMode ? corporateColors.white : corporateColors.black,
-  },
-  button: {
-    backgroundColor: corporateColors.shark,
-    padding: 15,
-    borderRadius: 10,
-    width: '100%',
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: corporateColors.white,
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  errorText: {
-    color: 'red',
-    marginTop: 15,
-    textAlign: 'center'
-  },
   successContainer: {
       flex: 1,
       justifyContent: 'center',
@@ -277,7 +127,7 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   successText: {
       fontSize: 24,
       fontWeight: 'bold',
-      color: isDarkMode ? corporateColors.white : corporateColors.shark,
+      color: isDarkMode ? corporateColors.white : corporateColors.sharkBlue,
       textAlign: 'center'
   }
 });

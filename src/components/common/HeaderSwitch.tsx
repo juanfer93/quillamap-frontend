@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Switch, StyleSheet, Text } from 'react-native';
 // Importaciones Absolutas
-import { useThemeStore } from 'src/store/useThemeStore';
-import { COLORS } from 'src/constants/theme';
+import { useThemeStore } from '@/store/useThemeStore';
+import { COLORS } from '@/constants/theme';
 
 export const HeaderSwitch = () => {
   const { mode, toggleTheme } = useThemeStore();
