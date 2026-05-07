@@ -110,7 +110,7 @@ describe('RegisterScreen Integration Flow', () => {
     fireEvent.press(getByText('Vehículo'));
 
     // 2. CarTypeStep: Select "Automóvil" (triggers handleCarTypeSelect with 'PARTICULAR')
-    fireEvent.press(getByText('Automóvil'));
+    fireEvent.press(getByText('Particular'));
 
     // 3. LicensePlateStep: Enter license plate
     const plateInput = getByPlaceholderText('AAA-000');
