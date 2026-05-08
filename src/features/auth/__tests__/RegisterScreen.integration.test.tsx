@@ -1,27 +1,37 @@
-
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import RegisterScreen from '../screens/RegisterScreen';
+import { authApi } from '@/api/client';
+import { RegisterResponse } from '@/features/auth/types/auth.types';
+
+// Mock AsyncStorage with an inline mock
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  setItem: jest.fn(() => Promise.resolve(null)),
+  getItem: jest.fn(() => Promise.resolve(null)),
+  removeItem: jest.fn(() => Promise.resolve(null)),
+  clear: jest.fn(() => Promise.resolve(null)),
+}));
 
 // Set up environment variables
 process.env.EXPO_PUBLIC_API_URL = 'http://localhost:3000';
 
-// Mock global fetch to intercept API calls
-global.fetch = jest.fn();
+// Mock the API client
+jest.mock('@/api/client', () => ({
+  authApi: {
+    register: jest.fn(),
+  },
+}));
 
 // Mock navigation
-jest.mock('@react-navigation/native', () => {
-  const actualNav = jest.requireActual('@react-navigation/native');
-  return {
-    ...actualNav,
-    useNavigation: () => ({
-      navigate: jest.fn(),
-    }),
-  };
-});
+jest.mock('@react-navigation/native', () => ({
+  ...jest.requireActual('@react-navigation/native'),
+  useNavigation: () => ({
+    navigate: jest.fn(),
+  }),
+}));
 
 // Mock colors to prevent style-related test failures
-jest.mock('../../../constants/theme', () => ({
+jest.mock('@/constants/theme', () => ({
   corporateColors: {
     black: '#000000',
     lightGray: '#F5F5F5',
@@ -34,16 +44,24 @@ describe('RegisterScreen Integration Flow', () => {
 
   beforeEach(() => {
     // Clear mock history before each test
-    (fetch as jest.Mock).mockClear();
+    (authApi.register as jest.Mock).mockClear();
   });
 
   test('should handle the pedestrian registration flow correctly', async () => {
     // Arrange: Mock a successful API response
-    (fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      status: 201,
-      json: async () => ({ message: 'User created successfully' }),
-    });
+    const mockUser = {
+      id: 1,
+      name: 'Test Pedestrian',
+      email: 'pedestrian@test.com',
+      mobility_type: 'PEATON' as const,
+    };
+    const mockResponse: RegisterResponse = {
+      success: true,
+      message: 'User created successfully',
+      access_token: 'fake-jwt-token',
+      data: mockUser,
+    };
+    (authApi.register as jest.Mock).mockResolvedValue(mockResponse);
 
     const { getByText, getByPlaceholderText, findByText } = render(<RegisterScreen />);
 
@@ -56,48 +74,53 @@ describe('RegisterScreen Integration Flow', () => {
     const passwordInput = getByPlaceholderText('Contraseña');
     const submitButton = getByText('Finalizar Registro');
 
-    const testUser = {
+    const testUserPayload = {
       name: 'Test Pedestrian',
       email: 'pedestrian@test.com',
       password: 'password123',
     };
 
-    fireEvent.changeText(nameInput, testUser.name);
-    fireEvent.changeText(emailInput, testUser.email);
-    fireEvent.changeText(passwordInput, testUser.password);
+    fireEvent.changeText(nameInput, testUserPayload.name);
+    fireEvent.changeText(emailInput, testUserPayload.email);
+    fireEvent.changeText(passwordInput, testUserPayload.password);
 
     // 3. Submit the form
     fireEvent.press(submitButton);
 
-    // 4. Assertions: Check if fetch was called correctly
+    // 4. Assertions: Check if authApi.register was called correctly
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledTimes(1);
+      expect(authApi.register).toHaveBeenCalledTimes(1);
     });
 
-    expect(fetch).toHaveBeenCalledWith(
-      'http://localhost:3000/api/auth/register',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...testUser,
-          mobility_type: 'PEATON',
-        }),
-      }
-    );
+    expect(authApi.register).toHaveBeenCalledWith({
+      ...testUserPayload,
+      mobility_type: 'PEATON',
+      license_plate: undefined,
+      vehicle_type: undefined
+    });
 
     // Check if success message is shown
-    const successMessage = await findByText(`Bienvenido ${testUser.name}, estás en modo PEATON`);
+    const successMessage = await findByText(`¡Bienvenido ${testUserPayload.name}! Tu registro ha sido exitoso.`);
     expect(successMessage).toBeTruthy();
-  }, 10000); 
+  }, 10000);
 
   test('should handle the vehicle registration flow correctly', async () => {
     // Arrange: Mock a successful API response
-    (fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      status: 201,
-      json: async () => ({ message: 'User created successfully' }),
-    });
+    const mockUser = {
+      id: 2,
+      name: 'Test Driver',
+      email: 'driver@test.com',
+      mobility_type: 'CARRO' as const,
+      vehicle_type: 'PARTICULAR' as const,
+      license_plate: 'XYZ-789',
+    };
+    const mockResponse: RegisterResponse = {
+      success: true,
+      message: 'User created successfully',
+      access_token: 'fake-jwt-token-2',
+      data: mockUser,
+    };
+    (authApi.register as jest.Mock).mockResolvedValue(mockResponse);
 
     const { getByText, getByPlaceholderText, findByText } = render(<RegisterScreen />);
 
@@ -108,7 +131,7 @@ describe('RegisterScreen Integration Flow', () => {
     fireEvent.press(getByText('Particular'));
 
     // 3. LicensePlateStep: Enter license plate
-    const plateInput = getByPlaceholderText('Placa del vehículo'); // <-- Corrected placeholder
+    const plateInput = getByPlaceholderText('Placa del vehículo');
     fireEvent.changeText(plateInput, 'XYZ-789');
     fireEvent.press(getByText('Siguiente'));
 
@@ -117,41 +140,34 @@ describe('RegisterScreen Integration Flow', () => {
     const emailInput = getByPlaceholderText('Correo electrónico');
     const passwordInput = getByPlaceholderText('Contraseña');
     const submitButton = getByText('Finalizar Registro');
-    
-    const testUser = {
+
+    const testUserPayload = {
         name: 'Test Driver',
         email: 'driver@test.com',
         password: 'password123',
     };
 
-    fireEvent.changeText(nameInput, testUser.name);
-    fireEvent.changeText(emailInput, testUser.email);
-    fireEvent.changeText(passwordInput, testUser.password);
+    fireEvent.changeText(nameInput, testUserPayload.name);
+    fireEvent.changeText(emailInput, testUserPayload.email);
+    fireEvent.changeText(passwordInput, testUserPayload.password);
 
     // 5. Submit the form
     fireEvent.press(submitButton);
 
     // 6. Assertions
     await waitFor(() => {
-        expect(fetch).toHaveBeenCalledTimes(1);
+        expect(authApi.register).toHaveBeenCalledTimes(1);
     });
 
-    expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/auth/register',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...testUser,
-            mobility_type: 'CARRO',
-            vehicle_type: 'PARTICULAR',
-            license_plate: 'XYZ-789',
-          }),
-        }
-    );
-    
+    expect(authApi.register).toHaveBeenCalledWith({
+      ...testUserPayload,
+      mobility_type: 'CARRO',
+      vehicle_type: 'PARTICULAR',
+      license_plate: 'XYZ-789',
+    });
+
     // Check if success message is shown
-    const successMessage = await findByText(`Bienvenido ${testUser.name}, estás en modo CARRO`);
+    const successMessage = await findByText(`¡Bienvenido ${testUserPayload.name}! Tu registro ha sido exitoso.`);
     expect(successMessage).toBeTruthy();
   });
 });
