@@ -11,8 +11,6 @@ jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: jest.fn() }),
 }));
 
-process.env.EXPO_PUBLIC_API_URL = '[http://192.168.1.10:3000/api](http://192.168.1.10:3000/api)';
-
 describe('PRUEBA E2E REAL - Registro QuillaMap (Diagnóstico Profundo)', () => {
   test('Debe registrar al usuario o mostrar exactamente qué falló', async () => {
     const emailDinamico = `test_${Date.now()}@quillamap.com`;
