@@ -21,8 +21,8 @@ const UserDetailsStep: React.FC<UserDetailsStepProps> = ({ formData, setFormData
       <TextInput
         style={styles.input}
         placeholder="Nombre completo"
-        value={formData.name}
-        onChangeText={(name) => setFormData({ ...formData, name })}
+        value={formData.full_name}
+        onChangeText={(full_name) => setFormData({ ...formData, full_name })}
         placeholderTextColor={isDarkMode ? corporateColors.lightGray : corporateColors.darkGray}
       />
       <TextInput

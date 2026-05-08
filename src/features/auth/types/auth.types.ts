@@ -1,8 +1,8 @@
 export interface RegisterRequest {
-    name: string;
+    full_name: string;
     email: string;
     password?: string;
-    mobility_type: 'PEATON' | 'TURISTA' | 'MOTO' | 'CARRO';
+    mobility_mode: 'peaton' | 'turista' | 'moto' | 'carro';
     vehicle_type?: 'PARTICULAR' | 'TAXI';
     license_plate?: string;
   }
@@ -13,9 +13,9 @@ export interface RegisterRequest {
     access_token: string;
     data: {
       id: number;
-      name: string;
+      full_name: string;
       email: string;
-      mobility_type: 'PEATON' | 'TURISTA' | 'MOTO' | 'CARRO';
+      mobility_mode: 'peaton' | 'turista' | 'moto' | 'carro';
       vehicle_type?: 'PARTICULAR' | 'TAXI';
       license_plate?: string;
     };

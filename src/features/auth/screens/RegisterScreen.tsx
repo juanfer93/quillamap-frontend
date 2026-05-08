@@ -10,16 +10,25 @@ import UserDetailsStep from '@/features/auth/components/register/UserDetailsStep
 import { authApi } from '@/api/client';
 import { useAuthStore } from '@/store/useAuthStore';
 
+// Maps backend enum values. The keys are what the UI (MobilityStep) sends.
+const mobilityModeMap: { [key: string]: RegisterRequest['mobility_mode'] } = {
+    'PEATON': 'peaton',
+    'TURISTA': 'turista',
+    'MOTO': 'moto',
+    'CARRO': 'carro',
+  };
+
+
 const RegisterScreen = () => {
   const colorScheme = useColorScheme();
   const isDarkMode = colorScheme === 'dark';
 
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<RegisterRequest>({
-    name: '',
+    full_name: '',
     email: '',
     password: '',
-    mobility_type: 'PEATON',
+    mobility_mode: 'peaton',
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -28,12 +37,15 @@ const RegisterScreen = () => {
   const setSession = useAuthStore(state => state.setSession);
 
   const handleVehicleTypeSelect = (type: 'PEATON' | 'TURISTA' | 'MOTO' | 'CARRO') => {
-    setFormData(prev => ({ ...prev, mobility_type: type, vehicle_type: undefined, license_plate: undefined }));
+    const mobility_mode = mobilityModeMap[type];
+    
+    setFormData(prev => ({ ...prev, mobility_mode, vehicle_type: undefined, license_plate: undefined }));
+    
     if (type === 'PEATON' || type === 'TURISTA') {
       setCurrentStep(4);
     } else if (type === 'MOTO') {
       setCurrentStep(3);
-    } else {
+    } else { // CARRO
       setCurrentStep(2);
     }
   };
@@ -52,16 +64,8 @@ const RegisterScreen = () => {
     setError(null);
 
     try {
-      const payload: RegisterRequest = {
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        mobility_type: formData.mobility_type,
-        vehicle_type: formData.vehicle_type,
-        license_plate: formData.license_plate,
-      };
-
-      const responseData: RegisterResponse = await authApi.register(payload);
+      // The `formData` state is already shaped like `RegisterRequest`
+      const responseData: RegisterResponse = await authApi.register(formData);
 
       if (responseData && responseData.access_token) {
         setSession(responseData.access_token, responseData.data);
@@ -83,7 +87,7 @@ const RegisterScreen = () => {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.successContainer}>
-                <Text style={styles.successText}>¡Bienvenido {formData.name}! Tu registro ha sido exitoso.</Text>
+                <Text style={styles.successText}>¡Bienvenido {formData.full_name}! Tu registro ha sido exitoso.</Text>
             </View>
         </SafeAreaView>
     )
@@ -98,6 +102,7 @@ const RegisterScreen = () => {
       case 3:
         return <LicensePlateStep formData={formData} setPlate={setPlate} setCurrentStep={setCurrentStep} />;
       case 4:
+        // UserDetailsStep will now work with `full_name` via the `formData` prop
         return <UserDetailsStep formData={formData} setFormData={setFormData} handleRegister={handleRegister} isLoading={isLoading} error={error} />;
       default:
         return null;
