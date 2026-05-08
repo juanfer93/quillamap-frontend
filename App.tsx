@@ -1,52 +1,63 @@
 
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useAuthStore } from '@/store/useAuthStore';
 import { WelcomeScreen } from '@/features/auth/screens/WelcomeScreen';
 import { LoginScreen } from '@/features/auth/screens/LoginScreen';
-import { useAuthStore } from '@/store/useAuthStore';
+import  RegisterScreen  from '@/features/auth/screens/RegisterScreen';
+import { SafeAreaView, Text, StyleSheet } from 'react-native';
 import { useThemeStore } from '@/store/useThemeStore';
 import { COLORS } from '@/constants/theme';
 
-const App = () => {
-  const [isAppReady, setIsAppReady] = useState(false);
-  const { session } = useAuthStore();
+// Placeholder for the main app screen
+const HomeScreen = () => {
   const { mode } = useThemeStore();
   const theme = mode === 'dark' ? COLORS.dark : COLORS.light;
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsAppReady(true);
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (!isAppReady) {
-    return <WelcomeScreen />;
-  }
-
-  if (!session) {
-    return <LoginScreen />;
-  }
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <StatusBar
-        barStyle={mode === 'dark' ? 'light-content' : 'dark-content'}
-        backgroundColor={theme.background}
-      />
-      <View style={styles.content}>
-        <Text style={{ color: theme.text }}>¡Bienvenido a QuillaMap!</Text>
-      </View>
+      <Text style={{ color: theme.text }}>Mapa Principal</Text>
     </SafeAreaView>
+  );
+};
+
+const AuthStack = createNativeStackNavigator();
+const MainStack = createNativeStackNavigator();
+const RootStack = createNativeStackNavigator();
+
+const AuthStackNavigator = () => (
+  <AuthStack.Navigator screenOptions={{ headerShown: false }}>
+    <AuthStack.Screen name="Welcome" component={WelcomeScreen} />
+    <AuthStack.Screen name="Login" component={LoginScreen} />
+    <AuthStack.Screen name="Register" component={RegisterScreen} />
+  </AuthStack.Navigator>
+);
+
+const MainStackNavigator = () => (
+  <MainStack.Navigator screenOptions={{ headerShown: false }}>
+    <MainStack.Screen name="Home" component={HomeScreen} />
+    {/* You can add more screens to your main app here */}
+  </MainStack.Navigator>
+);
+
+const App = () => {
+  const { token } = useAuthStore();
+
+  return (
+    <NavigationContainer>
+      <RootStack.Navigator screenOptions={{ headerShown: false }}>
+        {token ? (
+          <RootStack.Screen name="Main" component={MainStackNavigator} />
+        ) : (
+          <RootStack.Screen name="Auth" component={AuthStackNavigator} />
+        )}
+      </RootStack.Navigator>
+    </NavigationContainer>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-  },
-  content: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',

@@ -6,9 +6,9 @@ import { useAuthStore } from '@/store/useAuthStore';
 
 const LOGO_SIZE = 250;
 
-export const WelcomeScreen = () => {
+export const WelcomeScreen = ({ navigation }: any) => {
   const { mode } = useThemeStore();
-  const { signOut } = useAuthStore();
+  const { signOut, session } = useAuthStore();
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -39,7 +39,19 @@ export const WelcomeScreen = () => {
         source={require('../../../../assets/logo-quillamap.png')}
       />
       <View style={styles.buttonContainer}>
-        <Button title="Cerrar Sesión" onPress={signOut} color="#004574" />
+        {session ? (
+          <>
+            <Button title="Ir al Mapa" onPress={() => navigation.navigate('Main')} color="#004574" />
+            <View style={styles.spacer} />
+            <Button title="Cerrar Sesión" onPress={signOut} color="#004574" />
+          </>
+        ) : (
+          <>
+            <Button title="Iniciar Sesión" onPress={() => navigation.navigate('Login')} color="#004574" />
+            <View style={styles.spacer} />
+            <Button title="Registrarse" onPress={() => navigation.navigate('Register')} color="#004574" />
+          </>
+        )}
       </View>
     </View>
   );
@@ -58,4 +70,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     marginTop: 20,
   },
+  spacer: {
+    height: 10,
+  }
 });
