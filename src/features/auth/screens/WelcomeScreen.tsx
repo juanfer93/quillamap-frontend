@@ -2,13 +2,11 @@ import { Animated, View, StyleSheet, Image, Button } from 'react-native';
 import { useThemeStore } from '@/store/useThemeStore';
 import { COLORS } from '@/constants/theme';
 import { useEffect, useRef } from 'react';
-import { useAuthStore } from '@/store/useAuthStore';
 
 const LOGO_SIZE = 250;
 
 export const WelcomeScreen = ({ navigation }: any) => {
   const { mode } = useThemeStore();
-  const { signOut, session } = useAuthStore();
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -39,19 +37,11 @@ export const WelcomeScreen = ({ navigation }: any) => {
         source={require('../../../../assets/logo-quillamap.png')}
       />
       <View style={styles.buttonContainer}>
-        {session ? (
-          <>
-            <Button title="Ir al Mapa" onPress={() => navigation.navigate('Main')} color="#004574" />
-            <View style={styles.spacer} />
-            <Button title="Cerrar Sesión" onPress={signOut} color="#004574" />
-          </>
-        ) : (
-          <>
+        <>
             <Button title="Iniciar Sesión" onPress={() => navigation.navigate('Login')} color="#004574" />
             <View style={styles.spacer} />
             <Button title="Registrarse" onPress={() => navigation.navigate('Register')} color="#004574" />
-          </>
-        )}
+        </>
       </View>
     </View>
   );

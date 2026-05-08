@@ -5,7 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuthStore } from '@/store/useAuthStore';
 import { WelcomeScreen } from '@/features/auth/screens/WelcomeScreen';
 import { LoginScreen } from '@/features/auth/screens/LoginScreen';
-import  RegisterScreen  from '@/features/auth/screens/RegisterScreen';
+import RegisterScreen from '@/features/auth/screens/RegisterScreen';
 import { SafeAreaView, Text, StyleSheet } from 'react-native';
 import { useThemeStore } from '@/store/useThemeStore';
 import { COLORS } from '@/constants/theme';
@@ -21,23 +21,22 @@ const HomeScreen = () => {
   );
 };
 
-const AuthStack = createNativeStackNavigator();
-const MainStack = createNativeStackNavigator();
-const RootStack = createNativeStackNavigator();
+const Auth = createNativeStackNavigator();
+const Main = createNativeStackNavigator();
 
-const AuthStackNavigator = () => (
-  <AuthStack.Navigator screenOptions={{ headerShown: false }}>
-    <AuthStack.Screen name="Welcome" component={WelcomeScreen} />
-    <AuthStack.Screen name="Login" component={LoginScreen} />
-    <AuthStack.Screen name="Register" component={RegisterScreen} />
-  </AuthStack.Navigator>
+const AuthStack = () => (
+  <Auth.Navigator screenOptions={{ headerShown: false }}>
+    <Auth.Screen name="Welcome" component={WelcomeScreen} />
+    <Auth.Screen name="Login" component={LoginScreen} />
+    <Auth.Screen name="Register" component={RegisterScreen} />
+  </Auth.Navigator>
 );
 
-const MainStackNavigator = () => (
-  <MainStack.Navigator screenOptions={{ headerShown: false }}>
-    <MainStack.Screen name="Home" component={HomeScreen} />
+const MainStack = () => (
+  <Main.Navigator screenOptions={{ headerShown: false }}>
+    <Main.Screen name="Home" component={HomeScreen} />
     {/* You can add more screens to your main app here */}
-  </MainStack.Navigator>
+  </Main.Navigator>
 );
 
 const App = () => {
@@ -45,13 +44,7 @@ const App = () => {
 
   return (
     <NavigationContainer>
-      <RootStack.Navigator screenOptions={{ headerShown: false }}>
-        {session ? (
-          <RootStack.Screen name="Main" component={MainStackNavigator} />
-        ) : (
-          <RootStack.Screen name="Auth" component={AuthStackNavigator} />
-        )}
-      </RootStack.Navigator>
+      {session ? <MainStack /> : <AuthStack />}
     </NavigationContainer>
   );
 };
