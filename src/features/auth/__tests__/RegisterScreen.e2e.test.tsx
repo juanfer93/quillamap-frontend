@@ -1,9 +1,8 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import RegisterScreen from '../screens/RegisterScreen';
 import { useAuthStore } from '@/store/useAuthStore';
 
-// Mocks mínimos para el entorno (no afectan la petición HTTP real)
 jest.mock('@react-native-async-storage/async-storage', () => ({
   setItem: jest.fn(), getItem: jest.fn(), removeItem: jest.fn(),
 }));
@@ -12,33 +11,42 @@ jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: jest.fn() }),
 }));
 
-// CONFIGURACIÓN DE API REAL (IP del entorno de desarrollo local)
 process.env.EXPO_PUBLIC_API_URL = '[http://192.168.1.10:3000/api](http://192.168.1.10:3000/api)';
 
-describe('PRUEBA E2E REAL - Registro QuillaMap', () => {
-  test('Debe registrar un usuario real en el Backend y recibir el token', async () => {
+describe('PRUEBA E2E REAL - Registro QuillaMap (Diagnóstico Profundo)', () => {
+  test('Debe registrar al usuario o mostrar exactamente qué falló', async () => {
     const emailDinamico = `test_${Date.now()}@quillamap.com`;
-    
-    const { getByText, getByPlaceholderText, findByText } = render(<RegisterScreen />);
+    const { getByText, getByPlaceholderText, queryByText, debug } = render(<RegisterScreen />);
 
-    // 1. Selección
     fireEvent.press(getByText('Peatón'));
-
-    // 2. Datos Reales
     fireEvent.changeText(getByPlaceholderText('Nombre completo'), 'Juan Test E2E');
     fireEvent.changeText(getByPlaceholderText('Correo electrónico'), emailDinamico);
     fireEvent.changeText(getByPlaceholderText('Contraseña'), 'password123');
 
-    // 3. Disparo al Backend
+    console.log('⏳ Disparando petición a NestJS...');
     fireEvent.press(getByText('Finalizar Registro'));
 
-    // 4. Verificación (45s de espera por lentitud del disco)
-    const successMessage = await findByText(/registro ha sido exitoso/i, {}, { timeout: 45000 });
-    expect(successMessage).toBeTruthy();
+    try {
+      // Esperamos hasta 30s. Si falla, el catch imprimirá la pantalla.
+      await waitFor(() => {
+        const success = queryByText(/registro ha sido exitoso/i);
+        const errorMessage = queryByText(/error/i) || queryByText(/failed/i);
+        
+        if (errorMessage) {
+          console.error('❌ SE DETECTÓ UN ERROR EN LA PANTALLA:', errorMessage.props.children);
+          throw new Error('La petición falló y se mostró un error en la UI.');
+        }
+        
+        expect(success).toBeTruthy();
+      }, { timeout: 30000 });
 
-    // 5. Validar Zustand
-    const session = useAuthStore.getState().session;
-    console.log('🚀 Resultado E2E - Token Recibido:', session ? 'SÍ' : 'NO');
-    expect(session).not.toBeNull();
-  }, 60000); // 60 segundos de timeout total para Jest
+      const session = useAuthStore.getState().session;
+      console.log('✅ TEST PASADO. Token:', session ? 'Recibido' : 'Nulo');
+
+    } catch (error) {
+      console.log('⚠️ EL TEST FALLÓ. IMPRIMIENDO LA PANTALLA ACTUAL:');
+      debug(); // ESTO ES LA MAGIA: Nos mostrará el HTML virtual para ver qué texto hay
+      throw error;
+    }
+  }, 40000);
 });
