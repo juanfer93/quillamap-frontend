@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { RegisterRequest, RegisterResponse } from '@/features/auth/types/auth.types';
+import { RegisterRequest, RegisterResponse, RootStackParamList } from '@/features/auth/types/auth.types';
 import { corporateColors } from '@/constants/theme';
 import MobilityStep from '@/features/auth/components/register/MobilityStep';
 import CarTypeStep from '@/features/auth/components/register/CarTypeStep';
@@ -9,6 +9,8 @@ import LicensePlateStep from '@/features/auth/components/register/LicensePlateSt
 import UserDetailsStep from '@/features/auth/components/register/UserDetailsStep';
 import { authApi } from '@/api/client';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 
 // Maps backend enum values. The keys are what the UI (MobilityStep) sends.
 const mobilityModeMap: { [key: string]: RegisterRequest['mobility_mode'] } = {
@@ -22,6 +24,7 @@ const mobilityModeMap: { [key: string]: RegisterRequest['mobility_mode'] } = {
 const RegisterScreen = () => {
   const colorScheme = useColorScheme();
   const isDarkMode = colorScheme === 'dark';
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<RegisterRequest>({
@@ -74,9 +77,15 @@ const RegisterScreen = () => {
         // Registro exitoso y token de NestJS recibido
         setSession(token, user);
         setIsSuccess(true);
+        setTimeout(() => {
+            navigation.navigate('Home');
+        }, 1500);
       } else if (user) {
         // Caso fallback si se requiere validación de correo
         setIsSuccess(true);
+        setTimeout(() => {
+            navigation.navigate('Home');
+        }, 1500);
       } else {
         throw new Error('No se recibió la información del usuario ni el token de sesión.');
       }

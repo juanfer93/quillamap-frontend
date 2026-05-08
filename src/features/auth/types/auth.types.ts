@@ -11,3 +11,7 @@ export interface RegisterResponse {
   user: any;
   accessToken?: string;
 }
+
+export type RootStackParamList = {
+    Home: undefined;
+};
