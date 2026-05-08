@@ -10,6 +10,7 @@ export interface RegisterRequest {
   export interface RegisterResponse {
     success: boolean;
     message: string;
+    access_token: string;
     data: {
       id: number;
       name: string;

@@ -7,6 +7,8 @@ import MobilityStep from '@/features/auth/components/register/MobilityStep';
 import CarTypeStep from '@/features/auth/components/register/CarTypeStep';
 import LicensePlateStep from '@/features/auth/components/register/LicensePlateStep';
 import UserDetailsStep from '@/features/auth/components/register/UserDetailsStep';
+import { authApi } from '@/api/client';
+import { useAuthStore } from '@/store/useAuthStore';
 
 const RegisterScreen = () => {
   const colorScheme = useColorScheme();
@@ -23,6 +25,7 @@ const RegisterScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const setSession = useAuthStore(state => state.setSession);
 
   const handleVehicleTypeSelect = (type: 'PEATON' | 'TURISTA' | 'MOTO' | 'CARRO') => {
     setFormData(prev => ({ ...prev, mobility_type: type, vehicle_type: undefined, license_plate: undefined }));
@@ -49,26 +52,26 @@ const RegisterScreen = () => {
     setError(null);
 
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      const payload: RegisterRequest = {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        mobility_type: formData.mobility_type,
+        vehicle_type: formData.vehicle_type,
+        license_plate: formData.license_plate,
+      };
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error de conexión con el servidor');
-      }
-      
-      const responseData: RegisterResponse = await response.json();
-      if (response.status === 201 || response.status === 200) {
+      const responseData: RegisterResponse = await authApi.register(payload);
+
+      if (responseData && responseData.access_token) {
+        setSession(responseData.access_token, responseData.data);
         setIsSuccess(true);
+      } else {
+        throw new Error(responseData.message || 'No se recibió el token de sesión.');
       }
 
     } catch (e: any) {
-      setError(e.message);
+      setError(e.response?.data?.message || e.message || 'Error de conexión con el servidor');
     } finally {
       setIsLoading(false);
     }
@@ -80,7 +83,7 @@ const RegisterScreen = () => {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.successContainer}>
-                <Text style={styles.successText}>Bienvenido {formData.name}, estás en modo {formData.mobility_type}</Text>
+                <Text style={styles.successText}>¡Bienvenido {formData.name}! Tu registro ha sido exitoso.</Text>
             </View>
         </SafeAreaView>
     )
@@ -123,7 +126,8 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   successContainer: {
       flex: 1,
       justifyContent: 'center',
-      alignItems: 'center'
+      alignItems: 'center',
+      paddingHorizontal: 20,
   },
   successText: {
       fontSize: 24,
