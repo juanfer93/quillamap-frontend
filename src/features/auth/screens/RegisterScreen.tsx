@@ -64,14 +64,21 @@ const RegisterScreen = () => {
     setError(null);
 
     try {
-      // The `formData` state is already shaped like `RegisterRequest`
-      const responseData: RegisterResponse = await authApi.register(formData);
+      const responseData = await authApi.register(formData);
+    
+      // Extraemos el token estandarizado generado por NestJS
+      const token = responseData?.accessToken;
+      const user = responseData?.user;
 
-      if (responseData && responseData.access_token) {
-        setSession(responseData.access_token, responseData.data);
+      if (token && user) {
+        // Registro exitoso y token de NestJS recibido
+        setSession(token, user);
+        setIsSuccess(true);
+      } else if (user) {
+        // Caso fallback si se requiere validación de correo
         setIsSuccess(true);
       } else {
-        throw new Error(responseData.message || 'No se recibió el token de sesión.');
+        throw new Error('No se recibió la información del usuario ni el token de sesión.');
       }
 
     } catch (e: any) {
