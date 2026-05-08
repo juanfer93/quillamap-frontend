@@ -41,12 +41,12 @@ const MainStackNavigator = () => (
 );
 
 const App = () => {
-  const { token } = useAuthStore();
+  const { session } = useAuthStore();
 
   return (
     <NavigationContainer>
       <RootStack.Navigator screenOptions={{ headerShown: false }}>
-        {token ? (
+        {session ? (
           <RootStack.Screen name="Main" component={MainStackNavigator} />
         ) : (
           <RootStack.Screen name="Auth" component={AuthStackNavigator} />
