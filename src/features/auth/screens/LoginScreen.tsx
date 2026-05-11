@@ -40,7 +40,7 @@ export const LoginScreen = () => {
           value={password}
           onChangeText={setPassword}
           accessibilityLabel="Campo de entrada de contraseña"
-          secureTextEntry
+          secureTextEntry={true}
         />
       </View>
 
