@@ -42,7 +42,11 @@ const MainStack = () => (
 );
 
 const App = () => {
-  const { session } = useAuthStore();
+  const { session, isLoading } = useAuthStore();
+
+  if (isLoading) {
+    return null; 
+  }
 
   return (
     <SafeAreaProvider> 
