@@ -1,5 +1,7 @@
 
 import React from 'react';
+import "./global.css";
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -43,9 +45,11 @@ const App = () => {
   const { session } = useAuthStore();
 
   return (
-    <NavigationContainer>
-      {session ? <MainStack /> : <AuthStack />}
-    </NavigationContainer>
+    <SafeAreaProvider> 
+      <NavigationContainer>
+        {session ? <MainStack /> : <AuthStack />}
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 };
 
