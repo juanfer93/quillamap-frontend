@@ -39,13 +39,13 @@ const UserDetailsStep: React.FC<UserDetailsStepProps> = ({ formData, setFormData
         placeholder="Contraseña"
         value={formData.password}
         onChangeText={(password) => setFormData({ ...formData, password })}
-        secureTextEntry
+        secureTextEntry={true}
         placeholderTextColor={isDarkMode ? corporateColors.lightGray : corporateColors.darkGray}
       />
-      <TouchableOpacity style={[styles.button, { backgroundColor: corporateColors.gold }]} onPress={handleRegister} disabled={isLoading}>
+      <TouchableOpacity style={[styles.button, { backgroundColor: corporateColors.gold }]} onPress={handleRegister} disabled={!!isLoading}>
         {isLoading ? <ActivityIndicator color={corporateColors.white} /> : <Text style={styles.buttonText}>Finalizar Registro</Text>}
       </TouchableOpacity>
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      {!!error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
 };
