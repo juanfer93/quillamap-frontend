@@ -43,7 +43,7 @@ const UserDetailsStep: React.FC<UserDetailsStepProps> = ({ formData, setFormData
         placeholderTextColor={isDarkMode ? corporateColors.lightGray : corporateColors.darkGray}
       />
       <TouchableOpacity style={[styles.button, { backgroundColor: corporateColors.gold }]} onPress={handleRegister} disabled={!!isLoading}>
-        {isLoading ? <ActivityIndicator color={corporateColors.white} /> : <Text style={styles.buttonText}>Finalizar Registro</Text>}
+        {isLoading ? <ActivityIndicator animating={true} color={corporateColors.white} /> : <Text style={styles.buttonText}>Finalizar Registro</Text>}
       </TouchableOpacity>
       {!!error && <Text style={styles.errorText}>{error}</Text>}
     </View>
