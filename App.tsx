@@ -1,6 +1,5 @@
 
 import React from 'react';
-import "./global.css";
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -8,17 +7,17 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { WelcomeScreen } from '@/features/auth/screens/WelcomeScreen';
 import { LoginScreen } from '@/features/auth/screens/LoginScreen';
 import RegisterScreen from '@/features/auth/screens/RegisterScreen';
-import { SafeAreaView, Text, StyleSheet } from 'react-native';
+import { SafeAreaView, Text } from 'react-native';
 import { useThemeStore } from '@/store/useThemeStore';
-import { COLORS } from '@/constants/theme';
+import tw from '@/lib/tailwind';
 
-// Placeholder for the main app screen
 const HomeScreen = () => {
   const { mode } = useThemeStore();
-  const theme = mode === 'dark' ? COLORS.dark : COLORS.light;
+  const theme = mode === 'dark' ? 'dark' : 'light';
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <Text style={{ color: theme.text }}>Mapa Principal</Text>
+    <SafeAreaView style={tw`flex-1 justify-center items-center bg-${theme === 'dark' ? 'black' : 'white'}`}>
+      <Text style={tw`text-${theme === 'dark' ? 'white' : 'black'}`}>Mapa Principal</Text>
     </SafeAreaView>
   );
 };
@@ -37,7 +36,6 @@ const AuthStack = () => (
 const MainStack = () => (
   <Main.Navigator screenOptions={{ headerShown: false }}>
     <Main.Screen name="Home" component={HomeScreen} />
-    {/* You can add more screens to your main app here */}
   </Main.Navigator>
 );
 
@@ -45,24 +43,16 @@ const App = () => {
   const { session, isLoading } = useAuthStore();
 
   if (isLoading) {
-    return null; 
+    return null;
   }
 
   return (
-    <SafeAreaProvider> 
+    <SafeAreaProvider>
       <NavigationContainer>
         {session ? <MainStack /> : <AuthStack />}
       </NavigationContainer>
     </SafeAreaProvider>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
 
 export default App;

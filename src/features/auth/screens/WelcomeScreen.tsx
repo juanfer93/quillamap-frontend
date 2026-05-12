@@ -1,7 +1,7 @@
-import { Animated, View, StyleSheet, Image, Button } from 'react-native';
+import { Animated, View, Image, Button } from 'react-native';
 import { useThemeStore } from '@/store/useThemeStore';
-import { COLORS } from '@/constants/theme';
 import { useEffect, useRef } from 'react';
+import tw from '@/lib/tailwind';
 
 const LOGO_SIZE = 250;
 
@@ -17,50 +17,29 @@ export const WelcomeScreen = ({ navigation }: any) => {
     }).start();
   }, [fadeAnim]);
 
-  const currentTheme = mode === 'dark' ? COLORS.dark : COLORS.light;
+  const theme = mode === 'dark' ? 'dark' : 'light';
 
   return (
     <View
-      style={[
-        styles.container,
-        { backgroundColor: currentTheme.background },
-      ]}
+      style={tw`flex-1 justify-center items-center bg-${theme === 'dark' ? 'black' : 'white'}`}
       accessibilityLabel="Bienvenido a QuillaMap. Cargando aplicación"
     >
       <Animated.Image
         style={[
-          styles.logo,
+          tw`w-[250px] h-[250px]`,
           {
             opacity: fadeAnim,
           },
         ]}
         source={require('../../../../assets/logo-quillamap.png')}
       />
-      <View style={styles.buttonContainer}>
+      <View style={tw`mt-5`}>
         <>
             <Button title="Iniciar Sesión" onPress={() => navigation.navigate('Login')} color="#004574" />
-            <View style={styles.spacer} />
+            <View style={tw`h-2.5`} />
             <Button title="Registrarse" onPress={() => navigation.navigate('Register')} color="#004574" />
         </>
       </View>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logo: {
-    width: LOGO_SIZE,
-    height: LOGO_SIZE,
-  },
-  buttonContainer: {
-    marginTop: 20,
-  },
-  spacer: {
-    height: 10,
-  }
-});

@@ -1,12 +1,12 @@
-import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import { useThemeStore } from '@/store/useThemeStore';
-import { COLORS, SPACING, BORDER_RADIUS } from '@/constants/theme';
 import { useState } from 'react';
 import { HeaderSwitch } from '@/components/common/HeaderSwitch';
+import tw from '@/lib/tailwind';
 
 export const LoginScreen = () => {
   const { mode } = useThemeStore();
-  const theme = mode === 'dark' ? COLORS.dark : COLORS.light;
+  const theme = mode === 'dark' ? 'dark' : 'light';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -14,16 +14,28 @@ export const LoginScreen = () => {
     console.log('Email:', email, 'Password:', password);
   };
 
-  return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <HeaderSwitch />
-      <Text style={[styles.title, { color: theme.text }]}>Iniciar Sesión</Text>
+  const themeStyles = {
+    container: tw`flex-1 justify-center p-6 bg-${theme === 'dark' ? 'black' : 'white'}`,
+    title: tw`text-4xl font-bold text-center mb-8 text-${theme === 'dark' ? 'white' : 'black'}`,
+    inputContainer: tw`rounded-lg border mb-4 bg-${theme === 'dark' ? 'dark-gray' : 'light-gray'} border-${theme === 'dark' ? 'medium-gray' : 'medium-gray'}`,
+    input: tw`h-12 px-4 text-base text-${theme === 'dark' ? 'white' : 'black'}`,
+    button: tw`bg-sand-gold p-4 rounded-lg items-center mt-4 mb-8`,
+    buttonText: tw`text-shark-blue text-lg font-bold`,
+    footer: tw`flex-row justify-center items-center`,
+    footerText: tw`text-${theme === 'dark' ? 'light-gray' : 'dark-gray'}`,
+    linkText: tw`text-sand-gold font-bold`,
+  };
 
-      <View style={[styles.inputContainer, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+  return (
+    <View style={themeStyles.container}>
+      <HeaderSwitch />
+      <Text style={themeStyles.title}>Iniciar Sesión</Text>
+
+      <View style={themeStyles.inputContainer}>
         <TextInput
-          style={[styles.input, { color: theme.text }]}
+          style={themeStyles.input}
           placeholder="Email"
-          placeholderTextColor={theme.textSecondary}
+          placeholderTextColor={tw.color(theme === 'dark' ? 'light-gray' : 'dark-gray')}
           value={email}
           onChangeText={setEmail}
           accessibilityLabel="Campo de entrada de correo electrónico"
@@ -32,11 +44,11 @@ export const LoginScreen = () => {
         />
       </View>
 
-      <View style={[styles.inputContainer, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+      <View style={themeStyles.inputContainer}>
         <TextInput
-          style={[styles.input, { color: theme.text }]}
+          style={themeStyles.input}
           placeholder="Contraseña"
-          placeholderTextColor={theme.textSecondary}
+          placeholderTextColor={tw.color(theme === 'dark' ? 'light-gray' : 'dark-gray')}
           value={password}
           onChangeText={setPassword}
           accessibilityLabel="Campo de entrada de contraseña"
@@ -44,58 +56,16 @@ export const LoginScreen = () => {
         />
       </View>
 
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Iniciar Sesión</Text>
+      <TouchableOpacity style={themeStyles.button} onPress={handleLogin}>
+        <Text style={themeStyles.buttonText}>Iniciar Sesión</Text>
       </TouchableOpacity>
 
-      <View style={styles.footer}>
-        <Text style={{ color: theme.textSecondary }}>¿No tienes una cuenta? </Text>
+      <View style={themeStyles.footer}>
+        <Text style={themeStyles.footerText}>¿No tienes una cuenta? </Text>
         <TouchableOpacity>
-          <Text style={{ color: COLORS.sandGold, fontWeight: 'bold' }}>Regístrate</Text>
+          <Text style={themeStyles.linkText}>Regístrate</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: SPACING.l,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: SPACING.xl,
-  },
-  inputContainer: {
-    borderRadius: BORDER_RADIUS.m,
-    borderWidth: 1,
-    marginBottom: SPACING.m,
-  },
-  input: {
-    height: 50,
-    paddingHorizontal: SPACING.m,
-    fontSize: 16,
-  },
-  button: {
-    backgroundColor: COLORS.sandGold,
-    padding: SPACING.m,
-    borderRadius: BORDER_RADIUS.m,
-    alignItems: 'center',
-    marginTop: SPACING.m,
-    marginBottom: SPACING.xl,
-  },
-  buttonText: {
-    color: COLORS.sharkBlue,
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

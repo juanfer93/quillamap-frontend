@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, useColorScheme, ActivityIndicator } from 'react-native';
-import { corporateColors } from '@/constants/theme';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { RegisterRequest } from '@/features/auth/types/auth.types';
+import tw from '@/lib/tailwind';
+import { useThemeStore } from '@/store/useThemeStore';
 
 interface UserDetailsStepProps {
   formData: RegisterRequest;
@@ -12,9 +13,16 @@ interface UserDetailsStepProps {
 }
 
 const UserDetailsStep: React.FC<UserDetailsStepProps> = ({ formData, setFormData, handleRegister, isLoading, error }) => {
-  const colorScheme = useColorScheme();
-  const isDarkMode = colorScheme === 'dark';
-  const styles = getStyles(isDarkMode);
+  const { mode } = useThemeStore();
+  const theme = mode === 'dark' ? 'dark' : 'light';
+
+  const styles = {
+    stepContainer: tw`items-center`,
+    input: tw`w-full p-4 rounded-lg text-base mb-4 bg-${theme === 'dark' ? 'dark-gray' : 'white'} text-${theme === 'dark' ? 'white' : 'black'}`,
+    button: tw`p-4 rounded-lg w-full items-center bg-gold`,
+    buttonText: tw`text-white text-lg font-bold`,
+    errorText: tw`text-red-500 mt-4 text-center`,
+  };
 
   return (
     <View style={styles.stepContainer}>
@@ -23,7 +31,7 @@ const UserDetailsStep: React.FC<UserDetailsStepProps> = ({ formData, setFormData
         placeholder="Nombre completo"
         value={formData.full_name}
         onChangeText={(full_name) => setFormData({ ...formData, full_name })}
-        placeholderTextColor={isDarkMode ? corporateColors.lightGray : corporateColors.darkGray}
+        placeholderTextColor={tw.color(theme === 'dark' ? 'light-gray' : 'dark-gray')}
       />
       <TextInput
         style={styles.input}
@@ -32,7 +40,7 @@ const UserDetailsStep: React.FC<UserDetailsStepProps> = ({ formData, setFormData
         onChangeText={(email) => setFormData({ ...formData, email })}
         keyboardType="email-address"
         autoCapitalize="none"
-        placeholderTextColor={isDarkMode ? corporateColors.lightGray : corporateColors.darkGray}
+        placeholderTextColor={tw.color(theme === 'dark' ? 'light-gray' : 'dark-gray')}
       />
       <TextInput
         style={styles.input}
@@ -40,45 +48,14 @@ const UserDetailsStep: React.FC<UserDetailsStepProps> = ({ formData, setFormData
         value={formData.password}
         onChangeText={(password) => setFormData({ ...formData, password })}
         secureTextEntry={true}
-        placeholderTextColor={isDarkMode ? corporateColors.lightGray : corporateColors.darkGray}
+        placeholderTextColor={tw.color(theme === 'dark' ? 'light-gray' : 'dark-gray')}
       />
-      <TouchableOpacity style={[styles.button, { backgroundColor: corporateColors.gold }]} onPress={handleRegister} disabled={!!isLoading}>
-        {isLoading ? <ActivityIndicator animating={true} color={corporateColors.white} /> : <Text style={styles.buttonText}>Finalizar Registro</Text>}
+      <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={!!isLoading}>
+        {isLoading ? <ActivityIndicator animating={true} color={tw.color('white')} /> : <Text style={styles.buttonText}>Finalizar Registro</Text>}
       </TouchableOpacity>
       {!!error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
 };
-
-const getStyles = (isDarkMode: boolean) => StyleSheet.create({
-  stepContainer: {
-    alignItems: 'center',
-  },
-  input: {
-    width: '100%',
-    backgroundColor: isDarkMode ? corporateColors.darkGray : corporateColors.white,
-    padding: 15,
-    borderRadius: 10,
-    fontSize: 16,
-    marginBottom: 15,
-    color: isDarkMode ? corporateColors.white : corporateColors.black,
-  },
-  button: {
-    padding: 15,
-    borderRadius: 10,
-    width: '100%',
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: corporateColors.white,
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  errorText: {
-    color: 'red',
-    marginTop: 15,
-    textAlign: 'center'
-  },
-});
 
 export default UserDetailsStep;

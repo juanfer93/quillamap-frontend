@@ -1,12 +1,11 @@
 
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, useColorScheme, UIManager, LayoutAnimation,
+  View, Text, UIManager, LayoutAnimation,
   Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RegisterRequest, RootStackParamList } from '@/features/auth/types/auth.types';
-import { corporateColors } from '@/constants/theme';
 import MobilityStep from '@/features/auth/components/register/MobilityStep';
 import CarTypeStep from '@/features/auth/components/register/CarTypeStep';
 import LicensePlateStep from '@/features/auth/components/register/LicensePlateStep';
@@ -15,13 +14,13 @@ import { authApi } from '@/api/client';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import tw from '@/lib/tailwind';
+import { useThemeStore } from '@/store/useThemeStore';
 
-// Enable LayoutAnimation for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-// Maps backend enum values.
 const mobilityModeMap: { [key: string]: RegisterRequest['mobility_mode'] } = {
   'PEATON': 'peaton',
   'TURISTA': 'turista',
@@ -30,8 +29,8 @@ const mobilityModeMap: { [key: string]: RegisterRequest['mobility_mode'] } = {
 };
 
 const RegisterScreen = () => {
-  const colorScheme = useColorScheme();
-  const isDarkMode = colorScheme === 'dark';
+  const { mode } = useThemeStore();
+  const theme = mode === 'dark' ? 'dark' : 'light';
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
   const [currentStep, setCurrentStep] = useState(1);
@@ -54,14 +53,12 @@ const RegisterScreen = () => {
 
   const handleVehicleTypeSelect = (type: 'PEATON' | 'TURISTA' | 'MOTO' | 'CARRO') => {
     const mobility_mode = mobilityModeMap[type];
-
     setFormData(prev => ({ ...prev, mobility_mode, vehicle_type: undefined, license_plate: undefined }));
-
     if (type === 'PEATON' || type === 'TURISTA') {
       changeStep(4);
     } else if (type === 'MOTO') {
       changeStep(3);
-    } else { // CARRO
+    } else { 
       changeStep(2);
     }
   };
@@ -78,12 +75,10 @@ const RegisterScreen = () => {
   const handleRegister = async () => {
     setIsLoading(true);
     setError(null);
-
     try {
       const responseData = await authApi.register(formData);
       const token = responseData?.accessToken;
       const user = responseData?.user;
-
       if (token && user) {
         setSession(token, user);
         setIsSuccess(true);
@@ -98,7 +93,6 @@ const RegisterScreen = () => {
       } else {
         throw new Error('No se recibió la información del usuario ni el token de sesión.');
       }
-
     } catch (e: any) {
       setError(e.response?.data?.message || e.message || 'Error de conexión con el servidor');
     } finally {
@@ -106,13 +100,16 @@ const RegisterScreen = () => {
     }
   };
 
-  const styles = getStyles(isDarkMode);
+  const containerStyle = tw`flex-1 bg-${theme === 'dark' ? 'black' : 'light-gray'}`;
+  const wizardContainerStyle = tw`flex-1 justify-center p-5`;
+  const successContainerStyle = tw`flex-1 justify-center items-center px-5`;
+  const successTextStyle = tw`text-2xl font-bold text-center text-${theme === 'dark' ? 'white' : 'shark-blue'}`;
 
   if (isSuccess) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.successContainer}>
-          <Text style={styles.successText}>¡Bienvenido {formData.full_name}! Tu registro ha sido exitoso.</Text>
+      <SafeAreaView style={containerStyle}>
+        <View style={successContainerStyle}>
+          <Text style={successTextStyle}>¡Bienvenido {formData.full_name}! Tu registro ha sido exitoso.</Text>
         </View>
       </SafeAreaView>
     )
@@ -134,36 +131,12 @@ const RegisterScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.wizardContainer}>
+    <SafeAreaView style={containerStyle}>
+      <View style={wizardContainerStyle}>
         {renderStep()}
       </View>
     </SafeAreaView>
   );
 };
-
-const getStyles = (isDarkMode: boolean) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: isDarkMode ? corporateColors.black : corporateColors.lightGray,
-  },
-  wizardContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: 20,
-  },
-  successContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  successText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: isDarkMode ? corporateColors.white : corporateColors.sharkBlue,
-    textAlign: 'center'
-  }
-});
 
 export default RegisterScreen;
