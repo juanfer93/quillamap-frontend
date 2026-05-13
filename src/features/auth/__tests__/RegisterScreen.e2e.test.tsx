@@ -25,7 +25,6 @@ describe('PRUEBA E2E REAL - Registro QuillaMap (Diagnóstico Profundo)', () => {
     fireEvent.press(getByText('Finalizar Registro'));
 
     try {
-      // Esperamos hasta 30s. Si falla, el catch imprimirá la pantalla.
       await waitFor(() => {
         const success = queryByText(/registro ha sido exitoso/i);
         const errorMessage = queryByText(/error/i) || queryByText(/failed/i);
@@ -43,7 +42,7 @@ describe('PRUEBA E2E REAL - Registro QuillaMap (Diagnóstico Profundo)', () => {
 
     } catch (error) {
       console.log('⚠️ EL TEST FALLÓ. IMPRIMIENDO LA PANTALLA ACTUAL:');
-      debug(); // ESTO ES LA MAGIA: Nos mostrará el HTML virtual para ver qué texto hay
+      debug();
       throw error;
     }
   }, 40000);

@@ -1,3 +1,5 @@
+process.env.EXPO_PUBLIC_API_URL = 'http://192.168.1.10:3000/api';
+
 module.exports = {
   preset: 'jest-expo',
   // Nuestra corrección para el error de 'winter' sigue siendo necesaria.
