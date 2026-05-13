@@ -1,7 +1,8 @@
 import { Animated, View, Image, Button } from 'react-native';
 import { useThemeStore } from '@/store/useThemeStore';
 import { useEffect, useRef } from 'react';
-import tw from '@/lib/tailwind';
+import tw from 'twrnc';
+import { corporateColors } from '@/constants/theme';
 
 const LOGO_SIZE = 250;
 
@@ -26,18 +27,18 @@ export const WelcomeScreen = ({ navigation }: any) => {
     >
       <Animated.Image
         style={[
-          tw`w-[250px] h-[250px]`,
+          tw`w-[${LOGO_SIZE}px] h-[${LOGO_SIZE}px]`,
           {
             opacity: fadeAnim,
           },
         ]}
         source={require('../../../../assets/logo-quillamap.png')}
       />
-      <View style={tw`mt-5`}>
+      <View style={tw`mt-l`}>
         <>
-            <Button title="Iniciar Sesión" onPress={() => navigation.navigate('Login')} color="#004574" />
-            <View style={tw`h-2.5`} />
-            <Button title="Registrarse" onPress={() => navigation.navigate('Register')} color="#004574" />
+            <Button title="Iniciar Sesión" onPress={() => navigation.navigate('Login')} color={corporateColors.sharkBlue} />
+            <View style={tw`h-s`} />
+            <Button title="Registrarse" onPress={() => navigation.navigate('Register')} color={corporateColors.sharkBlue} />
         </>
       </View>
     </View>

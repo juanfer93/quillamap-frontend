@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
-import tw from '@/lib/tailwind';
+import tw from 'twrnc';
 import { useThemeStore } from '@/store/useThemeStore';
 
 interface MobilityStepProps {
@@ -12,33 +12,26 @@ const MobilityStep: React.FC<MobilityStepProps> = ({ handleVehicleTypeSelect }) 
   const { mode } = useThemeStore();
   const theme = mode === 'dark' ? 'dark' : 'light';
 
-  const styles = {
-    stepContainer: tw`items-center`,
-    questionText: tw`text-2xl font-bold mb-8 text-center text-${theme === 'dark' ? 'white' : 'shark-blue'}`,
-    card: tw`bg-${theme === 'dark' ? 'dark-gray' : 'white'} p-5 rounded-2xl mb-4 w-full items-center flex-row justify-center shadow-md`,
-    cardText: tw`text-lg font-semibold ml-4 text-${theme === 'dark' ? 'white' : 'shark-blue'}`,
-  };
-
-  const iconColor = tw.color(theme === 'dark' ? 'gold' : 'shark-blue');
+  const iconColor = tw.style(theme === 'dark' ? 'text-gold' : 'text-shark-blue').color as string;
 
   return (
-    <View style={styles.stepContainer}>
-      <Text style={styles.questionText}>¿Cómo te mueves por la ciudad?</Text>
-      <TouchableOpacity style={styles.card} onPress={() => handleVehicleTypeSelect('PEATON')}>
+    <View style={tw`items-center`}>
+      <Text style={tw`text-2xl font-bold mb-l text-center text-${theme === 'dark' ? 'white' : 'shark-blue'}`}>¿Cómo te mueves por la ciudad?</Text>
+      <TouchableOpacity style={tw`bg-${theme === 'dark' ? 'dark-gray' : 'white'} p-l rounded-l mb-m w-full items-center flex-row justify-center shadow-md`} onPress={() => handleVehicleTypeSelect('PEATON')}>
         <FontAwesome name="male" size={40} color={iconColor} />
-        <Text style={styles.cardText}>Peatón</Text>
+        <Text style={tw`text-lg font-semibold ml-m text-${theme === 'dark' ? 'white' : 'shark-blue'}`}>Peatón</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.card} onPress={() => handleVehicleTypeSelect('TURISTA')}>
+      <TouchableOpacity style={tw`bg-${theme === 'dark' ? 'dark-gray' : 'white'} p-l rounded-l mb-m w-full items-center flex-row justify-center shadow-md`} onPress={() => handleVehicleTypeSelect('TURISTA')}>
         <FontAwesome name="user-circle" size={40} color={iconColor} />
-        <Text style={styles.cardText}>Turista</Text>
+        <Text style={tw`text-lg font-semibold ml-m text-${theme === 'dark' ? 'white' : 'shark-blue'}`}>Turista</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.card} onPress={() => handleVehicleTypeSelect('MOTO')}>
+      <TouchableOpacity style={tw`bg-${theme === 'dark' ? 'dark-gray' : 'white'} p-l rounded-l mb-m w-full items-center flex-row justify-center shadow-md`} onPress={() => handleVehicleTypeSelect('MOTO')}>
         <FontAwesome name="motorcycle" size={40} color={iconColor} />
-        <Text style={styles.cardText}>Moto</Text>
+        <Text style={tw`text-lg font-semibold ml-m text-${theme === 'dark' ? 'white' : 'shark-blue'}`}>Moto</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.card} onPress={() => handleVehicleTypeSelect('CARRO')}>
+      <TouchableOpacity style={tw`bg-${theme === 'dark' ? 'dark-gray' : 'white'} p-l rounded-l mb-m w-full items-center flex-row justify-center shadow-md`} onPress={() => handleVehicleTypeSelect('CARRO')}>
         <FontAwesome name="car" size={40} color={iconColor} />
-        <Text style={styles.cardText}>Carro</Text>
+        <Text style={tw`text-lg font-semibold ml-m text-${theme === 'dark' ? 'white' : 'shark-blue'}`}>Carro</Text>
       </TouchableOpacity>
     </View>
   );

@@ -1,22 +1,38 @@
-import axios from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import { RegisterRequest, RegisterResponse } from '@/features/auth/types/auth.types';
 
-const client = axios.create({
-  baseURL: process.env.EXPO_PUBLIC_API_URL,
-  timeout: 60000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+let client: AxiosInstance;
 
-export const authApi = {
-  // This function is now correctly typed to return a Promise that resolves to a RegisterResponse object.
-  register: async (userData: RegisterRequest): Promise<RegisterResponse> => {
-    // We perform a POST request, and we tell Axios that the response data will be of type RegisterResponse.
-    const response = await client.post<RegisterResponse>('/auth/register', userData);
-    // Axios wraps the response in a 'data' property, so we return response.data to get the actual RegisterResponse object.
-    return response.data;
+function getClient(): AxiosInstance {
+  if (!client) {
+    console.log(`[getClient] Creating axios client with baseURL: ${process.env.EXPO_PUBLIC_API_URL}`);
+    client = axios.create({
+      baseURL: process.env.EXPO_PUBLIC_API_URL,
+      timeout: 60000, // 60 segundos de timeout
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   }
+  return client;
 }
 
-export default client;
+export const authApi = {
+  register: async (userData: RegisterRequest): Promise<RegisterResponse> => {
+    const response = await getClient().post<RegisterResponse>('/auth/register', userData);
+    return response.data;
+  },
+};
+
+// Proxy para el cliente de axios, para asegurar la inicialización perezosa
+const clientProxy = new Proxy({}, {
+  get: (target, prop) => {
+    return (...args: any[]) => {
+        const instance = getClient();
+        // @ts-ignore
+        return instance[prop](...args);
+    }
+  }
+});
+
+export default clientProxy as AxiosInstance;

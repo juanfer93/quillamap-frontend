@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Switch, Text } from 'react-native';
 import { useThemeStore } from '@/store/useThemeStore';
-import tw from '@/lib/tailwind';
+import tw from 'twrnc';
 
 export const HeaderSwitch = () => {
   const { mode, toggleTheme } = useThemeStore();

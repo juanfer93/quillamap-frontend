@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   View, Text, UIManager, LayoutAnimation,
@@ -14,7 +13,7 @@ import { authApi } from '@/api/client';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import tw from '@/lib/tailwind';
+import tw from 'twrnc';
 import { useThemeStore } from '@/store/useThemeStore';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -101,15 +100,15 @@ const RegisterScreen = () => {
   };
 
   const containerStyle = tw`flex-1 bg-${theme === 'dark' ? 'black' : 'light-gray'}`;
-  const wizardContainerStyle = tw`flex-1 justify-center p-5`;
-  const successContainerStyle = tw`flex-1 justify-center items-center px-5`;
+  const wizardContainerStyle = tw`flex-1 justify-center p-l`;
+  const successContainerStyle = tw`flex-1 justify-center items-center px-l`;
   const successTextStyle = tw`text-2xl font-bold text-center text-${theme === 'dark' ? 'white' : 'shark-blue'}`;
 
   if (isSuccess) {
     return (
       <SafeAreaView style={containerStyle}>
         <View style={successContainerStyle}>
-          <Text style={successTextStyle}>¡Bienvenido {formData.full_name}! Tu registro ha sido exitoso.</Text>
+          <Text style={successTextStyle}>{`¡Bienvenido ${formData.full_name}! Tu registro ha sido exitoso.`}</Text>
         </View>
       </SafeAreaView>
     )

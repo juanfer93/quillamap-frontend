@@ -51,15 +51,13 @@ describe('RegisterScreen Integration Flow', () => {
     // Arrange: Mock a successful API response
     const mockUser = {
       id: 1,
-      name: 'Test Pedestrian',
+      full_name: 'Test Pedestrian',
       email: 'pedestrian@test.com',
-      mobility_type: 'PEATON' as const,
+      mobility_mode: 'peaton' as const,
     };
     const mockResponse: RegisterResponse = {
-      success: true,
-      message: 'User created successfully',
-      access_token: 'fake-jwt-token',
-      data: mockUser,
+      user: mockUser,
+      accessToken: 'fake-jwt-token',
     };
     (authApi.register as jest.Mock).mockResolvedValue(mockResponse);
 
@@ -75,12 +73,12 @@ describe('RegisterScreen Integration Flow', () => {
     const submitButton = getByText('Finalizar Registro');
 
     const testUserPayload = {
-      name: 'Test Pedestrian',
+      full_name: 'Test Pedestrian',
       email: 'pedestrian@test.com',
       password: 'password123',
     };
 
-    fireEvent.changeText(nameInput, testUserPayload.name);
+    fireEvent.changeText(nameInput, testUserPayload.full_name);
     fireEvent.changeText(emailInput, testUserPayload.email);
     fireEvent.changeText(passwordInput, testUserPayload.password);
 
@@ -93,14 +91,14 @@ describe('RegisterScreen Integration Flow', () => {
     });
 
     expect(authApi.register).toHaveBeenCalledWith({
-      ...testUserPayload,
-      mobility_type: 'PEATON',
-      license_plate: undefined,
-      vehicle_type: undefined
+      full_name: testUserPayload.full_name,
+      email: testUserPayload.email,
+      password: testUserPayload.password,
+      mobility_mode: 'peaton',
     });
 
     // Check if success message is shown
-    const successMessage = await findByText(`¡Bienvenido ${testUserPayload.name}! Tu registro ha sido exitoso.`);
+    const successMessage = await findByText(`¡Bienvenido ${testUserPayload.full_name}! Tu registro ha sido exitoso.`);
     expect(successMessage).toBeTruthy();
   }, 10000);
 
@@ -108,17 +106,15 @@ describe('RegisterScreen Integration Flow', () => {
     // Arrange: Mock a successful API response
     const mockUser = {
       id: 2,
-      name: 'Test Driver',
+      full_name: 'Test Driver',
       email: 'driver@test.com',
-      mobility_type: 'CARRO' as const,
+      mobility_mode: 'carro' as const,
       vehicle_type: 'PARTICULAR' as const,
       license_plate: 'XYZ-789',
     };
     const mockResponse: RegisterResponse = {
-      success: true,
-      message: 'User created successfully',
-      access_token: 'fake-jwt-token-2',
-      data: mockUser,
+      user: mockUser,
+      accessToken: 'fake-jwt-token-2',
     };
     (authApi.register as jest.Mock).mockResolvedValue(mockResponse);
 
@@ -142,12 +138,12 @@ describe('RegisterScreen Integration Flow', () => {
     const submitButton = getByText('Finalizar Registro');
 
     const testUserPayload = {
-        name: 'Test Driver',
+        full_name: 'Test Driver',
         email: 'driver@test.com',
         password: 'password123',
     };
 
-    fireEvent.changeText(nameInput, testUserPayload.name);
+    fireEvent.changeText(nameInput, testUserPayload.full_name);
     fireEvent.changeText(emailInput, testUserPayload.email);
     fireEvent.changeText(passwordInput, testUserPayload.password);
 
@@ -160,14 +156,16 @@ describe('RegisterScreen Integration Flow', () => {
     });
 
     expect(authApi.register).toHaveBeenCalledWith({
-      ...testUserPayload,
-      mobility_type: 'CARRO',
+      full_name: testUserPayload.full_name,
+      email: testUserPayload.email,
+      password: testUserPayload.password,
+      mobility_mode: 'carro',
       vehicle_type: 'PARTICULAR',
       license_plate: 'XYZ-789',
     });
 
     // Check if success message is shown
-    const successMessage = await findByText(`¡Bienvenido ${testUserPayload.name}! Tu registro ha sido exitoso.`);
+    const successMessage = await findByText(`¡Bienvenido ${testUserPayload.full_name}! Tu registro ha sido exitoso.`);
     expect(successMessage).toBeTruthy();
   });
 });
