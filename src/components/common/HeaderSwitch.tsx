@@ -1,25 +1,34 @@
 import React from 'react';
-import { View, Switch, Text } from 'react-native';
-import { useThemeStore } from '@/store/useThemeStore';
+import { TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import tw from 'twrnc';
+import { useThemeStore } from '@/store/useThemeStore';
 
-export const HeaderSwitch = () => {
+const HeaderSwitch = () => {
   const { mode, toggleTheme } = useThemeStore();
-  const theme = mode === 'dark' ? 'dark' : 'light';
-
-  const labelStyle = tw`mr-2 text-xs font-semibold text-${theme === 'dark' ? 'gray-400' : 'gray-600'}`;
+  const isDark = mode === 'dark';
 
   return (
-    <View style={tw`flex-row items-center p-2.5`}>
-      <Text style={labelStyle}>
-        {mode === 'dark' ? 'Dark' : 'Light'}
-      </Text>
-      <Switch
-        trackColor={{ false: '#767577', true: tw.color('gold') }}
-        thumbColor={tw.color('white')}
-        onValueChange={toggleTheme}
-        value={mode === 'dark'}
-      />
+    <View style={tw`flex-row justify-end items-center px-4 pt-4`}>
+      <TouchableOpacity
+        onPress={toggleTheme}
+        activeOpacity={0.8}
+        style={tw`flex-row items-center bg-gray-200 dark:bg-gray-800 p-1 rounded-full w-14`}
+      >
+        <View
+          style={tw`w-6 h-6 rounded-full items-center justify-center ${
+            isDark ? 'translate-x-6 bg-primary' : 'bg-white'
+          }`}
+        >
+          <Ionicons
+            name={isDark ? 'moon' : 'sunny'}
+            size={14}
+            color={isDark ? 'white' : '#F59E0B'} 
+          />
+        </View>
+      </TouchableOpacity>
     </View>
   );
 };
+
+export default HeaderSwitch;

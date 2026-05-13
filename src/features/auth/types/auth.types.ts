@@ -13,5 +13,18 @@ export interface RegisterResponse {
 }
 
 export type RootStackParamList = {
-    Home: undefined;
+  Welcome: undefined;
+  Login: undefined;
+  Register: undefined;
+  Home: undefined;
 };
+
+export interface AuthResponse {
+  accessToken: string;
+  user: {
+    id: string;
+    full_name: string;
+    email: string;
+    mobility_mode: string;
+  };
+}
