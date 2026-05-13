@@ -1,13 +1,17 @@
-import { Animated, View, Image, Button } from 'react-native';
+import { Animated, View } from 'react-native';
 import { useThemeStore } from '@/store/useThemeStore';
 import { useEffect, useRef } from 'react';
+import { useAuthStore } from '@/store/useAuthStore'; 
 import tw from 'twrnc';
-import { corporateColors } from '@/constants/theme';
 
 const LOGO_SIZE = 250;
 
 export const WelcomeScreen = ({ navigation }: any) => {
   const { mode } = useThemeStore();
+  const theme = mode === 'dark' ? 'dark' : 'light';
+  
+  const token = useAuthStore((state) => state.session); 
+  
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -16,13 +20,21 @@ export const WelcomeScreen = ({ navigation }: any) => {
       duration: 1500,
       useNativeDriver: true,
     }).start();
-  }, [fadeAnim]);
 
-  const theme = mode === 'dark' ? 'dark' : 'light';
+    const timer = setTimeout(() => {
+      if (token) {
+        navigation.replace('Home'); 
+      } else {
+        navigation.replace('Login'); 
+      }
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [fadeAnim, navigation, token]);
 
   return (
     <View
-      style={tw`flex-1 justify-center items-center bg-${theme === 'dark' ? 'black' : 'white'}`}
+      style={tw`flex-1 justify-center items-center bg-${theme === 'dark' ? 'black' : 'shark-blue'}`}
       accessibilityLabel="Bienvenido a QuillaMap. Cargando aplicación"
     >
       <Animated.Image
@@ -33,14 +45,8 @@ export const WelcomeScreen = ({ navigation }: any) => {
           },
         ]}
         source={require('../../../../assets/logo-quillamap.png')}
+        resizeMode="contain"
       />
-      <View style={tw`mt-l`}>
-        <>
-            <Button title="Iniciar Sesión" onPress={() => navigation.navigate('Login')} color={corporateColors.sharkBlue} />
-            <View style={tw`h-s`} />
-            <Button title="Registrarse" onPress={() => navigation.navigate('Register')} color={corporateColors.sharkBlue} />
-        </>
-      </View>
     </View>
   );
 };
