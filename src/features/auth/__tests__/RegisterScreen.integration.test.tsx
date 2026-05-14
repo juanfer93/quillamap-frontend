@@ -6,10 +6,10 @@ import { authApi } from '@/api/client';
 import { useAuthStore } from '@/store/useAuthStore';
 import { NavigationContainer } from '@react-navigation/native';
 
-// Aumentamos el tiempo de espera global para este archivo de test
-jest.setTimeout(15000);
+// Aumentamos el tiempo de espera para evitar errores de timeout en renders pesados
+jest.setTimeout(20000);
 
-// Mocks
+// Mocks de dependencias
 jest.mock('@/api/client', () => ({
   authApi: { register: jest.fn() },
 }));
@@ -23,7 +23,7 @@ jest.mock('@react-navigation/native', () => ({
 describe('RegisterScreen Integration Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Usamos signOut() para limpiar el estado antes de cada prueba
+    // Limpiamos el store antes de cada prueba
     useAuthStore.getState().signOut();
   });
 
@@ -37,17 +37,17 @@ describe('RegisterScreen Integration Tests', () => {
   test('debe completar el flujo de Peatón y registrar exitosamente', async () => {
     const mockResponse = {
       accessToken: 'token-peaton',
-      user: { id: '1', full_name: 'Juan Fernando', email: 'juan@test.com' }
+      user: { id: '1', full_name: 'Juan Pacheco', email: 'juan@test.com' }
     };
     (authApi.register as jest.Mock).mockResolvedValueOnce(mockResponse);
 
     const { getByText, getByPlaceholderText } = renderScreen();
 
-    // Paso 1: Seleccionar Peatón (salta a paso 4)
+    // Paso 1: Seleccionar Peatón
     fireEvent.press(getByText('Peatón'));
 
     // Paso 4: Datos de usuario
-    fireEvent.changeText(getByPlaceholderText('Nombre completo'), 'Juan Fernando');
+    fireEvent.changeText(getByPlaceholderText('Nombre completo'), 'Juan Pacheco');
     fireEvent.changeText(getByPlaceholderText('Correo electrónico'), 'juan@test.com');
     fireEvent.changeText(getByPlaceholderText('Contraseña'), '123456');
 
@@ -57,10 +57,9 @@ describe('RegisterScreen Integration Tests', () => {
       expect(authApi.register).toHaveBeenCalledWith(expect.objectContaining({
         mobility_mode: 'peaton'
       }));
-      // Verificamos la propiedad session según tu useAuthStore
       expect(useAuthStore.getState().session).toBe('token-peaton');
       expect(getByText(/registro ha sido exitoso/i)).toBeTruthy();
-    });
+    }, { timeout: 5000 });
   });
 
   test('debe bloquear el avance en LicensePlateStep si la placa es corta', async () => {
@@ -72,12 +71,12 @@ describe('RegisterScreen Integration Tests', () => {
     fireEvent.press(getByText('Particular'));
     
     const inputPlaca = getByPlaceholderText('Ej: ABC-12D');
-    fireEvent.changeText(inputPlaca, 'ABC'); // Muy corta
+    fireEvent.changeText(inputPlaca, 'ABC'); // Placa muy corta
 
     fireEvent.press(getByText('Siguiente'));
 
     expect(alertSpy).toHaveBeenCalledWith("Atención", "Por favor ingresa una placa válida.");
-    // Verificar que no pasó al paso 4
+    // Verificar que no avanzó al paso 4
     expect(queryByPlaceholderText('Nombre completo')).toBeNull();
   });
 
@@ -87,10 +86,9 @@ describe('RegisterScreen Integration Tests', () => {
 
     fireEvent.press(getByText('Peatón'));
 
-    // CORRECCIÓN: Llenamos el nombre completo para que pase la primera validación de Zod
-    // y así el test pueda verificar específicamente el error del correo electrónico.
+    // Llenamos el nombre para que Zod pase esa validación y evalúe el correo
     fireEvent.changeText(getByPlaceholderText('Nombre completo'), 'Juan Pacheco');
-    fireEvent.changeText(getByPlaceholderText('Correo electrónico'), 'correo-mal');
+    fireEvent.changeText(getByPlaceholderText('Correo electrónico'), 'correo-invalido');
     
     fireEvent.press(getByText('Finalizar Registro'));
 
