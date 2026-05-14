@@ -20,6 +20,7 @@ import { useAuthStore } from 'src/store/useAuthStore';
 import { useThemeStore } from 'src/store/useThemeStore';
 import { authService } from '@/api/client';
 import HeaderSwitch from 'src/components/common/HeaderSwitch';
+import { loginSchema } from 'src/features/auth/schemas/auth.schema';
 
 type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Login'>;
 
@@ -34,17 +35,18 @@ const LoginScreen = () => {
   const isDark = mode === 'dark';
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Atención', 'Por favor ingresa tus credenciales');
+    const validation = loginSchema.safeParse({ email, password });
+
+    if (!validation.success) {
+      const firstError = validation.error.issues[0].message;
+      Alert.alert('Atención', firstError);
       return;
     }
 
     setIsLocalLoading(true);
     try {
       const { accessToken, user } = await authService.login(email, password);
-
       setSession(accessToken, user);
-
       navigation.navigate('Home');
     } catch (error: any) {
       const message = error.response?.data?.message || 'Error al conectar con el servidor';
@@ -83,6 +85,7 @@ const LoginScreen = () => {
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"
+                keyboardType="email-address"
               />
             </View>
 
