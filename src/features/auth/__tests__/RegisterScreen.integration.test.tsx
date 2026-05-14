@@ -4,7 +4,7 @@ import RegisterScreen from '../screens/RegisterScreen';
 import { authApi } from '@/api/client';
 import { RegisterResponse } from '@/features/auth/types/auth.types';
 
-// Mock AsyncStorage with an inline mock
+// Mock AsyncStorage
 jest.mock('@react-native-async-storage/async-storage', () => ({
   setItem: jest.fn(() => Promise.resolve(null)),
   getItem: jest.fn(() => Promise.resolve(null)),
@@ -12,17 +12,16 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   clear: jest.fn(() => Promise.resolve(null)),
 }));
 
-// Set up environment variables
 process.env.EXPO_PUBLIC_API_URL = 'http://localhost:3000';
 
-// Mock the API client
+// Mock del API client
 jest.mock('@/api/client', () => ({
   authApi: {
     register: jest.fn(),
   },
 }));
 
-// Mock navigation
+// Mock de navegación
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
   useNavigation: () => ({
@@ -30,7 +29,7 @@ jest.mock('@react-navigation/native', () => ({
   }),
 }));
 
-// Mock colors to prevent style-related test failures
+// Mock colors
 jest.mock('@/constants/theme', () => ({
   corporateColors: {
     black: '#000000',
@@ -43,12 +42,11 @@ jest.mock('@/constants/theme', () => ({
 describe('RegisterScreen Integration Flow', () => {
 
   beforeEach(() => {
-    // Clear mock history before each test
     (authApi.register as jest.Mock).mockClear();
   });
 
+  // TEST 1: PEATÓN
   test('should handle the pedestrian registration flow correctly', async () => {
-    // Arrange: Mock a successful API response
     const mockUser = {
       id: '1',
       full_name: 'Test Pedestrian',
@@ -63,10 +61,8 @@ describe('RegisterScreen Integration Flow', () => {
 
     const { getByText, getByPlaceholderText, findByText } = render(<RegisterScreen />);
 
-    // 1. MobilityStep: Select a pedestrian option
     fireEvent.press(getByText('Peatón'));
 
-    // 2. UserDetailsStep: The form should now be visible
     const nameInput = getByPlaceholderText('Nombre completo');
     const emailInput = getByPlaceholderText('Correo electrónico');
     const passwordInput = getByPlaceholderText('Contraseña');
@@ -82,28 +78,28 @@ describe('RegisterScreen Integration Flow', () => {
     fireEvent.changeText(emailInput, testUserPayload.email);
     fireEvent.changeText(passwordInput, testUserPayload.password);
 
-    // 3. Submit the form
     fireEvent.press(submitButton);
 
-    // 4. Assertions: Check if authApi.register was called correctly
     await waitFor(() => {
       expect(authApi.register).toHaveBeenCalledTimes(1);
     });
 
+    // Aserción del Peatón (espera undefined en vehículos)
     expect(authApi.register).toHaveBeenCalledWith({
       full_name: testUserPayload.full_name,
       email: testUserPayload.email,
       password: testUserPayload.password,
       mobility_mode: 'peaton',
+      vehicle_type: undefined,
+      license_plate: undefined,
     });
 
-    // Check if success message is shown
     const successMessage = await findByText(`¡Bienvenido ${testUserPayload.full_name}! Tu registro ha sido exitoso.`);
     expect(successMessage).toBeTruthy();
-  }, 10000);
+  });
 
+  // TEST 2: VEHÍCULO
   test('should handle the vehicle registration flow correctly', async () => {
-    // Arrange: Mock a successful API response
     const mockUser = {
       id: '2',
       full_name: 'Test Driver',
@@ -120,18 +116,13 @@ describe('RegisterScreen Integration Flow', () => {
 
     const { getByText, getByPlaceholderText, findByText } = render(<RegisterScreen />);
 
-    // 1. MobilityStep: Select "Carro"
     fireEvent.press(getByText('Carro'));
-
-    // 2. CarTypeStep: Select "Particular"
     fireEvent.press(getByText('Particular'));
 
-    // 3. LicensePlateStep: Enter license plate
     const plateInput = getByPlaceholderText('Placa del vehículo');
     fireEvent.changeText(plateInput, 'XYZ-789');
     fireEvent.press(getByText('Siguiente'));
 
-    // 4. UserDetailsStep: Fill user details
     const nameInput = getByPlaceholderText('Nombre completo');
     const emailInput = getByPlaceholderText('Correo electrónico');
     const passwordInput = getByPlaceholderText('Contraseña');
@@ -147,24 +138,22 @@ describe('RegisterScreen Integration Flow', () => {
     fireEvent.changeText(emailInput, testUserPayload.email);
     fireEvent.changeText(passwordInput, testUserPayload.password);
 
-    // 5. Submit the form
     fireEvent.press(submitButton);
 
-    // 6. Assertions
     await waitFor(() => {
         expect(authApi.register).toHaveBeenCalledTimes(1);
     });
 
+    // Aserción del Vehículo (espera carro, particular y placa)
     expect(authApi.register).toHaveBeenCalledWith({
       full_name: testUserPayload.full_name,
       email: testUserPayload.email,
       password: testUserPayload.password,
-      mobility_mode: 'peaton',
-      vehicle_type: undefined,
-      license_plate: undefined,
+      mobility_mode: 'carro',
+      vehicle_type: 'particular',
+      license_plate: 'XYZ-789',
     });
 
-    // Check if success message is shown
     const successMessage = await findByText(`¡Bienvenido ${testUserPayload.full_name}! Tu registro ha sido exitoso.`);
     expect(successMessage).toBeTruthy();
   });
