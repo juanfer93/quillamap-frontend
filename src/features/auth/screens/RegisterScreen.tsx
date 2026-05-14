@@ -20,18 +20,6 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-interface MobilityStepProps {
-  selectedMode?: string;
-  handleVehicleTypeSelect: (type: 'peaton' | 'turista' | 'moto' | 'carro') => void;
-}
-
-const mobilityModeMap: { [key: string]: RegisterRequest['mobility_mode'] } = {
-  'PEATON': 'peaton',
-  'TURISTA': 'turista',
-  'MOTO': 'moto',
-  'CARRO': 'carro',
-};
-
 const RegisterScreen = () => {
   const { mode } = useThemeStore();
   const theme = mode === 'dark' ? 'dark' : 'light';

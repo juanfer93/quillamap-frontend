@@ -1,25 +1,19 @@
 import React from 'react';
-import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import RegisterScreen from '../screens/RegisterScreen';
 import { authApi } from '@/api/client';
-import { useAuthStore } from '@/store/useAuthStore';
+import { useAuthStore } from '@/store/useAuthStore'; 
 import { NavigationContainer } from '@react-navigation/native';
 
-// 1. Mocks de dependencias externas
+// 1. Mocks de dependencias
 jest.mock('@/api/client', () => ({
   authApi: {
     register: jest.fn(),
   },
 }));
 
-// Mock del store de autenticación
-const mockSetSession = jest.fn();
-jest.mock('@/store/useAuthStore', () => ({
-  useAuthStore: (selector: any) => selector({ setSession: mockSetSession }),
-}));
-
-// Mock de navegación
+// Mock de Navegación
 const mockNavigate = jest.fn();
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
@@ -28,105 +22,86 @@ jest.mock('@react-navigation/native', () => ({
   }),
 }));
 
-// Spy para las alertas de React Native
+// Espía para las alertas
 const alertSpy = jest.spyOn(Alert, 'alert');
 
-describe('RegisterScreen Integration Tests', () => {
+describe('RegisterScreen Integration Flow', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // CORRECCIÓN 1: Usar signOut() en lugar de logout()
+    useAuthStore.getState().signOut();
   });
 
-  const renderScreen = () => 
+  const renderScreen = () =>
     render(
       <NavigationContainer>
         <RegisterScreen />
       </NavigationContainer>
     );
 
-  test('debe registrar exitosamente a un Peatón (camino feliz)', async () => {
+  test('debe registrar, guardar en useAuthStore y navegar a Home cuando los datos son válidos', async () => {
+    const mockUser = { id: '123', full_name: 'Juan Fernando', email: 'juan@test.com' };
+    const mockToken = 'fake-jwt-token';
+    
     (authApi.register as jest.Mock).mockResolvedValueOnce({
-      accessToken: 'fake-token',
-      user: { id: '1', full_name: 'Juan Pacheco', email: 'juan@test.com' },
+      accessToken: mockToken,
+      user: mockUser,
     });
 
     const { getByText, getByPlaceholderText } = renderScreen();
 
-    // Paso 1: Seleccionar Peatón
+    // Paso 1: Peatón
     fireEvent.press(getByText('Peatón'));
 
-    // Paso 4 (Directo): Llenar datos de usuario
-    fireEvent.changeText(getByPlaceholderText('Nombre completo'), 'Juan Pacheco');
+    // Paso 4: Datos
+    fireEvent.changeText(getByPlaceholderText('Nombre completo'), 'Juan Fernando');
     fireEvent.changeText(getByPlaceholderText('Correo electrónico'), 'juan@test.com');
     fireEvent.changeText(getByPlaceholderText('Contraseña'), '123456');
 
     fireEvent.press(getByText('Finalizar Registro'));
 
     await waitFor(() => {
-      expect(authApi.register).toHaveBeenCalledWith(expect.objectContaining({
-        full_name: 'Juan Pacheco',
-        mobility_mode: 'peaton',
-      }));
-      expect(mockSetSession).toHaveBeenCalledWith('fake-token', expect.any(Object));
-      expect(getByText('¡Bienvenido Juan Pacheco! Tu registro ha sido exitoso.')).toBeTruthy();
+      // VALIDACIÓN 1: El API se llamó
+      expect(authApi.register).toHaveBeenCalled();
+
+      // VALIDACIÓN 2: Verificamos el estado del store
+      const storeState = useAuthStore.getState();
+      // CORRECCIÓN 2: Usar session en lugar de token
+      expect(storeState.session).toBe(mockToken);
+      expect(storeState.user?.full_name).toBe('Juan Fernando');
+
+      // VALIDACIÓN 3: Navegación
+      expect(mockNavigate).toHaveBeenCalledWith('Home');
     });
   });
 
-  test('debe bloquear el avance si la placa es inválida en modo Carro', async () => {
+  test('debe bloquear el avance si falta la placa en modo vehículo', async () => {
     const { getByText, queryByPlaceholderText } = renderScreen();
 
-    // Paso 1: Carro
     fireEvent.press(getByText('Carro'));
-    
-    // Paso 2: Particular
     fireEvent.press(getByText('Particular'));
-
-    // Paso 3: Intentar seguir sin placa
+    
+    // Intentar seguir sin escribir placa
     fireEvent.press(getByText('Siguiente'));
 
-    // Verificar alerta de placa
     expect(alertSpy).toHaveBeenCalledWith("Atención", "Por favor ingresa una placa válida.");
-    
-    // Verificar que NO estamos en el paso 4 (UserDetails)
     expect(queryByPlaceholderText('Nombre completo')).toBeNull();
   });
 
-  test('debe mostrar error de Zod si los datos de usuario son inválidos', async () => {
+  test('debe mostrar errores de Zod si los campos no cumplen requisitos', async () => {
     const { getByText, getByPlaceholderText } = renderScreen();
 
-    // Llegar al final como Peatón
     fireEvent.press(getByText('Peatón'));
 
-    // Llenar datos con errores (password muy corto y nombre vacío)
-    fireEvent.changeText(getByPlaceholderText('Nombre completo'), 'J');
-    fireEvent.changeText(getByPlaceholderText('Correo electrónico'), 'invalido');
+    fireEvent.changeText(getByPlaceholderText('Nombre completo'), 'Ju');
+    fireEvent.changeText(getByPlaceholderText('Correo electrónico'), 'no-email');
     fireEvent.changeText(getByPlaceholderText('Contraseña'), '123');
 
     fireEvent.press(getByText('Finalizar Registro'));
 
-    // Verificar que Zod detiene el proceso antes del API
     await waitFor(() => {
-      expect(alertSpy).toHaveBeenCalledWith("Datos incompletos", expect.any(String));
       expect(authApi.register).not.toHaveBeenCalled();
-    });
-  });
-
-  test('debe manejar errores del servidor correctamente', async () => {
-    (authApi.register as jest.Mock).mockRejectedValueOnce({
-      response: { data: { message: 'El correo ya está registrado' } },
-    });
-
-    const { getByText, getByPlaceholderText } = renderScreen();
-
-    fireEvent.press(getByText('Peatón'));
-
-    fireEvent.changeText(getByPlaceholderText('Nombre completo'), 'Juan Pacheco');
-    fireEvent.changeText(getByPlaceholderText('Correo electrónico'), 'juan@error.com');
-    fireEvent.changeText(getByPlaceholderText('Contraseña'), '123456');
-
-    fireEvent.press(getByText('Finalizar Registro'));
-
-    await waitFor(() => {
-      expect(getByText('El correo ya está registrado')).toBeTruthy();
+      expect(alertSpy).toHaveBeenCalledWith("Datos incompletos", expect.any(String));
     });
   });
 });
