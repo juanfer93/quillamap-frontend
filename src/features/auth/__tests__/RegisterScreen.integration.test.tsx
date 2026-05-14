@@ -159,9 +159,9 @@ describe('RegisterScreen Integration Flow', () => {
       full_name: testUserPayload.full_name,
       email: testUserPayload.email,
       password: testUserPayload.password,
-      mobility_mode: 'carro',
-      vehicle_type: 'particular',
-      license_plate: 'XYZ-789',
+      mobility_mode: 'peaton',
+      vehicle_type: undefined,
+      license_plate: undefined,
     });
 
     // Check if success message is shown
