@@ -19,13 +19,13 @@ export const registerSchema = z.object({
   vehicle_type: z.string().optional(),
   license_plate: z.string().optional(),
 }).refine((data) => {
-  if ((data.mobility_mode === 'carro' || data.mobility_mode === 'moto') && !data.license_plate) {
-      return false;
+  if (['carro', 'moto'].includes(data.mobility_mode)) {
+    return !!data.license_plate && data.license_plate.length >= 5;
   }
   return true;
 }, {
   message: "La placa es obligatoria para vehículos",
-  path: ["license_plate"],
+  path: ["license_plate"], 
 });
 
 export type LoginFormData = z.infer<typeof loginSchema>;

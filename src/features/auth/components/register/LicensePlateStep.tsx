@@ -1,9 +1,8 @@
 import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native'; // <--- Alert añadido
 import { RegisterRequest } from '@/features/auth/types/auth.types';
 import tw from 'twrnc';
 import { useThemeStore } from '@/store/useThemeStore';
-import { COLORS } from '@/constants/theme'; 
 
 interface LicensePlateStepProps {
   formData: RegisterRequest;
@@ -13,10 +12,10 @@ interface LicensePlateStepProps {
 
 const LicensePlateStep: React.FC<LicensePlateStepProps> = ({ formData, setPlate, setCurrentStep }) => {
   const { mode } = useThemeStore();
-  const themeColors = mode === 'dark' ? COLORS.dark : COLORS.light;
+  const isDark = mode === 'dark';
 
   const isTaxi = formData.vehicle_type === 'taxi';
-  const plateBackgroundColor = isTaxi ? 'bg-white' : 'bg-yellow-400'; 
+  const plateBackgroundColor = isTaxi ? 'bg-white' : 'bg-yellow-400';
 
   return (
     <View style={tw`items-center`}>
@@ -28,18 +27,14 @@ const LicensePlateStep: React.FC<LicensePlateStepProps> = ({ formData, setPlate,
 
       <TextInput
         style={[
-          tw`border p-4 rounded-xl mb-4 w-full`, 
+          tw`border p-4 rounded-xl mb-4 w-full`,
           { 
-            color: themeColors.text, 
-            borderColor: themeColors.border 
+            color: isDark ? '#FFFFFF' : '#000000', 
+            borderColor: isDark ? '#444' : '#CCC' 
           }
         ]}
-        placeholder={
-          isTaxi 
-            ? "Ej: ABC-123 (Placa de Taxi)" 
-            : "Ej: ABC-12D (Placa de Particular)"
-        }
-        placeholderTextColor={mode === 'dark' ? '#999' : '#666'}
+        placeholder={isTaxi ? "Ej: ABC-123" : "Ej: ABC-12D"}
+        placeholderTextColor={isDark ? '#999' : '#666'}
         value={formData.license_plate}
         onChangeText={setPlate}
         autoCapitalize="characters"
@@ -49,6 +44,7 @@ const LicensePlateStep: React.FC<LicensePlateStepProps> = ({ formData, setPlate,
       <TouchableOpacity 
         style={tw`bg-[#004574] p-4 rounded-xl w-full items-center`} 
         onPress={() => {
+          // Bloqueo manual: si no hay placa válida, no pasa al paso 4
           if (!formData.license_plate || formData.license_plate.length < 5) {
             Alert.alert("Atención", "Por favor ingresa una placa válida.");
             return;
