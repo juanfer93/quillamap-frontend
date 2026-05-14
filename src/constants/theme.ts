@@ -7,8 +7,10 @@ export const corporateColors = {
   lightGray: '#f2f2f2',
   mediumGray: '#e0e0e0',
   darkGray: '#333333',
-  charcoal: '#121212', // Fondo principal oscuro
-  slate: '#1E1E1E',    // Fondo de la tarjeta (card) oscuro
+  charcoal: '#121212', 
+  slate: '#1E1E1E', 
+  error: '#FF3B30',
+  errorLight: 'rgba(255, 59, 48, 0.1)'   
 };
 
 export const COLORS = {

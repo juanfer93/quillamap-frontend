@@ -1,16 +1,17 @@
-import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Alert, TouchableOpacity, Text, ActivityIndicator } from 'react-native';
 import { RegisterRequest } from '@/features/auth/types/auth.types';
 import tw from 'twrnc';
 import { useThemeStore } from '@/store/useThemeStore';
 import { registerSchema } from '@/features/auth/schemas/auth.schema';
+import AnimatedInput from '@/features/auth/components/animated/AnimatedInput';
 
 interface UserDetailsStepProps {
   formData: RegisterRequest;
   setFormData: (formData: RegisterRequest) => void;
   handleRegister: () => void;
   isLoading: boolean;
-  error: string | null;
+  error: string | null; 
 }
 
 const UserDetailsStep: React.FC<UserDetailsStepProps> = ({
@@ -23,85 +24,89 @@ const UserDetailsStep: React.FC<UserDetailsStepProps> = ({
   const { mode } = useThemeStore();
   const isDark = mode === 'dark';
 
+  const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
+
   const onFinalizePress = () => {
     const result = registerSchema.safeParse(formData);
 
     if (!result.success) {
+      const newErrors: Record<string, boolean> = {};
+      result.error.issues.forEach((issue) => {
+        const fieldName = issue.path[0] as string;
+        newErrors[fieldName] = true;
+      });
+
+      setFieldErrors(newErrors); 
+
       const firstError = result.error.issues[0].message;
       Alert.alert("Datos incompletos", firstError);
       return;
     }
 
+    setFieldErrors({});
     handleRegister();
   };
 
   return (
-    <View style={tw`items-center w-full px-4`}>
-      <Text style={tw`text-xl font-bold mb-6 ${isDark ? 'text-white' : 'text-[#004574]'}`}>
-        Datos de tu cuenta
-      </Text>
-
-      <TextInput
-        style={[
-          tw`w-full p-4 rounded-xl text-base mb-4`,
-          {
-            backgroundColor: isDark ? '#2D2D2D' : '#F3F4F6',
-            color: isDark ? '#FFFFFF' : '#000000'
-          }
-        ]}
-        placeholder="Nombre completo"
+    <View style={tw`w-full`}>
+      <AnimatedInput
+        label="Nombre completo"
+        placeholder="Tu nombre"
         value={formData.full_name}
-        onChangeText={(full_name) => setFormData({ ...formData, full_name })}
-        placeholderTextColor={isDark ? '#9CA3AF' : '#6B7280'}
+        onChangeText={(val: string) => {
+          setFormData({ ...formData, full_name: val });
+          if (fieldErrors.full_name) setFieldErrors({ ...fieldErrors, full_name: false });
+        }}
+        hasError={!!fieldErrors.full_name} 
+        isDark={isDark}
       />
 
-      <TextInput
-        style={[
-          tw`w-full p-4 rounded-xl text-base mb-4`,
-          {
-            backgroundColor: isDark ? '#2D2D2D' : '#F3F4F6',
-            color: isDark ? '#FFFFFF' : '#000000'
-          }
-        ]}
-        placeholder="Correo electrónico"
+      <AnimatedInput
+        label="Correo electrónico"
+        placeholder="ejemplo@correo.com"
         value={formData.email}
-        onChangeText={(email) => setFormData({ ...formData, email })}
+        onChangeText={(val: string) => {
+          setFormData({ ...formData, email: val });
+          if (fieldErrors.email) setFieldErrors({ ...fieldErrors, email: false });
+        }}
+        hasError={!!fieldErrors.email} 
+        isDark={isDark}
         keyboardType="email-address"
         autoCapitalize="none"
-        placeholderTextColor={isDark ? '#9CA3AF' : '#6B7280'}
       />
 
-      <TextInput
-        style={[
-          tw`w-full p-4 rounded-xl text-base mb-6`,
-          {
-            backgroundColor: isDark ? '#2D2D2D' : '#F3F4F6',
-            color: isDark ? '#FFFFFF' : '#000000'
-          }
-        ]}
-        placeholder="Contraseña"
+      <AnimatedInput
+        label="Contraseña"
+        placeholder="********"
         value={formData.password}
-        onChangeText={(password) => setFormData({ ...formData, password })}
-        secureTextEntry={true}
-        placeholderTextColor={isDark ? '#9CA3AF' : '#6B7280'}
+        onChangeText={(val: string) => {
+          setFormData({ ...formData, password: val });
+          if (fieldErrors.password) setFieldErrors({ ...fieldErrors, password: false });
+        }}
+        hasError={!!fieldErrors.password} 
+        isDark={isDark}
+        secureTextEntry
       />
 
       <TouchableOpacity
-        style={tw`p-4 rounded-xl w-full items-center ${isLoading ? 'bg-gray-400' : 'bg-[#004574]'}`}
         onPress={onFinalizePress}
         disabled={isLoading}
+        activeOpacity={0.8}
+        style={tw`w-full bg-shark-blue dark:bg-sand-gold py-m rounded-l mt-xl items-center shadow-md`}
       >
         {isLoading ? (
-          <ActivityIndicator animating={true} color="#FFFFFF" />
+          <ActivityIndicator color={isDark ? "#000" : "#FFF"} />
         ) : (
-          <Text style={tw`text-white text-lg font-bold`}>Finalizar Registro</Text>
+          <Text style={tw`text-white dark:text-black text-lg font-bold uppercase`}>
+            Finalizar Registro
+          </Text>
         )}
       </TouchableOpacity>
 
-      {!!error && (
-        <View style={tw`mt-4 p-3 bg-red-100 rounded-lg w-full`}>
-          <Text style={tw`text-red-600 text-center text-sm font-medium`}>{error}</Text>
-        </View>
+      {error && (
+        <Text style={tw`text-error text-center mt-m font-semibold`}>
+          {error}
+        </Text>
       )}
     </View>
   );

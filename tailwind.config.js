@@ -13,7 +13,8 @@ module.exports = {
         'medium-gray': corporateColors.mediumGray,
         'dark-gray': corporateColors.darkGray,
         'charcoal': corporateColors.charcoal, 
-        'slate': corporateColors.slate,       
+        'slate': corporateColors.slate, 
+        'error': corporateColors.error,      
       },
       spacing: {
         'xs': `${SPACING.xs}px`,
