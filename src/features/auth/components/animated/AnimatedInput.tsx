@@ -41,6 +41,7 @@ const AnimatedInput = ({ label, hasError, isDark, ...props }: AnimatedInputProps
       >
         <TextInput
           {...props}
+          testID={props.testID} 
           style={tw`w-full text-black dark:text-white px-m py-m rounded-m`}
           placeholderTextColor={isDark ? '#666' : '#999'}
         />
