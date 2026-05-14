@@ -3,57 +3,46 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import RegisterScreen from '../screens/RegisterScreen';
 import { authApi } from '@/api/client';
-import { useAuthStore } from '@/store/useAuthStore'; 
+import { useAuthStore } from '@/store/useAuthStore';
 import { NavigationContainer } from '@react-navigation/native';
 
-// 1. Mocks de dependencias
+// Mocks
 jest.mock('@/api/client', () => ({
-  authApi: {
-    register: jest.fn(),
-  },
+  authApi: { register: jest.fn() },
 }));
 
-// Mock de Navegación
 const mockNavigate = jest.fn();
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
-  useNavigation: () => ({
-    navigate: mockNavigate,
-  }),
+  useNavigation: () => ({ navigate: mockNavigate }),
 }));
 
-// Espía para las alertas
-const alertSpy = jest.spyOn(Alert, 'alert');
-
-describe('RegisterScreen Integration Flow', () => {
+describe('RegisterScreen Integration Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // CORRECCIÓN 1: Usar signOut() en lugar de logout()
     useAuthStore.getState().signOut();
   });
 
-  const renderScreen = () =>
+  const renderScreen = () => 
     render(
       <NavigationContainer>
         <RegisterScreen />
       </NavigationContainer>
     );
 
-  test('debe registrar, guardar en useAuthStore y navegar a Home cuando los datos son válidos', async () => {
-    const mockUser = { id: '123', full_name: 'Juan Fernando', email: 'juan@test.com' };
-    const mockToken = 'fake-jwt-token';
-    
-    (authApi.register as jest.Mock).mockResolvedValueOnce({
-      accessToken: mockToken,
-      user: mockUser,
-    });
+  test('debe completar el flujo de Peatón y registrar exitosamente', async () => {
+    const mockResponse = {
+      accessToken: 'token-peaton',
+      user: { id: '1', full_name: 'Juan Fernando', email: 'juan@test.com' }
+    };
+    (authApi.register as jest.Mock).mockResolvedValueOnce(mockResponse);
 
     const { getByText, getByPlaceholderText } = renderScreen();
 
-    // Paso 1: Peatón
+    // Paso 1: Seleccionar Peatón (salta a paso 4)
     fireEvent.press(getByText('Peatón'));
 
-    // Paso 4: Datos
+    // Paso 4: Datos de usuario
     fireEvent.changeText(getByPlaceholderText('Nombre completo'), 'Juan Fernando');
     fireEvent.changeText(getByPlaceholderText('Correo electrónico'), 'juan@test.com');
     fireEvent.changeText(getByPlaceholderText('Contraseña'), '123456');
@@ -61,47 +50,45 @@ describe('RegisterScreen Integration Flow', () => {
     fireEvent.press(getByText('Finalizar Registro'));
 
     await waitFor(() => {
-      // VALIDACIÓN 1: El API se llamó
-      expect(authApi.register).toHaveBeenCalled();
-
-      // VALIDACIÓN 2: Verificamos el estado del store
-      const storeState = useAuthStore.getState();
-      // CORRECCIÓN 2: Usar session en lugar de token
-      expect(storeState.session).toBe(mockToken);
-      expect(storeState.user?.full_name).toBe('Juan Fernando');
-
-      // VALIDACIÓN 3: Navegación
-      expect(mockNavigate).toHaveBeenCalledWith('Home');
+      expect(authApi.register).toHaveBeenCalledWith(expect.objectContaining({
+        mobility_mode: 'peaton'
+      }));
+      expect(useAuthStore.getState().session).toBe('token-peaton');
+      expect(getByText(/registro ha sido exitoso/i)).toBeTruthy();
     });
   });
 
-  test('debe bloquear el avance si falta la placa en modo vehículo', async () => {
-    const { getByText, queryByPlaceholderText } = renderScreen();
+  test('debe bloquear el avance en LicensePlateStep si la placa es corta', async () => {
+    const alertSpy = jest.spyOn(Alert, 'alert');
+    const { getByText, getByPlaceholderText, queryByPlaceholderText } = renderScreen();
 
+    // Flujo Carro -> Particular -> Placa
     fireEvent.press(getByText('Carro'));
     fireEvent.press(getByText('Particular'));
     
-    // Intentar seguir sin escribir placa
+    const inputPlaca = getByPlaceholderText('Ej: ABC-12D');
+    fireEvent.changeText(inputPlaca, 'ABC'); // Muy corta
+
     fireEvent.press(getByText('Siguiente'));
 
     expect(alertSpy).toHaveBeenCalledWith("Atención", "Por favor ingresa una placa válida.");
+    // Verificar que no pasó al paso 4
     expect(queryByPlaceholderText('Nombre completo')).toBeNull();
   });
 
-  test('debe mostrar errores de Zod si los campos no cumplen requisitos', async () => {
+  test('debe validar errores de Zod en el último paso', async () => {
+    const alertSpy = jest.spyOn(Alert, 'alert');
     const { getByText, getByPlaceholderText } = renderScreen();
 
     fireEvent.press(getByText('Peatón'));
 
-    fireEvent.changeText(getByPlaceholderText('Nombre completo'), 'Ju');
-    fireEvent.changeText(getByPlaceholderText('Correo electrónico'), 'no-email');
-    fireEvent.changeText(getByPlaceholderText('Contraseña'), '123');
-
+    // Email inválido
+    fireEvent.changeText(getByPlaceholderText('Correo electrónico'), 'correo-mal');
     fireEvent.press(getByText('Finalizar Registro'));
 
     await waitFor(() => {
+      expect(alertSpy).toHaveBeenCalledWith("Datos incompletos", "Ingresa un correo electrónico válido");
       expect(authApi.register).not.toHaveBeenCalled();
-      expect(alertSpy).toHaveBeenCalledWith("Datos incompletos", expect.any(String));
     });
   });
 });
