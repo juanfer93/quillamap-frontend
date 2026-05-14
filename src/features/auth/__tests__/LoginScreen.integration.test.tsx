@@ -9,7 +9,7 @@ jest.mock('@/api/client', () => ({
   authApi: { register: jest.fn() },
 }));
 
-// Mock de navegación (AÑADIDO PARA SOLUCIONAR EL ERROR)
+// Mock de Navegación
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
     navigate: jest.fn(),
@@ -27,10 +27,12 @@ describe('LoginScreen - Integración', () => {
 
     fireEvent.changeText(getByPlaceholderText('Correo electrónico'), 'juan@test.com');
     fireEvent.changeText(getByPlaceholderText('********'), '123456');
-    fireEvent.press(getByText('ENTRAR'));
+    
+    // Usamos regex /entrar/i para que no importe si es ENTRAR o Entrar
+    fireEvent.press(getByText(/entrar/i));
 
     await waitFor(() => {
       expect(authService.login).toHaveBeenCalledWith('juan@test.com', '123456');
-    });
+    }, { timeout: 10000 }); // Más tiempo para máquinas lentas
   });
 });

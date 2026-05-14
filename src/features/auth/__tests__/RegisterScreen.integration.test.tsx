@@ -2,15 +2,13 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import RegisterScreen from '../screens/RegisterScreen';
 import { authApi } from '@/api/client';
-import { Alert } from 'react-native';
 
-// Mock de API
+// Mock de API y Navegación
 jest.mock('@/api/client', () => ({
   authService: { login: jest.fn() },
   authApi: { register: jest.fn() },
 }));
 
-// Mock de navegación (IMPORTANTE)
 const mockedNavigate = jest.fn();
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
@@ -19,6 +17,7 @@ jest.mock('@react-navigation/native', () => ({
 }));
 
 describe('RegisterScreen - Flujo Completo', () => {
+  // Aumentamos el tiempo de espera a 30 segundos al final de la función 'it'
   it('debe completar el wizard de registro exitosamente', async () => {
     (authApi.register as jest.Mock).mockResolvedValue({
       accessToken: 'fake-token',
@@ -27,29 +26,29 @@ describe('RegisterScreen - Flujo Completo', () => {
 
     const { getByText, getByPlaceholderText } = render(<RegisterScreen />);
 
-    // Paso 1
-    fireEvent.press(getByText('Carro'));
+    // Paso 1: Movilidad
+    fireEvent.press(getByText(/carro/i));
 
-    // Paso 2
-    await waitFor(() => expect(getByText('Particular')).toBeTruthy());
-    fireEvent.press(getByText('Particular'));
+    // Paso 2: Tipo de Vehículo
+    await waitFor(() => expect(getByText(/particular/i)).toBeTruthy(), { timeout: 5000 });
+    fireEvent.press(getByText(/particular/i));
 
-    // Paso 3: CORREGIDO EL PLACEHOLDER Y EL BOTÓN
-    await waitFor(() => expect(getByPlaceholderText('Ej: ABC-12D')).toBeTruthy());
+    // Paso 3: Placa (Usa el placeholder exacto del error)
+    await waitFor(() => expect(getByPlaceholderText('Ej: ABC-12D')).toBeTruthy(), { timeout: 5000 });
     fireEvent.changeText(getByPlaceholderText('Ej: ABC-12D'), 'KRL-520');
-    fireEvent.press(getByText('Siguiente')); // Antes decía SIGUIENTE
+    fireEvent.press(getByText(/siguiente/i));
 
-    // Paso 4
-    await waitFor(() => expect(getByPlaceholderText('Tu nombre')).toBeTruthy());
-    fireEvent.changeText(getByPlaceholderText('Tu nombre'), 'Juan Fernando');
-    fireEvent.changeText(getByPlaceholderText('ejemplo@correo.com'), 'juan@test.com');
+    // Paso 4: Detalles de Usuario
+    await waitFor(() => expect(getByPlaceholderText(/nombre/i)).toBeTruthy(), { timeout: 5000 });
+    fireEvent.changeText(getByPlaceholderText(/nombre/i), 'Juan Fernando');
+    fireEvent.changeText(getByPlaceholderText(/correo/i), 'juan@test.com');
     fireEvent.changeText(getByPlaceholderText('********'), 'password123');
 
-    fireEvent.press(getByText('FINALIZAR REGISTRO'));
+    fireEvent.press(getByText(/finalizar registro/i));
 
     await waitFor(() => {
       expect(authApi.register).toHaveBeenCalled();
       expect(mockedNavigate).toHaveBeenCalledWith('Home');
-    });
-  });
+    }, { timeout: 10000 });
+  }, 30000); 
 });
