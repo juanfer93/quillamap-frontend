@@ -7,11 +7,13 @@ export const corporateColors = {
   lightGray: '#f2f2f2',
   mediumGray: '#e0e0e0',
   darkGray: '#333333',
+  charcoal: '#121212', // Fondo principal oscuro
+  slate: '#1E1E1E',    // Fondo de la tarjeta (card) oscuro
 };
 
 export const COLORS = {
   light: {
-    background: corporateColors.lightGray,
+    background: corporateColors.white,
     surface: corporateColors.white,
     text: corporateColors.black,
     textSecondary: corporateColors.darkGray,
@@ -20,8 +22,8 @@ export const COLORS = {
     border: corporateColors.mediumGray,
   },
   dark: {
-    background: corporateColors.black,
-    surface: corporateColors.darkGray,
+    background: corporateColors.charcoal,
+    surface: corporateColors.slate,
     text: corporateColors.white,
     textSecondary: corporateColors.lightGray,
     primary: corporateColors.sandGold,

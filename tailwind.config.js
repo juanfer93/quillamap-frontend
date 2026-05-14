@@ -12,6 +12,8 @@ module.exports = {
         'light-gray': corporateColors.lightGray,
         'medium-gray': corporateColors.mediumGray,
         'dark-gray': corporateColors.darkGray,
+        'charcoal': corporateColors.charcoal, 
+        'slate': corporateColors.slate,       
       },
       spacing: {
         'xs': `${SPACING.xs}px`,
