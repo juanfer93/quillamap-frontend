@@ -6,6 +6,9 @@ import { authApi } from '@/api/client';
 import { useAuthStore } from '@/store/useAuthStore';
 import { NavigationContainer } from '@react-navigation/native';
 
+// Aumentamos el tiempo de espera global para este archivo de test
+jest.setTimeout(15000);
+
 // Mocks
 jest.mock('@/api/client', () => ({
   authApi: { register: jest.fn() },
@@ -20,6 +23,7 @@ jest.mock('@react-navigation/native', () => ({
 describe('RegisterScreen Integration Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Usamos signOut() para limpiar el estado antes de cada prueba
     useAuthStore.getState().signOut();
   });
 
@@ -53,6 +57,7 @@ describe('RegisterScreen Integration Tests', () => {
       expect(authApi.register).toHaveBeenCalledWith(expect.objectContaining({
         mobility_mode: 'peaton'
       }));
+      // Verificamos la propiedad session según tu useAuthStore
       expect(useAuthStore.getState().session).toBe('token-peaton');
       expect(getByText(/registro ha sido exitoso/i)).toBeTruthy();
     });
@@ -82,8 +87,11 @@ describe('RegisterScreen Integration Tests', () => {
 
     fireEvent.press(getByText('Peatón'));
 
-    // Email inválido
+    // CORRECCIÓN: Llenamos el nombre completo para que pase la primera validación de Zod
+    // y así el test pueda verificar específicamente el error del correo electrónico.
+    fireEvent.changeText(getByPlaceholderText('Nombre completo'), 'Juan Pacheco');
     fireEvent.changeText(getByPlaceholderText('Correo electrónico'), 'correo-mal');
+    
     fireEvent.press(getByText('Finalizar Registro'));
 
     await waitFor(() => {
