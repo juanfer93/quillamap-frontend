@@ -4,7 +4,7 @@ import { Alert } from 'react-native';
 import LoginScreen from '../screens/LoginScreen';
 import { authService } from '@/api/client';
 
-// Mock de servicios y navegación (Se mantiene igual)
+// Mock de servicios
 jest.mock('@/api/client', () => ({
   authService: {
     login: jest.fn(),
@@ -17,7 +17,7 @@ jest.mock('@react-navigation/native', () => ({
   }),
 }));
 
-// Mock de Alert para espiar sus llamadas
+// Mock de Alert
 jest.spyOn(Alert, 'alert');
 
 describe('LoginScreen Integration Flow', () => {
@@ -36,7 +36,9 @@ describe('LoginScreen Integration Flow', () => {
     
     fireEvent.changeText(getByPlaceholderText('Correo'), 'test@test.com');
     fireEvent.changeText(getByPlaceholderText('********'), 'password123');
-    fireEvent.press(getByText('ENTRAR'));
+    
+    // USAMOS REGEX /entrar/i para que no importe si es Entrar o ENTRAR
+    fireEvent.press(getByText(/entrar/i));
 
     await waitFor(() => {
       expect(authService.login).toHaveBeenCalledWith('test@test.com', 'password123');
@@ -45,11 +47,13 @@ describe('LoginScreen Integration Flow', () => {
 
   test('debe mostrar alerta si los campos están vacíos sin llamar al API', () => {
     const { getByText } = render(<LoginScreen />);
-    const loginButton = getByText('ENTRAR');
+    
+    // Aplicamos lo mismo aquí
+    const loginButton = getByText(/entrar/i);
 
     fireEvent.press(loginButton);
 
-    // CORRECCIÓN AQUÍ: Ahora esperamos el mensaje de Zod
+    // Mensaje de Zod verificado en el paso anterior
     expect(Alert.alert).toHaveBeenCalledWith('Atención', 'El correo es obligatorio');
     expect(authService.login).not.toHaveBeenCalled();
   });
@@ -63,7 +67,8 @@ describe('LoginScreen Integration Flow', () => {
     
     fireEvent.changeText(getByPlaceholderText('Correo'), 'error@test.com');
     fireEvent.changeText(getByPlaceholderText('********'), 'wrongpass');
-    fireEvent.press(getByText('ENTRAR'));
+    
+    fireEvent.press(getByText(/entrar/i));
 
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith('Error de inicio de sesión', 'Credenciales inválidas');
