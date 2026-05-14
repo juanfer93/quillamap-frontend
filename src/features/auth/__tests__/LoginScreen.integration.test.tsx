@@ -86,7 +86,9 @@ describe('LoginScreen Integration Flow', () => {
     
     expect(mockNavigate).toHaveBeenCalledWith('Home');
     
-    jest.runAllTimers();
+    await act(async () => {
+      jest.runOnlyPendingTimers();
+    });
   }, 30000);
 
   // Test 2: Validación Zod (Campos vacíos)
@@ -99,7 +101,9 @@ describe('LoginScreen Integration Flow', () => {
     expect(Alert.alert).toHaveBeenCalledWith('Atención', 'El correo es obligatorio');
     expect(authService.login).not.toHaveBeenCalled();
     
-    jest.runAllTimers();
+    act(async () => {
+      jest.runOnlyPendingTimers();
+    });
   }, 30000);
 
   // Test 3: Error de servidor
@@ -122,6 +126,8 @@ describe('LoginScreen Integration Flow', () => {
 
     expect(mockNavigate).not.toHaveBeenCalled();
     
-    jest.runAllTimers();
+    await act(async () => {
+      jest.runOnlyPendingTimers();
+    });
   }, 30000);
 });
