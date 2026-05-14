@@ -50,7 +50,7 @@ describe('RegisterScreen Integration Flow', () => {
   test('should handle the pedestrian registration flow correctly', async () => {
     // Arrange: Mock a successful API response
     const mockUser = {
-      id: 1,
+      id: '1',
       full_name: 'Test Pedestrian',
       email: 'pedestrian@test.com',
       mobility_mode: 'peaton' as const,
@@ -105,11 +105,11 @@ describe('RegisterScreen Integration Flow', () => {
   test('should handle the vehicle registration flow correctly', async () => {
     // Arrange: Mock a successful API response
     const mockUser = {
-      id: 2,
+      id: '2',
       full_name: 'Test Driver',
       email: 'driver@test.com',
       mobility_mode: 'carro' as const,
-      vehicle_type: 'PARTICULAR' as const,
+      vehicle_type: 'particular' as const,
       license_plate: 'XYZ-789',
     };
     const mockResponse: RegisterResponse = {
@@ -160,7 +160,7 @@ describe('RegisterScreen Integration Flow', () => {
       email: testUserPayload.email,
       password: testUserPayload.password,
       mobility_mode: 'carro',
-      vehicle_type: 'PARTICULAR',
+      vehicle_type: 'particular',
       license_plate: 'XYZ-789',
     });
 
