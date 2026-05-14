@@ -5,7 +5,7 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.10:3000/api
 
 const client: AxiosInstance = axios.create({
   baseURL: API_URL,
-  timeout: 60000, // 60 segundos de timeout
+  timeout: 60000, 
   headers: {
     'Content-Type': 'application/json',
   },
@@ -23,7 +23,7 @@ export const authApi = {
 export const authService = {
   login: async (email: string, password: string): Promise<AuthResponse> => {
     const response = await client.post<AuthResponse>('/auth/login', {
-      email: email.trim(),
+      email: email.trim().toLowerCase(), 
       password,
     });
     return response.data;

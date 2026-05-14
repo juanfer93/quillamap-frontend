@@ -1,16 +1,6 @@
-export interface RegisterRequest {
-    full_name: string;
-    email: string;
-    password?: string;
-    mobility_mode: 'peaton' | 'turista' | 'moto' | 'carro';
-    vehicle_type?: 'PARTICULAR' | 'TAXI';
-    license_plate?: string;
-  }
+export type MobilityMode = 'peaton' | 'turista' | 'moto' | 'carro';
 
-export interface RegisterResponse {
-  user: any;
-  accessToken?: string;
-}
+export type VehicleType = 'particular' | 'taxi' | 'moto';
 
 export type RootStackParamList = {
   Welcome: undefined;
@@ -19,12 +9,25 @@ export type RootStackParamList = {
   Home: undefined;
 };
 
+export interface RegisterRequest {
+  full_name: string;
+  email: string;
+  password: string; 
+  mobility_mode: MobilityMode;
+  vehicle_type?: VehicleType; 
+  license_plate?: string;    
+}
+
 export interface AuthResponse {
   accessToken: string;
   user: {
     id: string;
     full_name: string;
     email: string;
-    mobility_mode: string;
+    mobility_mode: MobilityMode;
+    vehicle_type?: VehicleType;
+    license_plate?: string;
   };
 }
+
+export interface RegisterResponse extends AuthResponse {}

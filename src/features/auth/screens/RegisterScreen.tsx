@@ -4,6 +4,7 @@ import {
   Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+// 1. AÑADIMOS RootStackParamList en la importación
 import { RegisterRequest, RootStackParamList } from '@/features/auth/types/auth.types';
 import MobilityStep from '@/features/auth/components/register/MobilityStep';
 import CarTypeStep from '@/features/auth/components/register/CarTypeStep';
@@ -30,6 +31,8 @@ const mobilityModeMap: { [key: string]: RegisterRequest['mobility_mode'] } = {
 const RegisterScreen = () => {
   const { mode } = useThemeStore();
   const theme = mode === 'dark' ? 'dark' : 'light';
+  
+  // 2. RESOLVEMOS EL ERROR pasándole el tipo RootStackParamList
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
   const [currentStep, setCurrentStep] = useState(1);
@@ -62,8 +65,11 @@ const RegisterScreen = () => {
     }
   };
 
-  const handleCarTypeSelect = (type: 'PARTICULAR' | 'TAXI') => {
-    setFormData(prev => ({ ...prev, vehicle_type: type }));
+  // 3. RESOLVEMOS EL ERROR transformando la entrada visual a minúsculas
+  // para que coincida con el backend y la interfaz ('particular' | 'taxi')
+  const handleCarTypeSelect = (type: 'PARTICULAR' | 'TAXI' | 'particular' | 'taxi') => {
+    const backendCompatibleType = type.toLowerCase() as 'particular' | 'taxi';
+    setFormData(prev => ({ ...prev, vehicle_type: backendCompatibleType }));
     changeStep(3);
   };
 
