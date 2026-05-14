@@ -1,23 +1,25 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import LoginScreen from '../screens/LoginScreen';
-import { authService } from '@/api/client'; // Cambiado de authApi a authService
+import { authService } from '@/api/client';
 
-// Mock corregido con la estructura real
+// Mock de API
 jest.mock('@/api/client', () => ({
-  authService: {
-    login: jest.fn(), // login vive en authService
-  },
-  authApi: {
-    register: jest.fn(), // register vive en authApi
-  },
+  authService: { login: jest.fn() },
+  authApi: { register: jest.fn() },
 }));
 
-describe('LoginScreen - Validación e Integración', () => {
+// Mock de navegación (AÑADIDO PARA SOLUCIONAR EL ERROR)
+jest.mock('@react-navigation/native', () => ({
+  useNavigation: () => ({
+    navigate: jest.fn(),
+  }),
+}));
+
+describe('LoginScreen - Integración', () => {
   it('debe realizar el login correctamente', async () => {
-    // Usamos authService.login para el mock
     (authService.login as jest.Mock).mockResolvedValue({
-      accessToken: 'token-valido',
+      accessToken: 'token-123',
       user: { email: 'juan@test.com' }
     });
 
@@ -28,7 +30,6 @@ describe('LoginScreen - Validación e Integración', () => {
     fireEvent.press(getByText('ENTRAR'));
 
     await waitFor(() => {
-      // Verificamos la llamada en authService
       expect(authService.login).toHaveBeenCalledWith('juan@test.com', '123456');
     });
   });
