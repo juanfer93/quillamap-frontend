@@ -4,7 +4,6 @@ import {
   Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-// 1. AÑADIMOS RootStackParamList en la importación
 import { RegisterRequest, RootStackParamList } from '@/features/auth/types/auth.types';
 import MobilityStep from '@/features/auth/components/register/MobilityStep';
 import CarTypeStep from '@/features/auth/components/register/CarTypeStep';
@@ -21,6 +20,11 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
+interface MobilityStepProps {
+  selectedMode?: string;
+  handleVehicleTypeSelect: (type: 'peaton' | 'turista' | 'moto' | 'carro') => void;
+}
+
 const mobilityModeMap: { [key: string]: RegisterRequest['mobility_mode'] } = {
   'PEATON': 'peaton',
   'TURISTA': 'turista',
@@ -31,8 +35,7 @@ const mobilityModeMap: { [key: string]: RegisterRequest['mobility_mode'] } = {
 const RegisterScreen = () => {
   const { mode } = useThemeStore();
   const theme = mode === 'dark' ? 'dark' : 'light';
-  
-  // 2. RESOLVEMOS EL ERROR pasándole el tipo RootStackParamList
+
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
   const [currentStep, setCurrentStep] = useState(1);
@@ -53,23 +56,25 @@ const RegisterScreen = () => {
     setCurrentStep(step);
   }
 
-  const handleVehicleTypeSelect = (type: 'PEATON' | 'TURISTA' | 'MOTO' | 'CARRO') => {
-    const mobility_mode = mobilityModeMap[type];
-    setFormData(prev => ({ ...prev, mobility_mode, vehicle_type: undefined, license_plate: undefined }));
-    if (type === 'PEATON' || type === 'TURISTA') {
+  const handleVehicleTypeSelect = (type: 'peaton' | 'turista' | 'moto' | 'carro') => {
+    setFormData(prev => ({
+      ...prev,
+      mobility_mode: type,
+      vehicle_type: undefined,
+      license_plate: undefined
+    }));
+
+    if (type === 'peaton' || type === 'turista') {
       changeStep(4);
-    } else if (type === 'MOTO') {
+    } else if (type === 'moto') {
       changeStep(3);
-    } else { 
+    } else {
       changeStep(2);
     }
   };
 
-  // 3. RESOLVEMOS EL ERROR transformando la entrada visual a minúsculas
-  // para que coincida con el backend y la interfaz ('particular' | 'taxi')
-  const handleCarTypeSelect = (type: 'PARTICULAR' | 'TAXI' | 'particular' | 'taxi') => {
-    const backendCompatibleType = type.toLowerCase() as 'particular' | 'taxi';
-    setFormData(prev => ({ ...prev, vehicle_type: backendCompatibleType }));
+  const handleCarTypeSelect = (type: 'particular' | 'taxi') => {
+    setFormData(prev => ({ ...prev, vehicle_type: type }));
     changeStep(3);
   };
 
@@ -123,13 +128,40 @@ const RegisterScreen = () => {
   const renderStep = () => {
     switch (currentStep) {
       case 1:
-        return <MobilityStep handleVehicleTypeSelect={handleVehicleTypeSelect} />;
+        return (
+          <MobilityStep
+            selectedMode={formData.mobility_mode}
+            handleVehicleTypeSelect={handleVehicleTypeSelect}
+          />
+        );
       case 2:
-        return <CarTypeStep handleCarTypeSelect={handleCarTypeSelect} />;
+        const carType = (formData.vehicle_type === 'particular' || formData.vehicle_type === 'taxi')
+          ? formData.vehicle_type
+          : undefined;
+        return (
+          <CarTypeStep
+            selectedType={carType}
+            handleCarTypeSelect={handleCarTypeSelect}
+          />
+        );
       case 3:
-        return <LicensePlateStep formData={formData} setPlate={setPlate} setCurrentStep={setCurrentStep} />;
+        return (
+          <LicensePlateStep
+            formData={formData}
+            setPlate={setPlate}
+            setCurrentStep={setCurrentStep}
+          />
+        );
       case 4:
-        return <UserDetailsStep formData={formData} setFormData={setFormData} handleRegister={handleRegister} isLoading={isLoading} error={error} />;
+        return (
+          <UserDetailsStep
+            formData={formData}
+            setFormData={setFormData}
+            handleRegister={handleRegister}
+            isLoading={isLoading}
+            error={error}
+          />
+        );
       default:
         return null;
     }

@@ -5,7 +5,8 @@ import tw from 'twrnc';
 import { useThemeStore } from '@/store/useThemeStore';
 
 interface CarTypeStepProps {
-  handleCarTypeSelect: (type: 'PARTICULAR' | 'TAXI') => void;
+  selectedType?: 'particular' | 'taxi'; 
+  handleCarTypeSelect: (type: 'particular' | 'taxi') => void;
 }
 
 const CarTypeStep: React.FC<CarTypeStepProps> = ({ handleCarTypeSelect }) => {
@@ -17,11 +18,11 @@ const CarTypeStep: React.FC<CarTypeStepProps> = ({ handleCarTypeSelect }) => {
   return (
     <View style={tw`items-center`}>
       <Text style={tw`text-2xl font-bold mb-l text-center text-${theme === 'dark' ? 'white' : 'shark-blue'}`}>¿Qué tipo de carro conduces?</Text>
-      <TouchableOpacity style={tw`bg-${theme === 'dark' ? 'dark-gray' : 'white'} p-l rounded-l mb-m w-full items-center flex-row justify-center shadow-md`} onPress={() => handleCarTypeSelect('PARTICULAR')}>
+      <TouchableOpacity style={tw`bg-${theme === 'dark' ? 'dark-gray' : 'white'} p-l rounded-l mb-m w-full items-center flex-row justify-center shadow-md`} onPress={() => handleCarTypeSelect('particular')}>
         <FontAwesome name="car" size={40} color={iconColor} />
         <Text style={tw`text-lg font-semibold ml-m text-${theme === 'dark' ? 'white' : 'shark-blue'}`}>Particular</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={tw`bg-${theme === 'dark' ? 'dark-gray' : 'white'} p-l rounded-l mb-m w-full items-center flex-row justify-center shadow-md`} onPress={() => handleCarTypeSelect('TAXI')}>
+      <TouchableOpacity style={tw`bg-${theme === 'dark' ? 'dark-gray' : 'white'} p-l rounded-l mb-m w-full items-center flex-row justify-center shadow-md`} onPress={() => handleCarTypeSelect('taxi')}>
         <FontAwesome name="taxi" size={40} color={iconColor} />
         <Text style={tw`text-lg font-semibold ml-m text-${theme === 'dark' ? 'white' : 'shark-blue'}`}>Taxi</Text>
       </TouchableOpacity>
