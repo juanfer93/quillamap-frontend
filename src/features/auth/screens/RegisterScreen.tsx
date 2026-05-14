@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, UIManager, LayoutAnimation,
-  Platform
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RegisterRequest, RootStackParamList } from '@/features/auth/types/auth.types';

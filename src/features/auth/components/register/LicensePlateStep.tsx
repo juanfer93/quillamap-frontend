@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { RegisterRequest } from '@/features/auth/types/auth.types';
 import tw from 'twrnc';
 import { useThemeStore } from '@/store/useThemeStore';
@@ -49,8 +49,9 @@ const LicensePlateStep: React.FC<LicensePlateStepProps> = ({ formData, setPlate,
       <TouchableOpacity 
         style={tw`bg-[#004574] p-4 rounded-xl w-full items-center`} 
         onPress={() => {
-          if(!formData.license_plate || formData.license_plate.length < 6) {
-             return;
+          if (!formData.license_plate || formData.license_plate.length < 5) {
+            Alert.alert("Atención", "Por favor ingresa una placa válida.");
+            return;
           }
           setCurrentStep(4);
         }}
