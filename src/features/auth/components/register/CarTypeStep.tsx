@@ -6,10 +6,10 @@ import { CAR_TYPES, CarTypeId } from '../../constants/carTypes';
 
 interface CarTypeStepProps {
   selectedType?: CarTypeId;
-  handleVehicleTypeSelect: (type: CarTypeId) => void;
+  handleCarTypeSelect: (type: CarTypeId) => void;
 }
 
-const CarTypeStep: React.FC<CarTypeStepProps> = ({ handleVehicleTypeSelect, selectedType }) => {
+const CarTypeStep: React.FC<CarTypeStepProps> = ({ handleCarTypeSelect, selectedType }) => {
   const { mode } = useThemeStore();
   const isDark = mode === 'dark';
 
@@ -31,7 +31,7 @@ const CarTypeStep: React.FC<CarTypeStepProps> = ({ handleVehicleTypeSelect, sele
           return (
             <TouchableOpacity
               key={item.id}
-              onPress={() => handleVehicleTypeSelect(item.id)}
+              onPress={() => handleCarTypeSelect(item.id)}
               activeOpacity={0.7}
               style={[
                 tw`w-full flex-row items-center p-l rounded-l mb-m border`,
