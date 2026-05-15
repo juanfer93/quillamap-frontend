@@ -5,9 +5,9 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuthStore } from '@/store/useAuthStore';
 import { WelcomeScreen } from '@/features/auth/screens/WelcomeScreen';
-import { LoginScreen } from '@/features/auth/screens/LoginScreen';
+import  LoginScreen  from '@/features/auth/screens/LoginScreen';
 import RegisterScreen from '@/features/auth/screens/RegisterScreen';
-import { SafeAreaView, Text } from 'react-native';
+import { SafeAreaView, Text, ActivityIndicator } from 'react-native';
 import { useThemeStore } from '@/store/useThemeStore';
 import tw from 'twrnc';
 
@@ -43,7 +43,11 @@ const App = () => {
   const { session, isLoading } = useAuthStore();
 
   if (isLoading) {
-    return null;
+    return (
+      <SafeAreaView style={tw`flex-1 justify-center items-center bg-white`}>
+         <ActivityIndicator size="large" color="#004574" />
+      </SafeAreaView>
+    );
   }
 
   return (
