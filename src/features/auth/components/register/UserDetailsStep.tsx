@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Alert, TouchableOpacity, Text, ActivityIndicator } from 'react-native';
 import { RegisterRequest } from '@/features/auth/types/auth.types';
-import tw from 'twrnc';
+import tw from '@/lib/tailwind';
 import { useThemeStore } from '@/store/useThemeStore';
 import { registerSchema } from '@/features/auth/schemas/auth.schema';
 import AnimatedInput from '@/features/auth/components/animated/AnimatedInput';

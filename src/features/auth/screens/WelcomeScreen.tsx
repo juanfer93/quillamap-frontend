@@ -2,7 +2,7 @@ import { Animated, View } from 'react-native';
 import { useThemeStore } from '@/store/useThemeStore';
 import { useEffect, useRef } from 'react';
 import { useAuthStore } from '@/store/useAuthStore'; 
-import tw from 'twrnc';
+import tw from '@/lib/tailwind';
 
 const LOGO_SIZE = 250;
 

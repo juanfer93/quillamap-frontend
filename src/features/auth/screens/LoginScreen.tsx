@@ -13,8 +13,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import tw from 'twrnc';
-
+import tw from '@/lib/tailwind';
 import { RootStackParamList } from 'src/features/auth/types/auth.types';
 import { useAuthStore } from 'src/store/useAuthStore';
 import { useThemeStore } from 'src/store/useThemeStore';

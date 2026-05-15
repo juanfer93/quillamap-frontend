@@ -13,7 +13,7 @@ import { authApi } from '@/api/client';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import tw from 'twrnc';
+import tw from '@/lib/tailwind';
 import { useThemeStore } from '@/store/useThemeStore';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {

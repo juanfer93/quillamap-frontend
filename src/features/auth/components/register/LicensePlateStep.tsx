@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native'; // <--- Alert añadido
+import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native'; 
 import { RegisterRequest } from '@/features/auth/types/auth.types';
-import tw from 'twrnc';
+import tw from '@/lib/tailwind';
 import { useThemeStore } from '@/store/useThemeStore';
 
 interface LicensePlateStepProps {

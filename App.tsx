@@ -9,7 +9,7 @@ import  LoginScreen  from '@/features/auth/screens/LoginScreen';
 import RegisterScreen from '@/features/auth/screens/RegisterScreen';
 import { SafeAreaView, Text, ActivityIndicator } from 'react-native';
 import { useThemeStore } from '@/store/useThemeStore';
-import tw from 'twrnc';
+import tw from '@/lib/tailwind';
 
 const HomeScreen = () => {
   const { mode } = useThemeStore();

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, View, Text, TextInput } from 'react-native';
-import tw from 'twrnc';
+import tw from '@/lib/tailwind';
 
 interface AnimatedInputProps {
   label: string;

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import tw from 'twrnc';
+import tw from '@/lib/tailwind';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';

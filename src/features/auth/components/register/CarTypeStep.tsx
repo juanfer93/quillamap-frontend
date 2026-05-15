@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
-import tw from 'twrnc';
+import tw from '@/lib/tailwind';
 import { useThemeStore } from 'src/store/useThemeStore';
 import { CAR_TYPES, CarTypeId } from '../../constants/carTypes';
 
