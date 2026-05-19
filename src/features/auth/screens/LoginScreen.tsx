@@ -27,7 +27,7 @@ const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLocalLoading, setIsLocalLoading] = useState(false);
-  
+
   const navigation = useNavigation<LoginScreenNavigationProp>();
   const { setSession } = useAuthStore();
   const { mode } = useThemeStore();
@@ -62,7 +62,7 @@ const LoginScreen = () => {
     >
       <ScrollView contentContainerStyle={tw`flex-grow justify-center`}>
         <HeaderSwitch />
-        
+
         <View style={tw`px-l items-center`}>
           <Image
             source={require('assets/logo-quillamap.png')}
@@ -70,9 +70,9 @@ const LoginScreen = () => {
             resizeMode="contain"
           />
 
-          <View 
+          <View
             style={[
-              tw`w-full bg-white dark:bg-slate p-l rounded-l`,
+              tw`w-full bg-white dark:bg-slate p-l rounded-l border border-transparent dark:border-dark-gray`,
               !isDark && {
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 10 },
@@ -94,7 +94,7 @@ const LoginScreen = () => {
                 <TextInput
                   style={tw`w-full bg-light-gray dark:bg-charcoal text-black dark:text-white px-m py-m rounded-m border border-medium-gray dark:border-dark-gray`}
                   placeholder="Correo electrónico"
-                  placeholderTextColor={isDark ? '#666' : '#999'}
+                  placeholderTextColor={isDark ? '#555555' : '#999999'}
                   value={email}
                   onChangeText={setEmail}
                   autoCapitalize="none"

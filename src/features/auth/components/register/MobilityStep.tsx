@@ -22,7 +22,7 @@ const MobilityStep: React.FC<MobilityStepProps> = ({ handleVehicleTypeSelect, se
       <View style={tw`w-full`}>
         {MOBILITY_MODES.map((item) => {
           const isSelected = selectedMode === item.id;
-          
+
           return (
             <TouchableOpacity
               key={item.id}
@@ -30,10 +30,10 @@ const MobilityStep: React.FC<MobilityStepProps> = ({ handleVehicleTypeSelect, se
               activeOpacity={0.7}
               style={[
                 tw`w-full flex-row items-center p-l rounded-l mb-m border`,
-                tw`bg-white dark:bg-slate`, 
-                { 
-                  borderColor: isSelected 
-                    ? (isDark ? '#c7ad8c' : '#004574') 
+                tw`bg-white dark:bg-slate`,
+                {
+                  borderColor: isSelected
+                    ? (isDark ? '#c7ad8c' : '#004574')
                     : (isDark ? '#333333' : '#f2f2f2'),
                   borderWidth: isSelected ? 2 : 1
                 },
@@ -46,20 +46,27 @@ const MobilityStep: React.FC<MobilityStepProps> = ({ handleVehicleTypeSelect, se
                 }
               ]}
             >
-              <Image 
-                source={{ uri: item.uri }} 
-                style={tw`w-12 h-12 mr-m`}
+              <Image
+                source={{ uri: item.uri }}
+                style={[
+                  tw`w-12 h-12 mr-m`,
+                  isDark && { tintColor: '#c7ad8c' }
+                ]}
                 resizeMode="contain"
               />
 
-              <Text style={tw`text-lg font-bold text-black dark:text-white`}>
+              <Text style={tw`text-lg font-bold text-black dark:text-sand-gold`}>
                 {item.name}
               </Text>
 
               <View style={tw`flex-1 items-end`}>
                 <View style={[
                   tw`w-6 h-6 rounded-full border-2 justify-center items-center`,
-                  { borderColor: isSelected ? (isDark ? '#c7ad8c' : '#004574') : '#e0e0e0' }
+                  {
+                    borderColor: isSelected
+                      ? (isDark ? '#c7ad8c' : '#004574')
+                      : (isDark ? '#444444' : '#e0e0e0')
+                  }
                 ]}>
                   {isSelected && (
                     <View style={tw`w-3 h-3 rounded-full bg-shark-blue dark:bg-sand-gold`} />

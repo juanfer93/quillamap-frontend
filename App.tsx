@@ -1,23 +1,20 @@
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuthStore } from '@/store/useAuthStore';
 import { WelcomeScreen } from '@/features/auth/screens/WelcomeScreen';
-import  LoginScreen  from '@/features/auth/screens/LoginScreen';
+import LoginScreen from '@/features/auth/screens/LoginScreen';
 import RegisterScreen from '@/features/auth/screens/RegisterScreen';
 import { SafeAreaView, Text, ActivityIndicator } from 'react-native';
 import { useThemeStore } from '@/store/useThemeStore';
 import tw from '@/lib/tailwind';
+import { useDeviceContext, useAppColorScheme } from 'twrnc';
 
 const HomeScreen = () => {
-  const { mode } = useThemeStore();
-  const theme = mode === 'dark' ? 'dark' : 'light';
-
   return (
-    <SafeAreaView style={tw`flex-1 justify-center items-center bg-${theme === 'dark' ? 'black' : 'white'}`}>
-      <Text style={tw`text-${theme === 'dark' ? 'white' : 'black'}`}>Mapa Principal</Text>
+    <SafeAreaView style={tw`flex-1 justify-center items-center bg-white dark:bg-black`}>
+      <Text style={tw`text-black dark:text-white`}>Mapa Principal</Text>
     </SafeAreaView>
   );
 };
@@ -41,11 +38,23 @@ const MainStack = () => (
 
 const App = () => {
   const { session, isLoading } = useAuthStore();
+  const { mode } = useThemeStore();
+
+  useDeviceContext(tw, {
+    observeDeviceColorSchemeChanges: false,
+    initialColorScheme: mode,
+  });
+
+  const [, , setColorScheme] = useAppColorScheme(tw);
+
+  useEffect(() => {
+    setColorScheme(mode);
+  }, [mode, setColorScheme]);
 
   if (isLoading) {
     return (
-      <SafeAreaView style={tw`flex-1 justify-center items-center bg-white`}>
-         <ActivityIndicator size="large" color="#004574" />
+      <SafeAreaView style={tw`flex-1 justify-center items-center bg-white dark:bg-black`}>
+        <ActivityIndicator size="large" color="#004574" />
       </SafeAreaView>
     );
   }
