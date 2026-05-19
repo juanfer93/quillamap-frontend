@@ -5,25 +5,29 @@ import tw from 'twrnc';
 import { useThemeStore } from '@/store/useThemeStore';
 
 const HeaderSwitch = () => {
-  const { mode, toggleTheme } = useThemeStore();
+  const { mode, setTheme } = useThemeStore();
   const isDark = mode === 'dark';
+
+  const handlePress = () => {
+    setTheme(isDark ? 'light' : 'dark');
+  };
 
   return (
     <View style={tw`flex-row justify-end items-center px-4 pt-4`}>
       <TouchableOpacity
-        onPress={toggleTheme}
+        onPress={handlePress}
         activeOpacity={0.8}
-        style={tw`flex-row items-center bg-gray-200 dark:bg-gray-800 p-1 rounded-full w-14`}
+        style={tw`w-14 h-8 rounded-full p-1 justify-center ${isDark ? 'bg-charcoal' : 'bg-medium-gray'
+          }`}
       >
         <View
-          style={tw`w-6 h-6 rounded-full items-center justify-center ${
-            isDark ? 'translate-x-6 bg-primary' : 'bg-white'
-          }`}
+          style={tw`w-6 h-6 rounded-full bg-white items-center justify-center transition-transform duration-300 ${isDark ? 'translate-x-6' : 'translate-x-0'
+            }`}
         >
           <Ionicons
             name={isDark ? 'moon' : 'sunny'}
             size={14}
-            color={isDark ? 'white' : '#F59E0B'} 
+            color={isDark ? '#333' : '#F59E0B'}
           />
         </View>
       </TouchableOpacity>

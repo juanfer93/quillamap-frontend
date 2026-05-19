@@ -41,15 +41,15 @@ const App = () => {
   const { mode } = useThemeStore();
 
   useDeviceContext(tw, {
-    observeDeviceColorSchemeChanges: false,
     initialColorScheme: mode,
+    observeDeviceColorSchemeChanges: false
   });
 
   const [, , setColorScheme] = useAppColorScheme(tw);
 
   useEffect(() => {
     setColorScheme(mode);
-  }, [mode, setColorScheme]);
+  }, [mode]);
 
   if (isLoading) {
     return (
