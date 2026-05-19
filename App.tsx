@@ -39,17 +39,18 @@ const MainStack = () => (
 const App = () => {
   const { session, isLoading } = useAuthStore();
   const { mode } = useThemeStore();
+  const [currentColorScheme, , setColorScheme] = useAppColorScheme(tw);
 
   useDeviceContext(tw, {
     initialColorScheme: mode,
     observeDeviceColorSchemeChanges: false
   });
 
-  const [, , setColorScheme] = useAppColorScheme(tw);
-
   useEffect(() => {
-    setColorScheme(mode);
-  }, [mode]);
+    if (currentColorScheme !== mode) {
+      setColorScheme(mode);
+    }
+  }, [mode, currentColorScheme, setColorScheme]);
 
   if (isLoading) {
     return (
