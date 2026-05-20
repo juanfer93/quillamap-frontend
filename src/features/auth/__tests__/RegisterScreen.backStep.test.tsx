@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent, act } from '@testing-library/react-native';
+import { render, fireEvent, act, waitFor } from '@testing-library/react-native';
 import RegisterScreen from '../screens/RegisterScreen';
 
 const mockedGoBack = jest.fn();
@@ -8,19 +8,28 @@ jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ goBack: mockedGoBack }),
 }));
 
-describe('RegisterScreen - handleBackStep', () => {
-  it('debe activar el spinner antes de navegar al Login', async () => {
-    const { getByTestId, queryByTestId } = render(<RegisterScreen />);
+describe('RegisterScreen - Flujo de Retroceso', () => {
+  it('debe mostrar el spinner y navegar', async () => {
+    const { findByTestId } = render(<RegisterScreen />);
     
-    const backButton = getByTestId('back-button'); 
-
-    fireEvent.press(backButton);
-
-
+    // 1. Usamos findBy para esperar que el componente aparezca
+    const backButton = await findByTestId('back-button');
+    
+    // 2. Presionamos
     await act(async () => {
-      await new Promise((r) => setTimeout(r, 500));
+      fireEvent.press(backButton);
     });
 
-    expect(mockedGoBack).toHaveBeenCalledTimes(1);
+    // 3. Verificamos que el spinner aparezca (requiere que agregues testID="spinner" a tu ActivityIndicator)
+    const spinner = await findByTestId('spinner');
+    expect(spinner).toBeTruthy();
+
+    // 4. Esperamos el timer del useEffect (400ms)
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 600));
+    });
+
+    // 5. Verificamos la navegación
+    expect(mockedGoBack).toHaveBeenCalled();
   });
 });

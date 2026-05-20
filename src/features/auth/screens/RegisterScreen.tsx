@@ -3,6 +3,7 @@ import {
   View, Text, UIManager, LayoutAnimation,
   Platform,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RegisterRequest, RootStackParamList } from '@/features/auth/types/auth.types';
@@ -16,6 +17,7 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import tw from '@/lib/tailwind';
 import { useThemeStore } from '@/store/useThemeStore';
+import { Ionicons } from '@expo/vector-icons';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -209,6 +211,21 @@ const RegisterScreen = () => {
 
   return (
     <SafeAreaView style={containerStyle}>
+      {/* Botón de retroceso global en el paso 1 o superior */}
+      <TouchableOpacity
+        testID="back-button"
+        accessibilityLabel="back-button"
+        onPress={handleBackStep}
+        style={tw`absolute top-8 left-6 z-50 p-2`} 
+        activeOpacity={0.7}
+      >
+        <Ionicons 
+          name="arrow-back" 
+          size={28} 
+          color={theme === 'dark' ? tw.color('sand-gold') : tw.color('shark-blue')} 
+        />
+      </TouchableOpacity>
+
       <View style={wizardContainerStyle}>
         {renderStep()}
       </View>
