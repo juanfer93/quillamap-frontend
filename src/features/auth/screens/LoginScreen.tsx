@@ -123,10 +123,10 @@ const LoginScreen = () => {
                 onPress={handleLogin}
                 disabled={isLocalLoading}
                 activeOpacity={0.8}
-                style={tw`w-full bg-shark-blue dark:bg-sand-gold py-m rounded-m items-center shadow-md`}
+                style={tw`w-full bg-shark-blue dark:bg-sand-gold py-m rounded-m items-center shadow-md ${isLocalLoading ? 'opacity-80' : ''}`}
               >
                 {isLocalLoading ? (
-                  <ActivityIndicator color={isDark ? "#000" : "#FFF"} />
+                  <ActivityIndicator color={isDark ? "#000" : "#FFF"} size="small" />
                 ) : (
                   <Text style={tw`text-white dark:text-black text-lg font-bold uppercase`}>
                     Entrar
