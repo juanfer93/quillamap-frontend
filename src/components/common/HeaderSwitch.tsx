@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { TouchableOpacity, View, Animated, Platform, UIManager } from 'react-native';
+import { TouchableOpacity, View, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppColorScheme } from 'twrnc';
 import tw from '@/lib/tailwind';
