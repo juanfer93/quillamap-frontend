@@ -3,10 +3,8 @@ import {
   View, Text, UIManager, LayoutAnimation,
   Platform,
   ActivityIndicator,
-  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { RegisterRequest, RootStackParamList } from '@/features/auth/types/auth.types';
 import MobilityStep from '@/features/auth/components/register/MobilityStep';
 import CarTypeStep from '@/features/auth/components/register/CarTypeStep';
@@ -83,22 +81,14 @@ const RegisterScreen = () => {
       setIsStepLoading(true);
       setTimeout(() => {
         navigation.goBack();
-      }, 600);
+      }, 500);
       return;
     }
 
     if (currentStep === 4) {
-      if (formData.mobility_mode === 'peaton' || formData.mobility_mode === 'turista') {
-        changeStep(1);
-      } else {
-        changeStep(3);
-      }
+      changeStep(formData.mobility_mode === 'peaton' ? 1 : 3);
     } else if (currentStep === 3) {
-      if (formData.mobility_mode === 'moto') {
-        changeStep(1);
-      } else {
-        changeStep(2);
-      }
+      changeStep(formData.mobility_mode === 'moto' ? 1 : 2);
     } else if (currentStep === 2) {
       changeStep(1);
     }
@@ -207,23 +197,6 @@ const RegisterScreen = () => {
 
   return (
     <SafeAreaView style={containerStyle}>
-      {currentStep >= 1 && (
-        <TouchableOpacity
-          onPress={handleBackStep}
-          style={tw`absolute top-4 left-4 z-50 p-2 flex-row items-center`}
-          activeOpacity={0.7}
-        >
-          <Ionicons 
-            name="arrow-back" 
-            size={24} 
-            color={theme === 'dark' ? (tw.color('sand-gold') || '#c7ad8c') : (tw.color('shark-blue') || '#004574')} 
-          />
-          <Text style={tw`ml-1 text-base font-semibold text-shark-blue dark:text-sand-gold`}>
-            Regresar
-          </Text>
-        </TouchableOpacity>
-      )}
-
       <View style={wizardContainerStyle}>
         {renderStep()}
       </View>

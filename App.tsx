@@ -1,5 +1,4 @@
-import React, { useEffect } from 'react';
-import { LayoutAnimation } from 'react-native'
+import React from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -10,7 +9,7 @@ import RegisterScreen from '@/features/auth/screens/RegisterScreen';
 import { SafeAreaView, Text, ActivityIndicator } from 'react-native';
 import { useThemeStore } from '@/store/useThemeStore';
 import tw from '@/lib/tailwind';
-import { useDeviceContext, useAppColorScheme } from 'twrnc';
+import { useDeviceContext } from 'twrnc';
 
 const HomeScreen = () => {
   return (
@@ -40,17 +39,11 @@ const MainStack = () => (
 const App = () => {
   const { session, isLoading } = useAuthStore();
   const { mode } = useThemeStore();
-  const [, , setColorScheme] = useAppColorScheme(tw);
 
   useDeviceContext(tw, {
     initialColorScheme: mode,
     observeDeviceColorSchemeChanges: false
   });
-
-  useEffect(() => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setColorScheme(mode);
-  }, [mode, setColorScheme]);
 
   if (isLoading) {
     return (

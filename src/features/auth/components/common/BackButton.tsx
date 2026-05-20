@@ -1,31 +1,27 @@
 import React from 'react';
 import { TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
 import tw from '@/lib/tailwind';
 import { useThemeStore } from '@/store/useThemeStore';
 
 interface BackButtonProps {
-  onPress?: () => void;
+  onPress: () => void;
 }
 
 const BackButton = ({ onPress }: BackButtonProps) => {
-  const navigation = useNavigation();
   const { mode } = useThemeStore();
+  const isDark = mode === 'dark';
 
   return (
     <TouchableOpacity
-      onPress={onPress || (() => navigation.goBack())}
+      onPress={onPress}
+      style={tw`absolute top-4 left-4 z-50 p-2`} 
       activeOpacity={0.7}
-      style={tw.style(
-        'w-10 h-10 rounded-full items-center justify-center',
-        mode === 'dark' ? 'bg-dark-gray' : 'bg-medium-gray'
-      )}
     >
       <Ionicons 
-        name="chevron-back" 
-        size={24} 
-        style={tw.style(mode === 'dark' ? 'text-white' : 'text-shark-blue')}
+        name="arrow-back" 
+        size={28} 
+        color={isDark ? tw.color('sand-gold') : tw.color('shark-blue')} 
       />
     </TouchableOpacity>
   );
