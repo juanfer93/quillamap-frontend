@@ -27,6 +27,7 @@ const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLocalLoading, setIsLocalLoading] = useState(false);
+  const [isTransitioningToRegister, setIsTransitioningToRegister] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
   const navigation = useNavigation<LoginScreenNavigationProp>();
@@ -60,10 +61,38 @@ const LoginScreen = () => {
     }
   };
 
+  const handleNavigateToRegister = () => {
+    setIsTransitioningToRegister(true);
+    setTimeout(() => {
+      navigation.navigate('Register');
+      setIsTransitioningToRegister(false);
+    }, 800);
+  };
+
+  const containerStyle = tw`flex-1 bg-white dark:bg-charcoal`;
+  const textSharkBlue = tw.color('shark-blue');
+  const textSandGold = tw.color('sand-gold');
+
+  if (isTransitioningToRegister) {
+    return (
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={containerStyle}
+      >
+        <View style={tw`flex-1 justify-center items-center p-l`}>
+          <ActivityIndicator 
+            size="large" 
+            color={isDark ? textSandGold : textSharkBlue} 
+          />
+        </View>
+      </KeyboardAvoidingView>
+    );
+  }
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={tw`flex-1 bg-white dark:bg-charcoal`}
+      style={containerStyle}
     >
       <ScrollView contentContainerStyle={tw`flex-grow justify-center`}>
         <HeaderSwitch />
@@ -123,10 +152,10 @@ const LoginScreen = () => {
                 onPress={handleLogin}
                 disabled={isLocalLoading}
                 activeOpacity={0.8}
-                style={tw`w-full bg-shark-blue dark:bg-sand-gold py-m rounded-m items-center shadow-md ${isLocalLoading ? 'opacity-80' : ''}`}
+                style={tw`w-full bg-shark-blue dark:bg-sand-gold py-m rounded-m items-center shadow-md`}
               >
                 {isLocalLoading ? (
-                  <ActivityIndicator color={isDark ? "#000" : "#FFF"} size="small" />
+                  <ActivityIndicator color={isDark ? "#000" : "#FFF"} />
                 ) : (
                   <Text style={tw`text-white dark:text-black text-lg font-bold uppercase`}>
                     Entrar
@@ -138,7 +167,7 @@ const LoginScreen = () => {
 
           <View style={tw`flex-row mt-xl`}>
             <Text style={tw`text-dark-gray dark:text-light-gray`}>¿No tienes cuenta? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+            <TouchableOpacity onPress={handleNavigateToRegister}>
               <Text style={tw`text-shark-blue dark:text-sand-gold font-bold underline`}>
                 Regístrate
               </Text>

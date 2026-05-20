@@ -52,7 +52,7 @@ const CarTypeStep: React.FC<CarTypeStepProps> = ({ handleCarTypeSelect, selected
                 style={[
                   tw`w-12 h-12 mr-m`,
                   {
-                    tintColor: isDark ? activeColor : undefined
+                    tintColor: isDark ? activeColor : '#000000'
                   }
                 ]}
                 resizeMode="contain"
