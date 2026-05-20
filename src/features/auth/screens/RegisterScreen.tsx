@@ -42,12 +42,8 @@ const RegisterScreen = () => {
   const setSession = useAuthStore(state => state.setSession);
 
   const changeStep = (step: number) => {
-    setIsStepLoading(true);
-    setTimeout(() => {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setCurrentStep(step);
-      setIsStepLoading(false);
-    }, 800);
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setCurrentStep(step);
   };
 
   const handleVehicleTypeSelect = (type: 'peaton' | 'turista' | 'moto' | 'carro') => {
@@ -76,20 +72,23 @@ const RegisterScreen = () => {
     setFormData(prev => ({ ...prev, license_plate: plate.toUpperCase() }));
   };
 
-  const handleBackStep = () => {
-    setIsStepLoading(true); 
-    setTimeout(() => {
-      if (currentStep === 1) {
-        navigation.goBack();
-      } else if (currentStep === 4) {
-        changeStep(formData.mobility_mode === 'peaton' ? 1 : 3);
-      } else if (currentStep === 3) {
-        changeStep(formData.mobility_mode === 'moto' ? 1 : 2);
-      } else if (currentStep === 2) {
-        changeStep(1);
-      }
-      setIsStepLoading(false);
-    }, 500);
+  const handleBackStep = async () => {
+    setIsStepLoading(true);
+
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    if (currentStep === 1) {
+      navigation.goBack();
+    } else if (currentStep === 4) {
+      changeStep(formData.mobility_mode === 'peaton' ? 1 : 3);
+      setIsStepLoading(false); 
+    } else if (currentStep === 3) {
+      changeStep(formData.mobility_mode === 'moto' ? 1 : 2);
+      setIsStepLoading(false); 
+    } else if (currentStep === 2) {
+      changeStep(1);
+      setIsStepLoading(false); 
+    }
   };
 
   const handleRegister = async () => {
@@ -139,9 +138,9 @@ const RegisterScreen = () => {
     return (
       <SafeAreaView style={containerStyle}>
         <View style={tw`flex-1 justify-center items-center`}>
-          <ActivityIndicator 
-            size="large" 
-            color={theme === 'dark' ? (tw.color('sand-gold') || '#c7ad8c') : (tw.color('shark-blue') || '#004574')} 
+          <ActivityIndicator
+            size="large"
+            color={theme === 'dark' ? (tw.color('sand-gold') || '#c7ad8c') : (tw.color('shark-blue') || '#004574')}
           />
         </View>
       </SafeAreaView>
@@ -165,7 +164,7 @@ const RegisterScreen = () => {
           <CarTypeStep
             selectedType={carType}
             handleCarTypeSelect={handleCarTypeSelect}
-            onBack={handleBackStep} 
+            onBack={handleBackStep}
           />
         );
       case 3:
@@ -174,7 +173,7 @@ const RegisterScreen = () => {
             formData={formData}
             setPlate={setPlate}
             setCurrentStep={changeStep}
-            onBack={handleBackStep} 
+            onBack={handleBackStep}
           />
         );
       case 4:
@@ -185,7 +184,7 @@ const RegisterScreen = () => {
             handleRegister={handleRegister}
             isLoading={isLoading}
             error={error}
-            onBack={handleBackStep} 
+            onBack={handleBackStep}
           />
         );
       default:
