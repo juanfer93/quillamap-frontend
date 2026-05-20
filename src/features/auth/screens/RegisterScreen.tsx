@@ -3,8 +3,10 @@ import {
   View, Text, UIManager, LayoutAnimation,
   Platform,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons'; // Importación para el icono de flecha
 import { RegisterRequest, RootStackParamList } from '@/features/auth/types/auth.types';
 import MobilityStep from '@/features/auth/components/register/MobilityStep';
 import CarTypeStep from '@/features/auth/components/register/CarTypeStep';
@@ -36,7 +38,7 @@ const RegisterScreen = () => {
   });
 
   const [isLoading, setIsLoading] = useState(false);
-  const [isStepLoading, setIsStepLoading] = useState(false); 
+  const [isStepLoading, setIsStepLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const setSession = useAuthStore(state => state.setSession);
@@ -47,8 +49,8 @@ const RegisterScreen = () => {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setCurrentStep(step);
       setIsStepLoading(false);
-    }, 800); 
-  }
+    }, 800);
+  };
 
   const handleVehicleTypeSelect = (type: 'peaton' | 'turista' | 'moto' | 'carro') => {
     setFormData(prev => ({
@@ -74,6 +76,24 @@ const RegisterScreen = () => {
 
   const setPlate = (plate: string) => {
     setFormData(prev => ({ ...prev, license_plate: plate.toUpperCase() }));
+  };
+
+  const handleBackStep = () => {
+    if (currentStep === 4) {
+      if (formData.mobility_mode === 'peaton' || formData.mobility_mode === 'turista') {
+        changeStep(1);
+      } else {
+        changeStep(3);
+      }
+    } else if (currentStep === 3) {
+      if (formData.mobility_mode === 'moto') {
+        changeStep(1);
+      } else {
+        changeStep(2);
+      }
+    } else if (currentStep === 2) {
+      changeStep(1);
+    }
   };
 
   const handleRegister = async () => {
@@ -156,7 +176,7 @@ const RegisterScreen = () => {
           <LicensePlateStep
             formData={formData}
             setPlate={setPlate}
-            setCurrentStep={changeStep} 
+            setCurrentStep={changeStep}
           />
         );
       case 4:
@@ -176,6 +196,24 @@ const RegisterScreen = () => {
 
   return (
     <SafeAreaView style={containerStyle}>
+      {/* Botón Maestro de Regresar: Absoluto para no comprometer la ubicación de los componentes hijos */}
+      {currentStep > 1 && (
+        <TouchableOpacity
+          onPress={handleBackStep}
+          style={tw`absolute top-4 left-4 z-50 p-2 flex-row items-center`}
+          activeOpacity={0.7}
+        >
+          <Ionicons 
+            name="arrow-back" 
+            size={24} 
+            color={theme === 'dark' ? (tw.color('sand-gold') || '#c7ad8c') : (tw.color('shark-blue') || '#004574')} 
+          />
+          <Text style={tw`ml-1 text-base font-semibold text-shark-blue dark:text-sand-gold`}>
+            Regresar
+          </Text>
+        </TouchableOpacity>
+      )}
+
       <View style={wizardContainerStyle}>
         {renderStep()}
       </View>

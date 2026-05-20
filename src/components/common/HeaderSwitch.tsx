@@ -1,9 +1,13 @@
 import React, { useEffect, useRef } from 'react';
-import { TouchableOpacity, View, Animated } from 'react-native';
+import { TouchableOpacity, View, Animated, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppColorScheme } from 'twrnc';
 import tw from '@/lib/tailwind';
-import { useThemeStore } from '@/store/useThemeStore';
+import { useThemeStore } from 'src/store/useThemeStore';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 const HeaderSwitch = () => {
   const { mode, setTheme } = useThemeStore();
@@ -14,18 +18,21 @@ const HeaderSwitch = () => {
   useEffect(() => {
     Animated.timing(animatedValue, {
       toValue: mode === 'dark' ? 1 : 0,
-      duration: 300, 
+      duration: 300,
       useNativeDriver: true,
     }).start();
   }, [mode]);
 
   const translateX = animatedValue.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 24], 
+    outputRange: [0, 24],
   });
 
   const handlePress = () => {
     const nextMode = mode === 'light' ? 'dark' : 'light';
+    
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    
     setColorScheme(nextMode);
     setTheme(nextMode);
   };
@@ -40,7 +47,7 @@ const HeaderSwitch = () => {
           mode === 'dark' ? 'bg-dark-gray' : 'bg-medium-gray'
         )}
       >
-        <Animated.View 
+        <Animated.View
           style={[
             tw`w-6 h-6 rounded-full bg-white items-center justify-center shadow-sm`,
             { transform: [{ translateX }] }
