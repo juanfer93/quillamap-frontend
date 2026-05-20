@@ -74,19 +74,23 @@ const RegisterScreen = () => {
 
   const handleBackStep = async () => {
     setIsStepLoading(true);
-
-    await new Promise(resolve => setTimeout(resolve, 300));
-
+  
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  
     if (currentStep === 1) {
       navigation.goBack();
-    } else if (currentStep === 4) {
-      changeStep(formData.mobility_mode === 'peaton' ? 1 : 3);
-      setIsStepLoading(false); 
-    } else if (currentStep === 3) {
-      changeStep(formData.mobility_mode === 'moto' ? 1 : 2);
-      setIsStepLoading(false); 
-    } else if (currentStep === 2) {
-      changeStep(1);
+    } else {
+      let nextStep = 1;
+      if (currentStep === 4) {
+        nextStep = formData.mobility_mode === 'peaton' ? 1 : 3;
+      } else if (currentStep === 3) {
+        nextStep = formData.mobility_mode === 'moto' ? 1 : 2;
+      } else if (currentStep === 2) {
+        nextStep = 1;
+      }
+      
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setCurrentStep(nextStep);
       setIsStepLoading(false); 
     }
   };
