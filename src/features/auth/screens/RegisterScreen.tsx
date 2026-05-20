@@ -79,7 +79,7 @@ const RegisterScreen = () => {
     setIsStepLoading(true);
     setPendingNavigation('back');
   };
-
+  
   useEffect(() => {
     if (isStepLoading && pendingNavigation === 'back') {
       const timer = setTimeout(() => {
@@ -90,14 +90,14 @@ const RegisterScreen = () => {
           if (currentStep === 4) nextStep = formData.mobility_mode === 'peaton' ? 1 : 3;
           else if (currentStep === 3) nextStep = formData.mobility_mode === 'moto' ? 1 : 2;
           else if (currentStep === 2) nextStep = 1;
-
+          
           LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
           setCurrentStep(nextStep);
-          setIsStepLoading(false);
+          setIsStepLoading(false); 
         }
         setPendingNavigation(null);
       }, 400);
-
+  
       return () => clearTimeout(timer);
     }
   }, [isStepLoading, pendingNavigation, currentStep]);
