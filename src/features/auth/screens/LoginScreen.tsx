@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   Image,
   KeyboardAvoidingView,
@@ -20,6 +19,7 @@ import { useThemeStore } from 'src/store/useThemeStore';
 import { authService } from '@/api/client';
 import HeaderSwitch from 'src/components/common/HeaderSwitch';
 import { loginSchema } from 'src/features/auth/schemas/auth.schema';
+import AnimatedInput from 'src/features/auth/components/animated/AnimatedInput';
 
 type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Login'>;
 
@@ -27,6 +27,7 @@ const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLocalLoading, setIsLocalLoading] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
   const navigation = useNavigation<LoginScreenNavigationProp>();
   const { setSession } = useAuthStore();
@@ -37,11 +38,15 @@ const LoginScreen = () => {
     const validation = loginSchema.safeParse({ email, password });
 
     if (!validation.success) {
-      const firstError = validation.error.issues[0].message;
-      Alert.alert('Atención', firstError);
+      const fieldErrors = validation.error.flatten().fieldErrors;
+      setErrors({
+        email: fieldErrors.email ? fieldErrors.email[0] : undefined,
+        password: fieldErrors.password ? fieldErrors.password[0] : undefined,
+      });
       return;
     }
 
+    setErrors({});
     setIsLocalLoading(true);
     try {
       const { accessToken, user } = await authService.login(email, password);
@@ -87,34 +92,32 @@ const LoginScreen = () => {
             </Text>
 
             <View style={tw`w-full`}>
-              <View style={tw`mb-m`}>
-                <Text style={tw`text-s font-semibold text-dark-gray dark:text-light-gray mb-s ml-1`}>
-                  Identificación
-                </Text>
-                <TextInput
-                  style={tw`w-full bg-light-gray dark:bg-charcoal text-black dark:text-white px-m py-m rounded-m border border-medium-gray dark:border-dark-gray`}
-                  placeholder="Correo electrónico"
-                  placeholderTextColor={isDark ? '#555555' : '#999999'}
-                  value={email}
-                  onChangeText={setEmail}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                />
-              </View>
+              <AnimatedInput
+                label="Identificación"
+                placeholder="Correo electrónico"
+                value={email}
+                onChangeText={(val: string) => {
+                  setEmail(val);
+                  if (errors.email) setErrors(prev => ({ ...prev, email: undefined }));
+                }}
+                hasError={!!errors.email}
+                isDark={isDark}
+                autoCapitalize="none"
+                keyboardType="email-address"
+              />
 
-              <View style={tw`mb-l`}>
-                <Text style={tw`text-s font-semibold text-dark-gray dark:text-light-gray mb-s ml-1`}>
-                  Contraseña
-                </Text>
-                <TextInput
-                  style={tw`w-full bg-light-gray dark:bg-charcoal text-black dark:text-white px-m py-m rounded-m border border-medium-gray dark:border-dark-gray`}
-                  placeholder="********"
-                  placeholderTextColor={isDark ? '#666' : '#999'}
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                />
-              </View>
+              <AnimatedInput
+                label="Contraseña"
+                placeholder="********"
+                value={password}
+                onChangeText={(val: string) => {
+                  setPassword(val);
+                  if (errors.password) setErrors(prev => ({ ...prev, password: undefined }));
+                }}
+                hasError={!!errors.password}
+                isDark={isDark}
+                secureTextEntry
+              />
 
               <TouchableOpacity
                 onPress={handleLogin}
