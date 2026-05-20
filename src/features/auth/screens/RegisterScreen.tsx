@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   View, Text, UIManager, LayoutAnimation,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RegisterRequest, RootStackParamList } from '@/features/auth/types/auth.types';
@@ -35,13 +36,18 @@ const RegisterScreen = () => {
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isStepLoading, setIsStepLoading] = useState(false); 
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const setSession = useAuthStore(state => state.setSession);
 
   const changeStep = (step: number) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setCurrentStep(step);
+    setIsStepLoading(true);
+    setTimeout(() => {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setCurrentStep(step);
+      setIsStepLoading(false);
+    }, 800); 
   }
 
   const handleVehicleTypeSelect = (type: 'peaton' | 'turista' | 'moto' | 'carro') => {
@@ -113,6 +119,19 @@ const RegisterScreen = () => {
     )
   }
 
+  if (isStepLoading) {
+    return (
+      <SafeAreaView style={containerStyle}>
+        <View style={tw`flex-1 justify-center items-center`}>
+          <ActivityIndicator 
+            size="large" 
+            color={theme === 'dark' ? (tw.color('sand-gold') || '#c7ad8c') : (tw.color('shark-blue') || '#004574')} 
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   const renderStep = () => {
     switch (currentStep) {
       case 1:
@@ -137,7 +156,7 @@ const RegisterScreen = () => {
           <LicensePlateStep
             formData={formData}
             setPlate={setPlate}
-            setCurrentStep={setCurrentStep}
+            setCurrentStep={changeStep} 
           />
         );
       case 4:

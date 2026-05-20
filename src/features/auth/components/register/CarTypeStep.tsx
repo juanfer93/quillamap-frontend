@@ -13,6 +13,9 @@ const CarTypeStep: React.FC<CarTypeStepProps> = ({ handleCarTypeSelect, selected
   const { mode } = useThemeStore();
   const isDark = mode === 'dark';
 
+  const activeColor = isDark ? (tw.color('sand-gold') || '#c7ad8c') : (tw.color('shark-blue') || '#004574');
+  const inactiveBorderColor = isDark ? '#333333' : '#f2f2f2';
+
   return (
     <View style={tw`items-center w-full`}>
       <Text style={tw`text-2xl font-bold mb-xl text-center text-shark-blue dark:text-sand-gold`}>
@@ -22,11 +25,6 @@ const CarTypeStep: React.FC<CarTypeStepProps> = ({ handleCarTypeSelect, selected
       <View style={tw`w-full`}>
         {CAR_TYPES.map((item) => {
           const isSelected = selectedType === item.id;
-          
-          let activeBorderColor = '#004574'; 
-          if (isDark) {
-            activeBorderColor = item.id === 'particular' ? '#004574' : '#c7ad8c'; 
-          }
 
           return (
             <TouchableOpacity
@@ -37,9 +35,7 @@ const CarTypeStep: React.FC<CarTypeStepProps> = ({ handleCarTypeSelect, selected
                 tw`w-full flex-row items-center p-l rounded-l mb-m border`,
                 tw`bg-white dark:bg-slate`, 
                 { 
-                  borderColor: isSelected 
-                    ? activeBorderColor 
-                    : (isDark ? '#333333' : '#f2f2f2'),
+                  borderColor: isSelected ? activeColor : inactiveBorderColor,
                   borderWidth: isSelected ? 2 : 1
                 },
                 !isDark && {
@@ -53,23 +49,28 @@ const CarTypeStep: React.FC<CarTypeStepProps> = ({ handleCarTypeSelect, selected
             >
               <Image 
                 source={{ uri: item.uri }} 
-                style={tw`w-12 h-12 mr-m`}
+                style={[
+                  tw`w-12 h-12 mr-m`,
+                  {
+                    tintColor: isDark ? activeColor : undefined
+                  }
+                ]}
                 resizeMode="contain"
               />
 
-              <Text style={tw`text-lg font-bold text-black dark:text-white`}>
+              <Text style={tw`text-lg font-bold text-black dark:text-sand-gold`}>
                 {item.name}
               </Text>
 
               <View style={tw`flex-1 items-end`}>
                 <View style={[
                   tw`w-6 h-6 rounded-full border-2 justify-center items-center`,
-                  { borderColor: isSelected ? activeBorderColor : '#e0e0e0' }
+                  { borderColor: isSelected ? activeColor : (isDark ? '#444444' : '#e0e0e0') }
                 ]}>
                   {isSelected && (
                     <View style={[
                       tw`w-3 h-3 rounded-full`,
-                      { backgroundColor: activeBorderColor }
+                      { backgroundColor: activeColor }
                     ]} />
                   )}
                 </View>

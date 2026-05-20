@@ -8,6 +8,11 @@ export interface MobilityMode {
 
 export const MOBILITY_MODES: MobilityMode[] = [
   { 
+    id: 'peaton', 
+    name: 'Peatón', 
+    uri: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Man%20walking/Medium-Light/3D/man_walking_3d_medium-light.png' 
+  },
+  { 
     id: 'carro', 
     name: 'Carro', 
     uri: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Automobile/3D/automobile_3d.png' 
@@ -16,11 +21,6 @@ export const MOBILITY_MODES: MobilityMode[] = [
     id: 'moto', 
     name: 'Moto', 
     uri: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Motorcycle/3D/motorcycle_3d.png' 
-  },
-  { 
-    id: 'peaton', 
-    name: 'Peatón', 
-    uri: 'https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Man%20walking/Medium-Light/3D/man_walking_3d_medium-light.png' 
   },
   { 
     id: 'turista', 
