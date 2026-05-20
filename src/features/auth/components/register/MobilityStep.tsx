@@ -50,7 +50,9 @@ const MobilityStep: React.FC<MobilityStepProps> = ({ handleVehicleTypeSelect, se
                 source={{ uri: item.uri }}
                 style={[
                   tw`w-12 h-12 mr-m`,
-                  isDark && { tintColor: '#c7ad8c' }
+                  {
+                    tintColor: isDark ? '#c7ad8c' : '#000000'
+                  }
                 ]}
                 resizeMode="contain"
               />
