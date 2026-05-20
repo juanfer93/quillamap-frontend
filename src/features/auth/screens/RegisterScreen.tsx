@@ -4,6 +4,7 @@ import {
   Platform,
   ActivityIndicator,
   TouchableOpacity,
+  InteractionManager
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RegisterRequest, RootStackParamList } from '@/features/auth/types/auth.types';
@@ -77,31 +78,26 @@ const RegisterScreen = () => {
 
   const handleBackStep = () => {
     setIsStepLoading(true);
-    setPendingNavigation('back');
-  };
-  
-  useEffect(() => {
-    if (isStepLoading && pendingNavigation === 'back') {
-      const timer = setTimeout(() => {
-        if (currentStep === 1) {
-          navigation.goBack();
-        } else {
-          let nextStep = 1;
-          if (currentStep === 4) nextStep = formData.mobility_mode === 'peaton' ? 1 : 3;
-          else if (currentStep === 3) nextStep = formData.mobility_mode === 'moto' ? 1 : 2;
-          else if (currentStep === 2) nextStep = 1;
-          
-          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-          setCurrentStep(nextStep);
-          setIsStepLoading(false); 
-        }
-        setPendingNavigation(null);
-      }, 400);
-  
-      return () => clearTimeout(timer);
-    }
-  }, [isStepLoading, pendingNavigation, currentStep]);
 
+    InteractionManager.runAfterInteractions(() => {
+      if (currentStep === 1) {
+        navigation.goBack();
+      } else {
+        let nextStep = 1;
+        if (currentStep === 4) {
+          nextStep = formData.mobility_mode === 'peaton' ? 1 : 3;
+        } else if (currentStep === 3) {
+          nextStep = formData.mobility_mode === 'moto' ? 1 : 2;
+        } else if (currentStep === 2) {
+          nextStep = 1;
+        }
+
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setCurrentStep(nextStep);
+        setIsStepLoading(false);
+      }
+    });
+  };
   const handleRegister = async () => {
     setIsLoading(true);
     setError(null);
