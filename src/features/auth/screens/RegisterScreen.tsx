@@ -87,17 +87,12 @@ const RegisterScreen = () => {
           navigation.goBack();
         } else {
           let nextStep = 1;
-          if (currentStep === 4) {
-            nextStep = formData.mobility_mode === 'peaton' ? 1 : 3;
-          } else if (currentStep === 3) {
-            nextStep = formData.mobility_mode === 'moto' ? 1 : 2;
-          } else if (currentStep === 2) {
-            nextStep = 1;
-          }
+          if (currentStep === 4) nextStep = formData.mobility_mode === 'peaton' ? 1 : 3;
+          else if (currentStep === 3) nextStep = formData.mobility_mode === 'moto' ? 1 : 2;
+          else if (currentStep === 2) nextStep = 1;
 
           LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
           setCurrentStep(nextStep);
-
           setIsStepLoading(false);
         }
         setPendingNavigation(null);
@@ -211,18 +206,27 @@ const RegisterScreen = () => {
 
   return (
     <SafeAreaView style={containerStyle}>
-      {/* Botón de retroceso global en el paso 1 o superior */}
+      {isStepLoading && (
+        <View style={tw`absolute inset-0 z-50 bg-${theme === 'dark' ? 'black' : 'light-gray'} justify-center items-center`}>
+          <ActivityIndicator
+            testID="spinner"
+            size="large"
+            color={theme === 'dark' ? (tw.color('sand-gold') || '#c7ad8c') : (tw.color('shark-blue') || '#004574')}
+          />
+        </View>
+      )}
+
       <TouchableOpacity
         testID="back-button"
         accessibilityLabel="back-button"
         onPress={handleBackStep}
-        style={tw`absolute top-8 left-6 z-50 p-2`} 
+        style={tw`absolute top-8 left-6 z-40 p-2`}
         activeOpacity={0.7}
       >
-        <Ionicons 
-          name="arrow-back" 
-          size={28} 
-          color={theme === 'dark' ? tw.color('sand-gold') : tw.color('shark-blue')} 
+        <Ionicons
+          name="arrow-back"
+          size={28}
+          color={theme === 'dark' ? tw.color('sand-gold') : tw.color('shark-blue')}
         />
       </TouchableOpacity>
 
