@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View, Text, UIManager, LayoutAnimation,
   Platform,
@@ -39,6 +39,7 @@ const RegisterScreen = () => {
   const [isStepLoading, setIsStepLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const setSession = useAuthStore(state => state.setSession);
 
   const changeStep = (step: number) => {
@@ -72,28 +73,37 @@ const RegisterScreen = () => {
     setFormData(prev => ({ ...prev, license_plate: plate.toUpperCase() }));
   };
 
-  const handleBackStep = async () => {
+  const handleBackStep = () => {
     setIsStepLoading(true);
-  
-    await new Promise((resolve) => setTimeout(resolve, 50));
-  
-    if (currentStep === 1) {
-      navigation.goBack();
-    } else {
-      let nextStep = 1;
-      if (currentStep === 4) {
-        nextStep = formData.mobility_mode === 'peaton' ? 1 : 3;
-      } else if (currentStep === 3) {
-        nextStep = formData.mobility_mode === 'moto' ? 1 : 2;
-      } else if (currentStep === 2) {
-        nextStep = 1;
-      }
-      
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setCurrentStep(nextStep);
-      setIsStepLoading(false); 
-    }
+    setPendingNavigation('back');
   };
+
+  useEffect(() => {
+    if (isStepLoading && pendingNavigation === 'back') {
+      const timer = setTimeout(() => {
+        if (currentStep === 1) {
+          navigation.goBack();
+        } else {
+          let nextStep = 1;
+          if (currentStep === 4) {
+            nextStep = formData.mobility_mode === 'peaton' ? 1 : 3;
+          } else if (currentStep === 3) {
+            nextStep = formData.mobility_mode === 'moto' ? 1 : 2;
+          } else if (currentStep === 2) {
+            nextStep = 1;
+          }
+
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+          setCurrentStep(nextStep);
+
+          setIsStepLoading(false);
+        }
+        setPendingNavigation(null);
+      }, 400);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isStepLoading, pendingNavigation, currentStep]);
 
   const handleRegister = async () => {
     setIsLoading(true);
@@ -143,6 +153,7 @@ const RegisterScreen = () => {
       <SafeAreaView style={containerStyle}>
         <View style={tw`flex-1 justify-center items-center`}>
           <ActivityIndicator
+            testID="spinner"
             size="large"
             color={theme === 'dark' ? (tw.color('sand-gold') || '#c7ad8c') : (tw.color('shark-blue') || '#004574')}
           />
