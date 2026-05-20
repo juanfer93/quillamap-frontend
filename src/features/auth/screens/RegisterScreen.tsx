@@ -77,21 +77,19 @@ const RegisterScreen = () => {
   };
 
   const handleBackStep = () => {
-    if (currentStep === 1) {
-      setIsStepLoading(true);
-      setTimeout(() => {
+    setIsStepLoading(true); 
+    setTimeout(() => {
+      if (currentStep === 1) {
         navigation.goBack();
-      }, 500);
-      return;
-    }
-
-    if (currentStep === 4) {
-      changeStep(formData.mobility_mode === 'peaton' ? 1 : 3);
-    } else if (currentStep === 3) {
-      changeStep(formData.mobility_mode === 'moto' ? 1 : 2);
-    } else if (currentStep === 2) {
-      changeStep(1);
-    }
+      } else if (currentStep === 4) {
+        changeStep(formData.mobility_mode === 'peaton' ? 1 : 3);
+      } else if (currentStep === 3) {
+        changeStep(formData.mobility_mode === 'moto' ? 1 : 2);
+      } else if (currentStep === 2) {
+        changeStep(1);
+      }
+      setIsStepLoading(false);
+    }, 500);
   };
 
   const handleRegister = async () => {

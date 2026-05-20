@@ -6,18 +6,11 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { WelcomeScreen } from '@/features/auth/screens/WelcomeScreen';
 import LoginScreen from '@/features/auth/screens/LoginScreen';
 import RegisterScreen from '@/features/auth/screens/RegisterScreen';
-import { SafeAreaView, Text, ActivityIndicator } from 'react-native';
+import  HomeScreen  from '@/features/auth/screens/HomeScreen'
+import { SafeAreaView, ActivityIndicator } from 'react-native';
 import { useThemeStore } from '@/store/useThemeStore';
 import tw from '@/lib/tailwind';
 import { useDeviceContext } from 'twrnc';
-
-const HomeScreen = () => {
-  return (
-    <SafeAreaView style={tw`flex-1 justify-center items-center bg-white dark:bg-black`}>
-      <Text style={tw`text-black dark:text-white`}>Mapa Principal</Text>
-    </SafeAreaView>
-  );
-};
 
 const Auth = createNativeStackNavigator();
 const Main = createNativeStackNavigator();
@@ -40,10 +33,7 @@ const App = () => {
   const { session, isLoading } = useAuthStore();
   const { mode } = useThemeStore();
 
-  useDeviceContext(tw, {
-    initialColorScheme: mode,
-    observeDeviceColorSchemeChanges: false
-  });
+  useDeviceContext(tw, { initialColorScheme: mode, observeDeviceColorSchemeChanges: false });
 
   if (isLoading) {
     return (
