@@ -5,22 +5,19 @@ import tw from '@/lib/tailwind';
 import { useThemeStore } from '@/store/useThemeStore';
 import { registerSchema } from '@/features/auth/schemas/auth.schema';
 import AnimatedInput from '@/features/auth/components/animated/AnimatedInput';
+import BackButton from 'src/features/auth/components/common/BackButton';
+
 
 interface UserDetailsStepProps {
   formData: RegisterRequest;
   setFormData: (formData: RegisterRequest) => void;
   handleRegister: () => void;
   isLoading: boolean;
-  error: string | null; 
+  error: string | null;
+  onBack: () => void; 
 }
 
-const UserDetailsStep: React.FC<UserDetailsStepProps> = ({
-  formData,
-  setFormData,
-  handleRegister,
-  isLoading,
-  error
-}) => {
+const UserDetailsStep: React.FC<UserDetailsStepProps> = ({ formData, setFormData, handleRegister, isLoading, error, onBack }) => {
   const { mode } = useThemeStore();
   const isDark = mode === 'dark';
 
@@ -49,6 +46,7 @@ const UserDetailsStep: React.FC<UserDetailsStepProps> = ({
 
   return (
     <View style={tw`w-full`}>
+      <BackButton onPress={onBack} /> 
       <AnimatedInput
         label="Nombre completo"
         placeholder="Tu nombre"

@@ -3,14 +3,16 @@ import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { RegisterRequest } from '@/features/auth/types/auth.types';
 import tw from '@/lib/tailwind';
 import { useThemeStore } from '@/store/useThemeStore';
+import BackButton from 'src/features/auth/components/common/BackButton';
 
 interface LicensePlateStepProps {
   formData: RegisterRequest;
   setPlate: (plate: string) => void;
   setCurrentStep: (step: number) => void;
+  onBack: () => void;
 }
 
-const LicensePlateStep: React.FC<LicensePlateStepProps> = ({ formData, setPlate, setCurrentStep }) => {
+const LicensePlateStep: React.FC<LicensePlateStepProps> = ({ formData, setPlate, setCurrentStep, onBack })=> {
   const { mode } = useThemeStore();
   const isDark = mode === 'dark';
 
@@ -19,6 +21,7 @@ const LicensePlateStep: React.FC<LicensePlateStepProps> = ({ formData, setPlate,
 
   return (
     <View style={tw`items-center`}>
+      <BackButton onPress={onBack} />
       <View style={tw`w-4/5 h-24 justify-center items-center rounded-xl border-2 border-[#004574] mb-6 ${plateBackgroundColor}`}>
         <Text style={tw`text-4xl font-bold tracking-widest text-black`}>
           {formData.license_plate?.toUpperCase() || "--- ---"}

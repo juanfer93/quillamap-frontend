@@ -169,6 +169,7 @@ const RegisterScreen = () => {
           <CarTypeStep
             selectedType={carType}
             handleCarTypeSelect={handleCarTypeSelect}
+            onBack={handleBackStep} 
           />
         );
       case 3:
@@ -177,6 +178,7 @@ const RegisterScreen = () => {
             formData={formData}
             setPlate={setPlate}
             setCurrentStep={changeStep}
+            onBack={handleBackStep} 
           />
         );
       case 4:
@@ -187,6 +189,7 @@ const RegisterScreen = () => {
             handleRegister={handleRegister}
             isLoading={isLoading}
             error={error}
+            onBack={handleBackStep} 
           />
         );
       default:
@@ -196,7 +199,6 @@ const RegisterScreen = () => {
 
   return (
     <SafeAreaView style={containerStyle}>
-      {/* Botón Maestro de Regresar: Absoluto para no comprometer la ubicación de los componentes hijos */}
       {currentStep > 1 && (
         <TouchableOpacity
           onPress={handleBackStep}
