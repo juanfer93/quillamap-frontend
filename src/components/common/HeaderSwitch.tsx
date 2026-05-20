@@ -1,13 +1,9 @@
 import React, { useEffect, useRef } from 'react';
-import { TouchableOpacity, View, Animated, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { TouchableOpacity, View, Animated, Platform, UIManager } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppColorScheme } from 'twrnc';
 import tw from '@/lib/tailwind';
 import { useThemeStore } from 'src/store/useThemeStore';
-
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 const HeaderSwitch = () => {
   const { mode, setTheme } = useThemeStore();
@@ -30,9 +26,6 @@ const HeaderSwitch = () => {
 
   const handlePress = () => {
     const nextMode = mode === 'light' ? 'dark' : 'light';
-    
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    
     setColorScheme(nextMode);
     setTheme(nextMode);
   };

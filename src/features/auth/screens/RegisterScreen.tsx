@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons'; // Importación para el icono de flecha
+import { Ionicons } from '@expo/vector-icons';
 import { RegisterRequest, RootStackParamList } from '@/features/auth/types/auth.types';
 import MobilityStep from '@/features/auth/components/register/MobilityStep';
 import CarTypeStep from '@/features/auth/components/register/CarTypeStep';
@@ -79,6 +79,14 @@ const RegisterScreen = () => {
   };
 
   const handleBackStep = () => {
+    if (currentStep === 1) {
+      setIsStepLoading(true);
+      setTimeout(() => {
+        navigation.goBack();
+      }, 600);
+      return;
+    }
+
     if (currentStep === 4) {
       if (formData.mobility_mode === 'peaton' || formData.mobility_mode === 'turista') {
         changeStep(1);
@@ -199,7 +207,7 @@ const RegisterScreen = () => {
 
   return (
     <SafeAreaView style={containerStyle}>
-      {currentStep > 1 && (
+      {currentStep >= 1 && (
         <TouchableOpacity
           onPress={handleBackStep}
           style={tw`absolute top-4 left-4 z-50 p-2 flex-row items-center`}

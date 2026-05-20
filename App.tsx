@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { LayoutAnimation } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -39,7 +40,7 @@ const MainStack = () => (
 const App = () => {
   const { session, isLoading } = useAuthStore();
   const { mode } = useThemeStore();
-  const [currentColorScheme, , setColorScheme] = useAppColorScheme(tw);
+  const [, , setColorScheme] = useAppColorScheme(tw);
 
   useDeviceContext(tw, {
     initialColorScheme: mode,
@@ -47,10 +48,9 @@ const App = () => {
   });
 
   useEffect(() => {
-    if (currentColorScheme !== mode) {
-      setColorScheme(mode);
-    }
-  }, [mode, currentColorScheme, setColorScheme]);
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setColorScheme(mode);
+  }, [mode, setColorScheme]);
 
   if (isLoading) {
     return (

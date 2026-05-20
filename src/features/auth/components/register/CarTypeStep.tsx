@@ -8,18 +8,17 @@ import BackButton from 'src/features/auth/components/common/BackButton';
 interface CarTypeStepProps {
   selectedType?: CarTypeId;
   handleCarTypeSelect: (type: CarTypeId) => void;
+  onBack: () => void;
 }
 
-const CarTypeStep: React.FC<CarTypeStepProps & { onBack: () => void }> = ({ handleCarTypeSelect, selectedType, onBack }) => {
+const CarTypeStep: React.FC<CarTypeStepProps> = ({ handleCarTypeSelect, selectedType, onBack }) => {
   const { mode } = useThemeStore();
   const isDark = mode === 'dark';
-
-  const activeColor = isDark ? (tw.color('sand-gold') || '#c7ad8c') : (tw.color('shark-blue') || '#004574');
-  const inactiveBorderColor = isDark ? '#333333' : '#f2f2f2';
 
   return (
     <View style={tw`items-center w-full`}>
       <BackButton onPress={onBack} />
+      
       <Text style={tw`text-2xl font-bold mb-xl text-center text-shark-blue dark:text-sand-gold`}>
         ¿Qué tipo de vehículo es?
       </Text>
@@ -33,29 +32,19 @@ const CarTypeStep: React.FC<CarTypeStepProps & { onBack: () => void }> = ({ hand
               key={item.id}
               onPress={() => handleCarTypeSelect(item.id)}
               activeOpacity={0.7}
-              style={[
-                tw`w-full flex-row items-center p-l rounded-l mb-m border`,
-                tw`bg-white dark:bg-slate`, 
-                { 
-                  borderColor: isSelected ? activeColor : inactiveBorderColor,
-                  borderWidth: isSelected ? 2 : 1
-                },
-                !isDark && {
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.05,
-                  shadowRadius: 8,
-                  elevation: 3,
-                }
-              ]}
+              style={tw.style(
+                'w-full flex-row items-center p-l rounded-m mb-m border-2',
+                'bg-white dark:bg-charcoal',
+                isSelected 
+                  ? (isDark ? 'border-sand-gold' : 'border-shark-blue') 
+                  : (isDark ? 'border-dark-gray' : 'border-medium-gray')
+              )}
             >
               <Image 
                 source={{ uri: item.uri }} 
                 style={[
                   tw`w-12 h-12 mr-m`,
-                  {
-                    tintColor: isDark ? activeColor : '#000000'
-                  }
+                  { tintColor: isDark ? tw.color('sand-gold') : tw.color('black') }
                 ]}
                 resizeMode="contain"
               />
@@ -65,15 +54,17 @@ const CarTypeStep: React.FC<CarTypeStepProps & { onBack: () => void }> = ({ hand
               </Text>
 
               <View style={tw`flex-1 items-end`}>
-                <View style={[
-                  tw`w-6 h-6 rounded-full border-2 justify-center items-center`,
-                  { borderColor: isSelected ? activeColor : (isDark ? '#444444' : '#e0e0e0') }
-                ]}>
+                <View style={tw.style(
+                  'w-6 h-6 rounded-full border-2 justify-center items-center',
+                  isSelected 
+                    ? (isDark ? 'border-sand-gold' : 'border-shark-blue') 
+                    : 'border-medium-gray'
+                )}>
                   {isSelected && (
-                    <View style={[
-                      tw`w-3 h-3 rounded-full`,
-                      { backgroundColor: activeColor }
-                    ]} />
+                    <View style={tw.style(
+                      'w-3 h-3 rounded-full',
+                      isDark ? 'bg-sand-gold' : 'bg-shark-blue'
+                    )} />
                   )}
                 </View>
               </View>
