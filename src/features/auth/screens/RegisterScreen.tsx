@@ -11,6 +11,7 @@ import MobilityStep from '@/features/auth/components/register/MobilityStep';
 import CarTypeStep from '@/features/auth/components/register/CarTypeStep';
 import LicensePlateStep from '@/features/auth/components/register/LicensePlateStep';
 import UserDetailsStep from '@/features/auth/components/register/UserDetailsStep';
+import ProgressBar from '@/features/auth/components/common/ProgressBar';
 import { authApi } from '@/api/client';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useNavigation } from '@react-navigation/native';
@@ -44,13 +45,13 @@ const RegisterScreen = () => {
   const setSession = useAuthStore(state => state.setSession);
 
   const handleStepTransition = (nextStep: number) => {
-    setIsStepLoading(true); 
+    setIsStepLoading(true);
 
     setTimeout(() => {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setCurrentStep(nextStep); 
-      setIsStepLoading(false);  
-    }, 300); 
+      setCurrentStep(nextStep);
+      setIsStepLoading(false);
+    }, 300);
   };
 
   const handleVehicleTypeSelect = (type: 'peaton' | 'turista' | 'moto' | 'carro') => {
@@ -196,15 +197,20 @@ const RegisterScreen = () => {
 
   return (
     <SafeAreaView style={containerStyle}>
-      {currentStep > 0 && (
-        <TouchableOpacity
-          testID="back-button"
-          onPress={handleBackStep}
-          style={tw`absolute top-8 left-6 z-50 p-2`}
-        >
-          <Ionicons name="arrow-back" size={28} color={theme === 'dark' ? '#c7ad8c' : '#004574'} />
-        </TouchableOpacity>
-      )}
+
+      <View style={tw`absolute top-8 left-6 right-6 z-50 flex-row items-center`}>
+        {currentStep > 0 && (
+          <TouchableOpacity
+            testID="back-button"
+            onPress={handleBackStep}
+            style={tw`p-2 mr-4`} 
+          >
+            <Ionicons name="arrow-back" size={28} color={theme === 'dark' ? '#c7ad8c' : '#004574'} />
+          </TouchableOpacity>
+        )}
+
+        <ProgressBar currentStep={currentStep} totalSteps={4} theme={theme} />
+      </View>
 
       {isStepLoading && (
         <View style={tw`absolute inset-0 z-50 bg-${theme === 'dark' ? 'black' : 'light-gray'} justify-center items-center`}>
