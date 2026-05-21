@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { RegisterRequest } from '@/features/auth/types/auth.types';
 import tw from '@/lib/tailwind';
 import { useThemeStore } from '@/store/useThemeStore';
+import AnimatedInput from '@/features/auth/components/animated/AnimatedInput'; 
 
 interface LicensePlateStepProps {
   formData: RegisterRequest;
@@ -29,21 +30,16 @@ const LicensePlateStep: React.FC<LicensePlateStepProps> = ({ formData, setPlate,
         </Text>
       </View>
 
-      <TextInput
-        style={[
-          tw`border p-4 rounded-xl mb-4 w-full`,
-          {
-            color: isDark ? '#FFFFFF' : '#000000',
-            borderColor: isError ? '#EF4444' : (isDark ? '#444' : '#CCC')
-          }
-        ]}
-        placeholder={isTaxi ? "Ej: ABC-123" : "Ej: ABC-12D"}
-        placeholderTextColor={isDark ? '#999' : '#666'}
+      <AnimatedInput
+        label="Número de placa"
+        hasError={isError}
+        isDark={isDark}
         value={formData.license_plate}
-        onChangeText={(text) => {
+        onChangeText={(text: string) => {
           setPlate(text);
           if (isError) setIsError(false);
         }}
+        placeholder={isTaxi ? "Ej: ABC-123" : "Ej: ABC-12D"}
         autoCapitalize="characters"
         maxLength={7}
       />
