@@ -20,7 +20,10 @@ const LicensePlateStep: React.FC<LicensePlateStepProps> = ({ formData, setPlate,
   return (
     <View style={tw`items-center`}>
       <View style={tw`w-4/5 h-24 justify-center items-center rounded-none border-2 border-black mb-6 ${plateBackgroundColor}`}>
-        <Text style={tw`text-4xl font-bold tracking-widest text-black font-mono`}>
+        {isDark && (
+          <View style={tw`absolute inset-0 bg-black/30`} />
+        )}
+        <Text style={tw`text-4xl font-bold tracking-widest text-black font-mono z-10`}>
           {formData.license_plate?.toUpperCase() || "--- ---"}
         </Text>
       </View>
@@ -51,7 +54,9 @@ const LicensePlateStep: React.FC<LicensePlateStepProps> = ({ formData, setPlate,
           setCurrentStep(4);
         }}
       >
-        <Text style={tw`text-white text-lg font-bold`}>Siguiente</Text>
+        <Text style={tw`${isDark ? 'text-black' : 'text-white'} text-lg font-bold`}>
+          Siguiente
+        </Text>
       </TouchableOpacity>
     </View>
   );
