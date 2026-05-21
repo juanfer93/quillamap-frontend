@@ -42,7 +42,7 @@ const LicensePlateStep: React.FC<LicensePlateStepProps> = ({ formData, setPlate,
       />
 
       <TouchableOpacity
-        style={tw`bg-[#004574] p-4 rounded-xl w-full items-center`}
+        style={tw`p-4 rounded-xl w-full items-center ${isDark ? 'bg-[#c7ad8c]' : 'bg-[#004574]'}`}
         onPress={() => {
           if (!formData.license_plate || formData.license_plate.length < 5) {
             Alert.alert("Atención", "Por favor ingresa una placa válida.");
