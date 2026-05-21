@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, UIManager, LayoutAnimation,
   Platform,
   ActivityIndicator,
   TouchableOpacity,
-  InteractionManager
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RegisterRequest, RootStackParamList } from '@/features/auth/types/auth.types';
@@ -42,12 +41,16 @@ const RegisterScreen = () => {
   const [isStepLoading, setIsStepLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const setSession = useAuthStore(state => state.setSession);
 
-  const changeStep = (step: number) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setCurrentStep(step);
+  const handleStepTransition = (nextStep: number) => {
+    setIsStepLoading(true); 
+
+    setTimeout(() => {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setCurrentStep(nextStep); 
+      setIsStepLoading(false);  
+    }, 300); 
   };
 
   const handleVehicleTypeSelect = (type: 'peaton' | 'turista' | 'moto' | 'carro') => {
@@ -58,18 +61,14 @@ const RegisterScreen = () => {
       license_plate: undefined
     }));
 
-    if (type === 'peaton' || type === 'turista') {
-      changeStep(4);
-    } else if (type === 'moto') {
-      changeStep(3);
-    } else {
-      changeStep(2);
-    }
+    if (type === 'peaton' || type === 'turista') handleStepTransition(4);
+    else if (type === 'moto') handleStepTransition(3);
+    else handleStepTransition(2);
   };
 
   const handleCarTypeSelect = (type: 'particular' | 'taxi') => {
     setFormData(prev => ({ ...prev, vehicle_type: type }));
-    changeStep(3);
+    handleStepTransition(3);
   };
 
   const setPlate = (plate: string) => {
@@ -84,20 +83,15 @@ const RegisterScreen = () => {
         navigation.navigate('Login');
       } else {
         let nextStep = 1;
-
-        if (currentStep === 4) {
-          nextStep = 1;
-        } else if (currentStep === 3) {
-          nextStep = formData.mobility_mode === 'moto' ? 1 : 2;
-        } else if (currentStep === 2) {
-          nextStep = 1;
-        }
+        if (currentStep === 4) nextStep = 1;
+        else if (currentStep === 3) nextStep = formData.mobility_mode === 'moto' ? 1 : 2;
+        else if (currentStep === 2) nextStep = 1;
 
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         setCurrentStep(nextStep);
         setIsStepLoading(false);
       }
-    }, 200);
+    }, 300);
   };
 
 
@@ -175,7 +169,6 @@ const RegisterScreen = () => {
           <CarTypeStep
             selectedType={carType}
             handleCarTypeSelect={handleCarTypeSelect}
-            onBack={handleBackStep}
           />
         );
       case 3:
@@ -183,8 +176,7 @@ const RegisterScreen = () => {
           <LicensePlateStep
             formData={formData}
             setPlate={setPlate}
-            setCurrentStep={changeStep}
-            onBack={handleBackStep}
+            setCurrentStep={handleStepTransition}
           />
         );
       case 4:
@@ -195,7 +187,6 @@ const RegisterScreen = () => {
             handleRegister={handleRegister}
             isLoading={isLoading}
             error={error}
-            onBack={handleBackStep}
           />
         );
       default:

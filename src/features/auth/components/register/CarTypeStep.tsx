@@ -3,21 +3,18 @@ import { View, Text, TouchableOpacity, Image } from 'react-native';
 import tw from '@/lib/tailwind';
 import { useThemeStore } from 'src/store/useThemeStore';
 import { CAR_TYPES, CarTypeId } from 'src/features/auth/constants/carTypes';
-import BackButton from 'src/features/auth/components/common/BackButton';
 
 interface CarTypeStepProps {
   selectedType?: CarTypeId;
   handleCarTypeSelect: (type: CarTypeId) => void;
-  onBack: () => void;
 }
 
-const CarTypeStep: React.FC<CarTypeStepProps> = ({ handleCarTypeSelect, selectedType, onBack }) => {
+const CarTypeStep: React.FC<CarTypeStepProps> = ({ handleCarTypeSelect, selectedType }) => {
   const { mode } = useThemeStore();
   const isDark = mode === 'dark';
 
   return (
     <View style={tw`items-center w-full`}>
-      <BackButton onPress={onBack} />
       
       <Text style={tw`text-2xl font-bold mb-xl text-center text-shark-blue dark:text-sand-gold`}>
         ¿Qué tipo de vehículo es?

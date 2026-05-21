@@ -5,7 +5,6 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import tw from '@/lib/tailwind';
 import { useThemeStore } from 'src/store/useThemeStore';
 import { MOBILITY_MODES, MobilityModeId } from 'src/features/auth/constants/mobilityModes';
-import BackButton from 'src/features/auth/components/common/BackButton';
 import { RootStackParamList } from '@/features/auth/types/auth.types';
 
 interface MobilityStepProps {
@@ -20,7 +19,6 @@ const MobilityStep: React.FC<MobilityStepProps> = ({ handleVehicleTypeSelect, se
 
   return (
     <View style={tw`items-center w-full pt-12`}>
-      <BackButton onPress={() => navigation.navigate('Login')} />
 
       <Text style={tw`text-2xl font-bold mb-xl text-center text-shark-blue dark:text-sand-gold`}>
         ¿Cómo te mueves por la ciudad?
