@@ -3,9 +3,10 @@ import { render, fireEvent, act, waitFor } from '@testing-library/react-native';
 import RegisterScreen from '../screens/RegisterScreen';
 
 const mockedGoBack = jest.fn();
+const mockedNavigate = jest.fn();
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
-  useNavigation: () => ({ goBack: mockedGoBack }),
+  useNavigation: () => ({ goBack: mockedGoBack, navigate: mockedNavigate }),
 }));
 
 describe('RegisterScreen - Flujo de Retroceso', () => {
@@ -30,6 +31,6 @@ describe('RegisterScreen - Flujo de Retroceso', () => {
     });
 
     // 5. Verificamos la navegación
-    expect(mockedGoBack).toHaveBeenCalled();
+    expect(mockedNavigate).toHaveBeenCalledWith('Login');
   });
 });

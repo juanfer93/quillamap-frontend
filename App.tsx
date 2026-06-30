@@ -3,7 +3,6 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuthStore } from '@/store/useAuthStore';
-import { WelcomeScreen } from '@/features/auth/screens/WelcomeScreen';
 import LoginScreen from '@/features/auth/screens/LoginScreen';
 import RegisterScreen from '@/features/auth/screens/RegisterScreen';
 import  HomeScreen  from '@/features/auth/screens/HomeScreen'
@@ -17,7 +16,6 @@ const Main = createNativeStackNavigator();
 
 const AuthStack = () => (
   <Auth.Navigator screenOptions={{ headerShown: false }}>
-    <Auth.Screen name="Welcome" component={WelcomeScreen} />
     <Auth.Screen name="Login" component={LoginScreen} />
     <Auth.Screen name="Register" component={RegisterScreen} />
   </Auth.Navigator>

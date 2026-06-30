@@ -1,5 +1,5 @@
 process.env.EXPO_OS = 'ios';
-process.env.EXPO_PUBLIC_API_URL = 'http://192.168.1.10:3000/api';
+process.env.EXPO_PUBLIC_API_URL = 'http://192.168.1.26:3000/api';
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   setItem: jest.fn(() => Promise.resolve()),

@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { Alert } from 'react-native';
 import RegisterScreen from '../screens/RegisterScreen';
 import { authApi } from '@/api/client';
 
@@ -17,6 +18,10 @@ jest.mock('@react-navigation/native', () => ({
 }));
 
 describe('RegisterScreen - Flujo Completo', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   // Aumentamos el tiempo de espera a 30 segundos al final de la función 'it'
   it('debe completar el wizard de registro exitosamente', async () => {
     (authApi.register as jest.Mock).mockResolvedValue({
@@ -51,4 +56,34 @@ describe('RegisterScreen - Flujo Completo', () => {
       expect(mockedNavigate).toHaveBeenCalledWith('Home');
     }, { timeout: 10000 });
   }, 30000); 
+
+  it('debe mostrar un aviso claro cuando el correo ya existe', async () => {
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    (authApi.register as jest.Mock).mockRejectedValue({
+      response: {
+        data: {
+          message: 'El correo ya existe. Inicia sesion o usa otro correo.',
+        },
+      },
+    });
+
+    const { getByText, getByPlaceholderText, findByPlaceholderText } = render(<RegisterScreen />);
+
+    fireEvent.press(getByText(/peat/i));
+
+    await findByPlaceholderText(/nombre/i);
+    fireEvent.changeText(getByPlaceholderText(/nombre/i), 'Juan Fernando');
+    fireEvent.changeText(getByPlaceholderText(/correo/i), 'juan@test.com');
+    fireEvent.changeText(getByPlaceholderText('********'), 'password123');
+
+    fireEvent.press(getByText(/finalizar registro/i));
+
+    await waitFor(() => {
+      expect(alertSpy).toHaveBeenCalledWith(
+        'No pudimos crear tu cuenta',
+        'El correo ya existe. Inicia sesion o usa otro correo.',
+      );
+    });
+    expect(mockedNavigate).not.toHaveBeenCalledWith('Home');
+  });
 });

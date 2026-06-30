@@ -4,6 +4,7 @@ import {
   Platform,
   ActivityIndicator,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RegisterRequest, RootStackParamList } from '@/features/auth/types/auth.types';
@@ -23,6 +24,26 @@ import { Ionicons } from '@expo/vector-icons';
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
+
+const emailExistsMessage = 'El correo ya existe. Inicia sesion o usa otro correo.';
+
+const getRegisterErrorMessage = (error: any) => {
+  const apiMessage = error.response?.data?.message;
+  const message = Array.isArray(apiMessage) ? apiMessage[0] : apiMessage;
+  const fallbackMessage = String(message || error.message || 'Error de conexion con el servidor');
+
+  const normalizedMessage = fallbackMessage.toLowerCase();
+
+  if (
+    normalizedMessage.includes('correo ya existe')
+    || normalizedMessage.includes('already registered')
+    || normalizedMessage.includes('already been registered')
+  ) {
+    return emailExistsMessage;
+  }
+
+  return fallbackMessage;
+};
 
 const RegisterScreen = () => {
   const { mode } = useThemeStore();
@@ -48,7 +69,9 @@ const RegisterScreen = () => {
     setIsStepLoading(true);
 
     setTimeout(() => {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      if (LayoutAnimation.Presets) {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      }
       setCurrentStep(nextStep);
       setIsStepLoading(false);
     }, 300);
@@ -88,7 +111,9 @@ const RegisterScreen = () => {
         else if (currentStep === 3) nextStep = formData.mobility_mode === 'moto' ? 1 : 2;
         else if (currentStep === 2) nextStep = 1;
 
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        if (LayoutAnimation.Presets) {
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        }
         setCurrentStep(nextStep);
         setIsStepLoading(false);
       }
@@ -118,7 +143,9 @@ const RegisterScreen = () => {
         throw new Error('No se recibió la información del usuario ni el token de sesión.');
       }
     } catch (e: any) {
-      setError(e.response?.data?.message || e.message || 'Error de conexión con el servidor');
+      const message = getRegisterErrorMessage(e);
+      setError(message);
+      Alert.alert('No pudimos crear tu cuenta', message);
     } finally {
       setIsLoading(false);
     }
