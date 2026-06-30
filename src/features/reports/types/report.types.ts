@@ -3,6 +3,7 @@ export enum ReportType {
     RETEN = 'RETEN',
     BACHE = 'BACHE',
     ACCIDENTE = 'ACCIDENTE',
+    SOMBRA = 'SOMBRA',
   }
   
   export interface Report {

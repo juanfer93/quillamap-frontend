@@ -3,6 +3,13 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        'primary': '#004574',
+        'secondary': '#D4AF37',
+        'surface-light': '#F8FAFC',
+        'map-shade': '#5DA271',
+        'map-shade-light': '#CFE8D6',
+        'map-route': '#2F8AC4',
+        'map-road': '#E0E7EF',
         'gold': '#D4AF37',
         'sand-gold': '#c7ad8c',
         'shark-blue': '#004574',

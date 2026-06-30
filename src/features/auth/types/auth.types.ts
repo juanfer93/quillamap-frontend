@@ -22,11 +22,12 @@ export interface AuthResponse {
   accessToken: string;
   user: {
     id: string;
-    full_name: string;
+    full_name: string | null;
     email: string;
-    mobility_mode: MobilityMode;
-    vehicle_type?: VehicleType;
-    license_plate?: string;
+    mobility_mode?: MobilityMode | null;
+    mobilityMode?: MobilityMode | null;
+    vehicle_type?: VehicleType | null;
+    license_plate?: string | null;
   };
 }
 

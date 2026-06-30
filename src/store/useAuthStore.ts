@@ -1,13 +1,17 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AuthResponse } from '@/features/auth/types/auth.types';
+
+export type AuthUser = AuthResponse['user'];
 
 interface AuthState {
-  user: any | null;
+  user: AuthUser | null;
   session: string | null;
   isLoading: boolean;
-  setSession: (session: string, user: any) => void;
+  setSession: (session: string, user: AuthUser) => void;
   signOut: () => void;
+  finishHydration: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -17,15 +21,14 @@ export const useAuthStore = create<AuthState>()(
       session: null,
       isLoading: true,
       setSession: (session, user) => set({ session, user, isLoading: false }),
-      signOut: () => set({ user: null, session: null }),
+      signOut: () => set({ user: null, session: null, isLoading: false }),
+      finishHydration: () => set({ isLoading: false }),
     }),
     {
       name: 'quillamap-auth',
       storage: createJSONStorage(() => AsyncStorage),
       onRehydrateStorage: () => (state) => {
-        if (state) {
-          state.isLoading = false;
-        }
+        state?.finishHydration();
       },
     }
   )
