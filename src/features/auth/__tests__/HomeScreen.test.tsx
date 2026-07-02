@@ -27,6 +27,13 @@ jest.mock('@/features/pedestrian/hooks/useLocationPermissions', () => ({
   }),
 }));
 
+jest.mock('@/api/client', () => ({
+  reportsApi: {
+    findNearby: jest.fn(() => new Promise(() => {})),
+    create: jest.fn(),
+  },
+}));
+
 const pedestrianUser: AuthUser = {
   id: 'user-peaton',
   full_name: 'Paula Peaton',

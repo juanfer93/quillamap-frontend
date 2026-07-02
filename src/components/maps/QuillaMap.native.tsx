@@ -1,94 +1,44 @@
 import React, { useRef, useState } from 'react';
 import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import MapView, { Circle, MapStyleElement, Marker, Polygon, Polyline, Region } from 'react-native-maps';
+import MapView, { Circle, Marker, Polyline, Region } from 'react-native-maps';
 import tw from '@/lib/tailwind';
-import type { QuillaMapCoordinate, QuillaMapProps } from './QuillaMap.types';
+import type { QuillaMapProps } from './QuillaMap.types';
+import type { MapIconProps } from './QuillaMap.icon.types';
+import { MAX_NATIVE_DELTA, MIN_NATIVE_DELTA } from './QuillaMap.constants';
 import { getRouteCoordinates, getVisibleShadeZones } from './QuillaMap.shared';
+import { darkMapStyle } from './QuillaMap.native-style';
 import QuillaMapControls from './QuillaMapControls';
-
-interface MapIconProps {
-  name: string;
-  size: number;
-  color: string;
-}
+import QuillaMapShadowMarker from './QuillaMapShadowMarker';
 
 const MapIcon = Ionicons as React.ComponentType<MapIconProps>;
-const MIN_NATIVE_DELTA = 0.002;
-const MAX_NATIVE_DELTA = 0.08;
-
-const darkMapStyle: MapStyleElement[] = [
-  { elementType: 'geometry', stylers: [{ color: '#1D2D3B' }] },
-  { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#B3C0CD' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#162638' }, { weight: 3 }] },
-  { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#405166' }] },
-  { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#1D2D3B' }] },
-  { featureType: 'landscape.man_made', elementType: 'geometry', stylers: [{ color: '#263849' }] },
-  { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#28455A' }] },
-  { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#96AABC' }] },
-  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#1F6B57' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#344A5F' }] },
-  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#5F7488' }, { weight: 1.05 }] },
-  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#C1CCD7' }] },
-  { featureType: 'road.local', elementType: 'geometry', stylers: [{ color: '#2C4053' }] },
-  { featureType: 'road.local', elementType: 'geometry.stroke', stylers: [{ color: '#4D6378' }, { weight: 0.9 }] },
-  { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#456078' }] },
-  { featureType: 'road.arterial', elementType: 'geometry.stroke', stylers: [{ color: '#7B8FA2' }, { weight: 1.1 }] },
-  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#687687' }] },
-  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#9AA7B4' }, { weight: 1.2 }] },
-  { featureType: 'transit', elementType: 'geometry', stylers: [{ color: '#33495E' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0D3952' }] },
-  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#8BC7E8' }] },
-];
-
-const getShadePolygon = (
-  coordinate: QuillaMapCoordinate,
-  radiusMeters: number
-): QuillaMapCoordinate[] => {
-  const radius = Math.min(Math.max(radiusMeters, 150), 280);
-  const latitudeMeters = 111320;
-  const longitudeMeters = 111320 * Math.cos((coordinate.latitude * Math.PI) / 180);
-  const points = [
-    [-0.82, -0.34],
-    [-0.58, -0.92],
-    [-0.06, -1.05],
-    [0.48, -0.72],
-    [0.92, -0.20],
-    [0.72, 0.50],
-    [0.18, 0.92],
-    [-0.46, 0.76],
-    [-0.94, 0.22],
-  ];
-
-  return points.map(([x, y]) => ({
-    latitude: coordinate.latitude + (y * radius) / latitudeMeters,
-    longitude: coordinate.longitude + (x * radius) / longitudeMeters,
-  }));
-};
 
 const QuillaMap = ({
   mode,
   themeMode = 'light',
   center,
   shadeZones,
+  showDefaultShadeZones,
   routePoints,
   showUserLocation = true,
   children,
   onShadeZonePress,
+  onMapPress,
+  selectedCoordinate,
   style,
 }: QuillaMapProps) => {
-  const zones = getVisibleShadeZones(shadeZones);
   const route = getRouteCoordinates(routePoints, center);
   const layerColor = tw.color('map-shade') ?? '';
-  const layerFillColor = `${tw.color('map-shade-light') ?? '#CFE8D6'}99`;
   const routeColor = tw.color('map-route') ?? '';
   const strokeColor = tw.color('primary') ?? '';
   const darkGray = tw.color('dark-gray') ?? '#333333';
   const primary = tw.color('primary') ?? '#004574';
-  const sandGold = tw.color('sand-gold') ?? tw.color('gold') ?? '#D4AF37';
+  const sandGold = tw.color('sand-gold') ?? tw.color('gold') ?? '';
+  const shadowMarkerColor = tw.color('secondary') ?? tw.color('brand-secondary') ?? sandGold;
   const isPedestrian = mode === 'pedestrian';
   const isDark = themeMode === 'dark';
+  const shouldShowShadowZones = !(isPedestrian && isDark);
+  const zones = shouldShowShadowZones ? getVisibleShadeZones(shadeZones, showDefaultShadeZones) : [];
   const initialRegion: Region = {
     latitude: center.latitude,
     longitude: center.longitude,
@@ -104,8 +54,6 @@ const QuillaMap = ({
   const controlBackground = isDark ? tw.color('charcoal') ?? '#121212' : tw.color('white') ?? '#FFFFFF';
   const controlText = isDark ? sandGold : darkGray;
   const controlBorder = isDark ? '#3A3328' : tw.color('medium-gray') ?? '#e0e0e0';
-  const shadeFillColor = isDark ? `${layerColor}66` : layerFillColor;
-  const shadeStrokeColor = isDark ? sandGold : layerColor;
   const applyZoom = (factor: number) => {
     const currentRegion = currentRegionRef.current;
     const nextRegion: Region = {
@@ -157,6 +105,7 @@ const QuillaMap = ({
           zoomEnabled
           rotateEnabled
           pitchEnabled
+          onPress={(event) => onMapPress?.(event.nativeEvent.coordinate)}
         >
           <Polyline
             testID="quillamap-native-route"
@@ -166,15 +115,7 @@ const QuillaMap = ({
           />
           {zones.map((zone) => (
             <React.Fragment key={zone.id}>
-              {isPedestrian ? (
-                <Polygon
-                  testID={`quillamap-native-shade-area-${zone.id}`}
-                  coordinates={getShadePolygon(zone.coordinate, zone.radiusMeters)}
-                  fillColor={shadeFillColor}
-                  strokeColor={shadeStrokeColor}
-                  strokeWidth={2}
-                />
-              ) : (
+              {!isPedestrian ? (
                 <Circle
                   testID={`quillamap-native-shade-radius-${zone.id}`}
                   center={zone.coordinate}
@@ -183,7 +124,7 @@ const QuillaMap = ({
                   strokeColor={strokeColor}
                   strokeWidth={2}
                 />
-              )}
+              ) : null}
               <Marker
                 testID={`quillamap-native-shade-marker-${zone.id}`}
                 coordinate={zone.coordinate}
@@ -193,18 +134,21 @@ const QuillaMap = ({
                 onPress={() => onShadeZonePress?.(zone)}
               >
                 {isPedestrian ? (
-                  <View
-                    style={[
-                      tw`w-9 h-9 rounded-xl border items-center justify-center`,
-                      { backgroundColor: controlBackground, borderColor: controlBorder },
-                    ]}
-                  >
-                    <MapIcon name="walk-outline" size={18} color={controlText} />
-                  </View>
+                  <QuillaMapShadowMarker color={shadowMarkerColor} />
                 ) : null}
               </Marker>
             </React.Fragment>
           ))}
+          {selectedCoordinate && shouldShowShadowZones ? (
+            <Marker
+              testID="quillamap-native-shadow-draft-marker"
+              coordinate={selectedCoordinate}
+              title="Zona de sombra"
+              pinColor={shadowMarkerColor}
+            >
+              <QuillaMapShadowMarker color={shadowMarkerColor} size="draft" />
+            </Marker>
+          ) : null}
           {isPedestrian
             ? route.slice(1, 5).map((point) => (
                 <Marker key={`route-marker-${point.latitude}-${point.longitude}`} coordinate={point}>

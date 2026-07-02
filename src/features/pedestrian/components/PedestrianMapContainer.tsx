@@ -36,11 +36,14 @@ const PedestrianMapContainer = ({
   initialCenter,
   showHeader = true,
   onShadowZonePress,
+  onMapPress,
+  selectedShadowCoordinate,
 }: PedestrianMapContainerProps) => {
   const { currentLocation, isRequestingPermission, errorMessage } = useLocationPermissions();
   const center = getCenterCoordinate(currentLocation, initialCenter);
-  const mapShadeZones = shadowZones.map(toMapShadeZone);
   const isDark = themeMode === 'dark';
+  const shouldShowShadowZones = !isDark;
+  const mapShadeZones = shouldShowShadowZones ? shadowZones.map(toMapShadeZone) : [];
 
   return (
     <View
@@ -83,7 +86,14 @@ const PedestrianMapContainer = ({
           themeMode={themeMode}
           center={center}
           shadeZones={mapShadeZones}
+          showDefaultShadeZones={false}
+          selectedCoordinate={shouldShowShadowZones ? selectedShadowCoordinate : null}
+          onMapPress={shouldShowShadowZones ? onMapPress : undefined}
           onShadeZonePress={(zone) => {
+            if (!shouldShowShadowZones) {
+              return;
+            }
+
             const selectedZone = shadowZones.find((shadowZone) => shadowZone.id === zone.id);
             if (selectedZone) {
               onShadowZonePress?.(selectedZone);

@@ -3,186 +3,31 @@ import { Image, PanResponder, Pressable, View, useWindowDimensions } from 'react
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path } from 'react-native-svg';
 import tw from '@/lib/tailwind';
-import type { QuillaMapCoordinate, QuillaMapProps } from './QuillaMap.types';
+import type { QuillaMapProps } from './QuillaMap.types';
+import type { MapClickEvent, MapPointerEvent, MapPressEvent, ScreenPoint } from './QuillaMap.web.types';
+import type { MapIconProps } from './QuillaMap.icon.types';
+import {
+  DEFAULT_TILE_ZOOM,
+  MAX_TILE_ZOOM,
+  MIN_TILE_ZOOM,
+  TILE_SIZE,
+} from './QuillaMap.constants';
 import { getRouteCoordinates, getVisibleShadeZones } from './QuillaMap.shared';
+import {
+  clamp,
+  getCoordinateFromScreenPoint,
+  getMapTiles,
+  getRoutePath,
+  getScreenPoint,
+} from './QuillaMap.web-geo';
 import QuillaMapControls from './QuillaMapControls';
-
-interface MapTile {
-  id: string;
-  uri: string;
-  labelUri?: string;
-  left: number;
-  top: number;
-  size: number;
-}
-
-interface ScreenPoint {
-  x: number;
-  y: number;
-}
-
-interface MapIconProps {
-  name: string;
-  size: number;
-  color: string;
-}
+import QuillaMapShadowMarker from './QuillaMapShadowMarker';
 
 const MapIcon = Ionicons as React.ComponentType<MapIconProps>;
-
-const DEFAULT_TILE_ZOOM = 16;
-const MIN_TILE_ZOOM = 14;
-const MAX_TILE_ZOOM = 18;
-const TILE_SIZE = 256;
 
 const tokenColor = (name: string): string => {
   const value = tw.color(name);
   return typeof value === 'string' ? value : '';
-};
-
-const clamp = (value: number, min: number, max: number): number =>
-  Math.min(Math.max(value, min), max);
-
-const longitudeToTileX: (longitude: number, zoom: number) => number = (longitude, zoom) =>
-  ((longitude + 180) / 360) * 2 ** zoom;
-
-const latitudeToTileY: (latitude: number, zoom: number) => number = (latitude, zoom) => {
-  const latitudeRadians = (latitude * Math.PI) / 180;
-  return (
-    ((1 -
-      Math.log(Math.tan(latitudeRadians) + 1 / Math.cos(latitudeRadians)) / Math.PI) /
-      2) *
-    2 ** zoom
-  );
-};
-
-const getTileUri = (x: number, y: number, zoom: number, isDark: boolean): string => {
-  if (isDark) {
-    return `https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/${zoom}/${y}/${x}`;
-  }
-
-  return `https://tile.openstreetmap.org/${zoom}/${x}/${y}.png`;
-};
-
-const getLabelTileUri = (x: number, y: number, zoom: number, isDark: boolean): string | undefined => {
-  if (!isDark) {
-    return undefined;
-  }
-
-  return `https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/${zoom}/${y}/${x}`;
-};
-
-const getScreenPoint = (
-  coordinate: QuillaMapCoordinate,
-  center: QuillaMapCoordinate,
-  zoom: number,
-  tileSize: number,
-  mapWidth: number,
-  mapHeight: number
-): ScreenPoint => {
-  const centerTileX = longitudeToTileX(center.longitude, zoom);
-  const centerTileY = latitudeToTileY(center.latitude, zoom);
-  const coordinateTileX = longitudeToTileX(coordinate.longitude, zoom);
-  const coordinateTileY = latitudeToTileY(coordinate.latitude, zoom);
-
-  return {
-    x: mapWidth / 2 + (coordinateTileX - centerTileX) * tileSize,
-    y: mapHeight / 2 + (coordinateTileY - centerTileY) * tileSize,
-  };
-};
-
-const getMapTiles = (
-  center: QuillaMapCoordinate,
-  zoom: number,
-  tileSize: number,
-  mapWidth: number,
-  mapHeight: number,
-  isDark: boolean,
-  offset: ScreenPoint
-): MapTile[] => {
-  const centerTileX = longitudeToTileX(center.longitude, zoom);
-  const centerTileY = latitudeToTileY(center.latitude, zoom);
-  const baseTileX = Math.floor(centerTileX);
-  const baseTileY = Math.floor(centerTileY);
-  const fractionalX = centerTileX - baseTileX;
-  const fractionalY = centerTileY - baseTileY;
-  const minColumnOffset = Math.floor((-mapWidth / 2 - offset.x) / tileSize + fractionalX) - 2;
-  const maxColumnOffset = Math.ceil((mapWidth / 2 - offset.x) / tileSize + fractionalX) + 2;
-  const minRowOffset = Math.floor((-mapHeight / 2 - offset.y) / tileSize + fractionalY) - 2;
-  const maxRowOffset = Math.ceil((mapHeight / 2 - offset.y) / tileSize + fractionalY) + 2;
-  const columnOffsets = Array.from(
-    { length: maxColumnOffset - minColumnOffset + 1 },
-    (_, index) => minColumnOffset + index
-  );
-  const rowOffsets = Array.from(
-    { length: maxRowOffset - minRowOffset + 1 },
-    (_, index) => minRowOffset + index
-  );
-
-  return columnOffsets.flatMap((columnOffset) =>
-    rowOffsets.map((rowOffset) => {
-      const x = baseTileX + columnOffset;
-      const y = baseTileY + rowOffset;
-
-      return {
-        id: `${zoom}-${x}-${y}`,
-        uri: getTileUri(x, y, zoom, isDark),
-        labelUri: getLabelTileUri(x, y, zoom, isDark),
-        left: mapWidth / 2 + (columnOffset - fractionalX) * tileSize + offset.x,
-        top: mapHeight / 2 + (rowOffset - fractionalY) * tileSize + offset.y,
-        size: tileSize,
-      };
-    })
-  );
-};
-
-const getRoutePath = (
-  routePoints: QuillaMapCoordinate[],
-  center: QuillaMapCoordinate,
-  zoom: number,
-  tileSize: number,
-  mapWidth: number,
-  mapHeight: number,
-  offset: ScreenPoint = { x: 0, y: 0 },
-  shouldClamp = true
-): string => {
-  const points = routePoints.map((point) => getScreenPoint(point, center, zoom, tileSize, mapWidth, mapHeight));
-  const visiblePoints = points.map((point) => {
-    const x = point.x + offset.x;
-    const y = point.y + offset.y;
-
-    return {
-      x: shouldClamp ? clamp(x, 18, mapWidth - 18) : x,
-      y: shouldClamp ? clamp(y, 70, mapHeight - 88) : y,
-    };
-  });
-
-  return visiblePoints
-    .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(1)} ${point.y.toFixed(1)}`)
-    .join(' ');
-};
-
-const getMetersPerTile = (latitude: number, zoom: number): number =>
-  (40075016.686 * Math.cos((latitude * Math.PI) / 180)) / 2 ** zoom;
-
-const getShadePath = (
-  zonePoint: ScreenPoint,
-  radiusMeters: number,
-  center: QuillaMapCoordinate,
-  zoom: number,
-  tileSize: number
-): string => {
-  const metersPerTile = getMetersPerTile(center.latitude, zoom);
-  const radius = clamp((radiusMeters * tileSize) / metersPerTile, 46, 128);
-  const horizontal = radius * 1.06;
-  const vertical = radius * 1.34;
-
-  return [
-    `M ${(zonePoint.x - horizontal * 0.92).toFixed(1)} ${(zonePoint.y - vertical * 0.32).toFixed(1)}`,
-    `C ${(zonePoint.x - horizontal * 0.72).toFixed(1)} ${(zonePoint.y - vertical * 0.92).toFixed(1)}, ${(zonePoint.x - horizontal * 0.12).toFixed(1)} ${(zonePoint.y - vertical * 1.06).toFixed(1)}, ${(zonePoint.x + horizontal * 0.42).toFixed(1)} ${(zonePoint.y - vertical * 0.72).toFixed(1)}`,
-    `C ${(zonePoint.x + horizontal * 1.04).toFixed(1)} ${(zonePoint.y - vertical * 0.34).toFixed(1)}, ${(zonePoint.x + horizontal * 0.82).toFixed(1)} ${(zonePoint.y + vertical * 0.44).toFixed(1)}, ${(zonePoint.x + horizontal * 0.20).toFixed(1)} ${(zonePoint.y + vertical * 0.84).toFixed(1)}`,
-    `C ${(zonePoint.x - horizontal * 0.46).toFixed(1)} ${(zonePoint.y + vertical * 1.18).toFixed(1)}, ${(zonePoint.x - horizontal * 1.08).toFixed(1)} ${(zonePoint.y + vertical * 0.48).toFixed(1)}, ${(zonePoint.x - horizontal * 0.92).toFixed(1)} ${(zonePoint.y - vertical * 0.32).toFixed(1)}`,
-    'Z',
-  ].join(' ');
 };
 
 const QuillaMapWebRenderer = ({
@@ -190,19 +35,28 @@ const QuillaMapWebRenderer = ({
   themeMode = 'light',
   center,
   shadeZones,
+  showDefaultShadeZones,
   routePoints,
   children,
   onShadeZonePress,
+  onMapPress,
+  selectedCoordinate,
   style,
 }: QuillaMapProps) => {
   const windowDimensions = useWindowDimensions();
-  const zones = getVisibleShadeZones(shadeZones);
   const route = getRouteCoordinates(routePoints, center);
   const isDark = themeMode === 'dark';
+  const isPedestrian = mode === 'pedestrian';
+  const shouldShowShadowZones = !(isPedestrian && isDark);
+  const zones = shouldShowShadowZones ? getVisibleShadeZones(shadeZones, showDefaultShadeZones) : [];
   const [tileZoom, setTileZoom] = useState(DEFAULT_TILE_ZOOM);
   const [panOffset, setPanOffset] = useState<ScreenPoint>({ x: 0, y: 0 });
   const panOffsetRef = useRef<ScreenPoint>({ x: 0, y: 0 });
   const panStartRef = useRef<ScreenPoint>({ x: 0, y: 0 });
+  const isDraggingRef = useRef(false);
+  const lastDragEndAtRef = useRef(0);
+  const pointerStartRef = useRef<ScreenPoint | null>(null);
+  const pointerPanStartRef = useRef<ScreenPoint>({ x: 0, y: 0 });
   const mapWidth = Math.max(320, windowDimensions.width - 48);
   const mapHeight = Math.max(520, windowDimensions.height - 210);
   const tileSize = TILE_SIZE;
@@ -213,12 +67,10 @@ const QuillaMapWebRenderer = ({
   const primary = tokenColor('primary');
   const darkGray = tokenColor('dark-gray');
   const sandGold = tokenColor('sand-gold') || tokenColor('gold');
-  const isPedestrian = mode === 'pedestrian';
+  const shadowMarkerColor = tokenColor('secondary') || tokenColor('brand-secondary') || sandGold;
   const controlBackground = isDark ? '#121212' : tokenColor('white');
   const controlText = isDark ? sandGold : darkGray;
   const controlBorder = isDark ? '#3A3328' : tokenColor('medium-gray');
-  const shadeFill = isDark ? `${mapShade}70` : mapShadeLight;
-  const shadeStroke = isDark ? sandGold : mapShade;
   const routeHalo = isDark ? '#132F46' : mapShadeLight;
   const tileFilter = isDark
     ? 'brightness(1.12) contrast(1.08) saturate(1.1)'
@@ -226,6 +78,107 @@ const QuillaMapWebRenderer = ({
   const routePath = getRoutePath(route, center, tileZoom, tileSize, mapWidth, mapHeight, panOffset, !isPedestrian);
   const zoomIn = () => setTileZoom((currentZoom) => clamp(currentZoom + 1, MIN_TILE_ZOOM, MAX_TILE_ZOOM));
   const zoomOut = () => setTileZoom((currentZoom) => clamp(currentZoom - 1, MIN_TILE_ZOOM, MAX_TILE_ZOOM));
+
+  const selectMapCoordinate = (screenPoint: ScreenPoint) => {
+    if (!onMapPress) {
+      return;
+    }
+
+    onMapPress(
+      getCoordinateFromScreenPoint(
+        screenPoint,
+        center,
+        tileZoom,
+        tileSize,
+        mapWidth,
+        mapHeight,
+        isPedestrian ? panOffset : { x: 0, y: 0 }
+      )
+    );
+  };
+
+  const handleMapPress = (event: MapPressEvent) => {
+    if (isDraggingRef.current) {
+      isDraggingRef.current = false;
+      lastDragEndAtRef.current = Date.now();
+      return;
+    }
+
+    const locationX = event.nativeEvent?.locationX ?? event.nativeEvent?.offsetX;
+    const locationY = event.nativeEvent?.locationY ?? event.nativeEvent?.offsetY;
+
+    if (typeof locationX === 'number' && typeof locationY === 'number') {
+      selectMapCoordinate({ x: locationX, y: locationY });
+    }
+  };
+
+  const handleMapClick = (event: MapClickEvent) => {
+    if (Date.now() - lastDragEndAtRef.current < 250) {
+      return;
+    }
+
+    const locationX = event.nativeEvent?.offsetX;
+    const locationY = event.nativeEvent?.offsetY;
+
+    if (typeof locationX === 'number' && typeof locationY === 'number') {
+      selectMapCoordinate({ x: locationX, y: locationY });
+      return;
+    }
+
+    const clientX = event.nativeEvent?.clientX;
+    const clientY = event.nativeEvent?.clientY;
+    const rect = event.currentTarget?.getBoundingClientRect?.();
+
+    if (typeof clientX === 'number' && typeof clientY === 'number' && rect) {
+      selectMapCoordinate({ x: clientX - rect.left, y: clientY - rect.top });
+    }
+  };
+
+  const handlePointerDown = (event: MapPointerEvent) => {
+    const clientX = event.nativeEvent?.clientX;
+    const clientY = event.nativeEvent?.clientY;
+
+    if (typeof clientX !== 'number' || typeof clientY !== 'number') {
+      return;
+    }
+
+    pointerStartRef.current = { x: clientX, y: clientY };
+    pointerPanStartRef.current = panOffsetRef.current;
+    isDraggingRef.current = false;
+  };
+
+  const handlePointerMove = (event: MapPointerEvent) => {
+    const pointerStart = pointerStartRef.current;
+    const clientX = event.nativeEvent?.clientX;
+    const clientY = event.nativeEvent?.clientY;
+
+    if (!pointerStart || typeof clientX !== 'number' || typeof clientY !== 'number') {
+      return;
+    }
+
+    const deltaX = clientX - pointerStart.x;
+    const deltaY = clientY - pointerStart.y;
+
+    if (Math.abs(deltaX) + Math.abs(deltaY) > 4) {
+      isDraggingRef.current = true;
+    }
+
+    const nextOffset = {
+      x: pointerPanStartRef.current.x + deltaX,
+      y: pointerPanStartRef.current.y + deltaY,
+    };
+
+    panOffsetRef.current = nextOffset;
+    setPanOffset(nextOffset);
+  };
+
+  const handlePointerUp = () => {
+    pointerStartRef.current = null;
+    if (isDraggingRef.current) {
+      lastDragEndAtRef.current = Date.now();
+    }
+  };
+
   const panResponder = useMemo(
     () =>
       PanResponder.create({
@@ -237,8 +190,13 @@ const QuillaMapWebRenderer = ({
           isPedestrian && Math.abs(gestureState.dx) + Math.abs(gestureState.dy) > 4,
         onPanResponderGrant: () => {
           panStartRef.current = panOffsetRef.current;
+          isDraggingRef.current = false;
         },
         onPanResponderMove: (_, gestureState) => {
+          if (Math.abs(gestureState.dx) + Math.abs(gestureState.dy) > 4) {
+            isDraggingRef.current = true;
+          }
+
           const nextOffset = {
             x: panStartRef.current.x + gestureState.dx,
             y: panStartRef.current.y + gestureState.dy,
@@ -311,26 +269,6 @@ const QuillaMapWebRenderer = ({
           viewBox={`0 0 ${mapWidth} ${mapHeight}`}
           style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}
         >
-          {isPedestrian
-            ? zones.map((zone) => {
-                const zonePoint = getScreenPoint(zone.coordinate, center, tileZoom, tileSize, mapWidth, mapHeight);
-                const pannedZonePoint = {
-                  x: zonePoint.x + panOffset.x,
-                  y: zonePoint.y + panOffset.y,
-                };
-
-                return (
-                  <Path
-                    key={`shade-area-${zone.id}`}
-                    d={getShadePath(pannedZonePoint, zone.radiusMeters, center, tileZoom, tileSize)}
-                    fill={shadeFill}
-                    stroke={shadeStroke}
-                    strokeWidth="2"
-                    opacity="0.78"
-                  />
-                );
-              })
-            : null}
           <Path
             d={routePath}
             stroke={isPedestrian ? routeHalo : 'transparent'}
@@ -365,21 +303,46 @@ const QuillaMapWebRenderer = ({
               onPress={() => onShadeZonePress?.(zone)}
               style={[
                 isPedestrian
-                  ? [
-                      tw`absolute w-10 h-10 rounded-xl border items-center justify-center`,
-                      { backgroundColor: controlBackground, borderColor: controlBorder },
-                    ]
+                  ? tw`absolute w-10 h-12 items-center justify-start`
                   : tw`absolute w-10 h-10 rounded-xl bg-white border-2 border-map-shade items-center justify-center`,
                 {
                   left: isPedestrian ? markerX - 20 : clamp(markerX - 20, 12, mapWidth - 52),
                   top: isPedestrian ? markerY - 20 : clamp(markerY - 20, 76, mapHeight - 120),
+                  zIndex: isPedestrian ? 12 : 4,
                 },
               ]}
             >
-              <MapIcon name={isPedestrian ? 'walk-outline' : 'leaf-outline'} size={18} color={isPedestrian ? controlText : mapShade} />
+              {isPedestrian ? (
+                <QuillaMapShadowMarker color={shadowMarkerColor} />
+              ) : (
+                <MapIcon name="leaf-outline" size={18} color={mapShade} />
+              )}
             </Pressable>
           );
         })}
+
+        {selectedCoordinate && shouldShowShadowZones ? (
+          <View
+            testID="quillamap-web-shadow-draft-marker"
+            style={[
+              tw`absolute w-11 items-center justify-start`,
+              {
+                height: 52,
+                left:
+                  getScreenPoint(selectedCoordinate, center, tileZoom, tileSize, mapWidth, mapHeight).x
+                  + (isPedestrian ? panOffset.x : 0)
+                  - 22,
+                top:
+                  getScreenPoint(selectedCoordinate, center, tileZoom, tileSize, mapWidth, mapHeight).y
+                  + (isPedestrian ? panOffset.y : 0)
+                  - 22,
+                zIndex: 12,
+              },
+            ]}
+          >
+            <QuillaMapShadowMarker color={shadowMarkerColor} size="draft" />
+          </View>
+        ) : null}
 
         {route.slice(0, 3).map((point, index) => {
           const routePoint = getScreenPoint(point, center, tileZoom, tileSize, mapWidth, mapHeight);
@@ -424,13 +387,23 @@ const QuillaMapWebRenderer = ({
           <View
             testID="quillamap-web-pan-layer"
             {...panResponder.panHandlers}
+            onResponderRelease={handleMapPress as never}
+            {...({ onClick: handleMapClick } as Record<string, unknown>)}
+            {...({
+              onPointerDown: handlePointerDown,
+              onPointerMove: handlePointerMove,
+              onPointerUp: handlePointerUp,
+              onPointerCancel: handlePointerUp,
+            } as Record<string, unknown>)}
+            accessibilityRole={onMapPress ? 'button' : undefined}
+            accessibilityLabel={onMapPress ? 'Seleccionar ubicacion de sombra' : undefined}
             style={[
               tw`absolute inset-0`,
               {
                 cursor: 'grab',
                 touchAction: 'none',
                 userSelect: 'none',
-                zIndex: 10,
+                zIndex: 6,
               } as never,
             ]}
           />

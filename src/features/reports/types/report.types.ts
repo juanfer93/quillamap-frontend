@@ -1,20 +1,34 @@
 export enum ReportType {
-    ARROYO = 'ARROYO',
-    RETEN = 'RETEN',
-    BACHE = 'BACHE',
-    ACCIDENTE = 'ACCIDENTE',
-    SOMBRA = 'SOMBRA',
-  }
-  
-  export interface Report {
-    id: string;
-    type: ReportType;
-    description: string;
-    location: {
-      latitude: number;
-      longitude: number;
-    };
-    status: 'PENDING' | 'VALIDATED' | 'RESOLVED';
-    karma_points: number;
-    created_at: string;
-  }
+  ARROYO = 'arroyo',
+  BACHE = 'bache',
+  TRAFICO = 'trafico',
+  ACCIDENTE = 'accidente',
+  SOMBRA = 'sombra',
+  OTRO = 'otro',
+}
+
+export enum ReportStatus {
+  ACTIVO = 'activo',
+  RESUELTO = 'resuelto',
+}
+
+export interface ReportPoint {
+  type: 'Point';
+  coordinates: [number, number];
+}
+
+export interface CreateReportDto {
+  type: ReportType;
+  description: string;
+  location: ReportPoint;
+}
+
+export interface Report {
+  id: string;
+  type: ReportType;
+  description: string;
+  location: ReportPoint;
+  status: ReportStatus;
+  profileId: string;
+  createdAt: string;
+}

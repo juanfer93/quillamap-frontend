@@ -6,4 +6,6 @@ export interface PedestrianMapContainerProps {
   initialCenter?: PedestrianCoordinates;
   showHeader?: boolean;
   onShadowZonePress?: (zone: ShadowZone) => void;
+  onMapPress?: (coordinate: PedestrianCoordinates) => void;
+  selectedShadowCoordinate?: PedestrianCoordinates | null;
 }

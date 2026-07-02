@@ -1,6 +1,6 @@
-export type ShadowReportType = 'SOMBRA';
+export type ShadowReportType = 'sombra';
 
-export type ShadowZoneStatus = 'PENDING' | 'VALIDATED' | 'RESOLVED';
+export type ShadowZoneStatus = 'activo' | 'resuelto';
 
 export interface PedestrianCoordinates {
   latitude: number;

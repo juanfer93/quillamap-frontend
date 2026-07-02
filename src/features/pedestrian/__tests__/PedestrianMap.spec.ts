@@ -51,26 +51,26 @@ jest.mock('../hooks/useLocationPermissions', () => ({
 const shadowZones: ShadowZone[] = [
   {
     id: 'shadow-zone-1',
-    type: 'SOMBRA',
+    type: 'sombra',
     title: 'Parque Los Fundadores',
     description: 'Sombra continua bajo arbolado urbano.',
     location: {
       latitude: 10.9878,
       longitude: -74.7889,
     },
-    status: 'VALIDATED',
+    status: 'activo',
     coverageRadiusMeters: 320,
   },
   {
     id: 'shadow-zone-2',
-    type: 'SOMBRA',
+    type: 'sombra',
     title: 'Carrera 51B',
     description: 'Paso peatonal fresco durante la tarde.',
     location: {
       latitude: 10.9941,
       longitude: -74.8089,
     },
-    status: 'PENDING',
+    status: 'activo',
     coverageRadiusMeters: 450,
   },
 ];
@@ -114,7 +114,6 @@ describe('PedestrianMapContainer', () => {
 
     const nativeMap = getByTestId('quillamap-native-map');
     const firstMarker = getByTestId('quillamap-native-shade-marker-shadow-zone-1');
-    const firstArea = getByTestId('quillamap-native-shade-area-shadow-zone-1');
 
     expect(nativeMap).toBeTruthy();
     expect(firstMarker).toBeTruthy();
@@ -122,7 +121,6 @@ describe('PedestrianMapContainer', () => {
       latitude: 10.9878,
       longitude: -74.7889,
     });
-    expect(firstArea.props.coordinates.length).toBeGreaterThan(4);
 
     fireEvent.press(firstMarker);
 

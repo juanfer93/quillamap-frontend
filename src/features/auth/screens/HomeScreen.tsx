@@ -6,12 +6,9 @@ import { useThemeStore } from '@/store/useThemeStore';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '@/features/auth/types/auth.types';
-import PedestrianMapContainer from '@/features/pedestrian/components/PedestrianMapContainer';
-import { ShadowZone } from '@/features/pedestrian/schemas/pedestrian.schema';
+import ShadowReportMapFlow from '@/features/reports/components/ShadowReportMapFlow';
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
-
-const shadowZones: ShadowZone[] = [];
 
 const HomeScreen = () => {
   const { user, signOut } = useAuthStore();
@@ -31,7 +28,7 @@ const HomeScreen = () => {
   if (isPedestrian) {
     return (
       <View style={tw`flex-1 bg-surface-light dark:bg-charcoal`}>
-        <PedestrianMapContainer shadowZones={shadowZones} themeMode={mode} showHeader={false} />
+        <ShadowReportMapFlow themeMode={mode} />
         <TouchableOpacity
           testID="pedestrian-logout-button"
           accessibilityRole="button"

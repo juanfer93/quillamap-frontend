@@ -25,9 +25,12 @@ export interface QuillaMapProps {
   themeMode?: 'light' | 'dark';
   center: QuillaMapCoordinate;
   shadeZones?: QuillaMapShadeZone[];
+  showDefaultShadeZones?: boolean;
   routePoints?: QuillaMapRoutePoint[];
   showUserLocation?: boolean;
   style?: StyleProp<ViewStyle>;
   children?: ReactNode;
   onShadeZonePress?: (zone: QuillaMapShadeZone) => void;
+  onMapPress?: (coordinate: QuillaMapCoordinate) => void;
+  selectedCoordinate?: QuillaMapCoordinate | null;
 }
