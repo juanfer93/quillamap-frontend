@@ -3,16 +3,22 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        'brand-primary': '#004574',
+        'brand-secondary': '#D4AF37',
         'primary': '#004574',
         'secondary': '#D4AF37',
         'surface-light': '#F8FAFC',
+        'surface-dark': '#121212',
         'map-shade': '#5DA271',
         'map-shade-light': '#CFE8D6',
+        'map-shade-soft': '#E3F3E7',
         'map-route': '#2F8AC4',
         'map-road': '#E0E7EF',
         'gold': '#D4AF37',
         'sand-gold': '#c7ad8c',
         'shark-blue': '#004574',
+        'status-danger': '#DC2626',
+        'status-warning': '#FBBF24',
         'white': '#FFFFFF',
         'black': '#000000',
         'light-gray': '#f2f2f2',

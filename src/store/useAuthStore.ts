@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthResponse } from '@/features/auth/types/auth.types';
+import { getAuthStorage } from './authStorage';
 
 export type AuthUser = AuthResponse['user'];
 
@@ -26,7 +26,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'quillamap-auth',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(getAuthStorage),
       onRehydrateStorage: () => (state) => {
         state?.finishHydration();
       },

@@ -9,6 +9,15 @@ jest.mock('@react-navigation/native', () => ({
   }),
 }));
 
+jest.mock('@expo/vector-icons', () => {
+  const ReactMock = jest.requireActual<typeof React>('react');
+  const { Text } = jest.requireActual('react-native');
+
+  return {
+    Ionicons: ({ name }: { name: string }) => ReactMock.createElement(Text, null, name),
+  };
+});
+
 jest.mock('@/features/pedestrian/hooks/useLocationPermissions', () => ({
   useLocationPermissions: () => ({
     permissionStatus: 'granted',
@@ -48,10 +57,9 @@ describe('HomeScreen', () => {
       isLoading: false,
     });
 
-    const { getByTestId, getByText } = render(<HomeScreen />);
+    const { getByTestId } = render(<HomeScreen />);
 
     expect(getByTestId('pedestrian-map-container')).toBeTruthy();
-    expect(getByText('Modo Peaton')).toBeTruthy();
     expect(getByTestId('pedestrian-logout-button')).toBeTruthy();
   });
 

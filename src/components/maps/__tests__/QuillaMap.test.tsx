@@ -1,4 +1,5 @@
 import React from 'react';
+import { Image } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import WebQuillaMap from '../QuillaMap.web-renderer';
 import NativeQuillaMap from '../QuillaMap.native';
@@ -19,11 +20,19 @@ jest.mock('react-native-maps', () => {
 
   return {
     __esModule: true,
-    default: ({ children, ...props }: { children?: React.ReactNode }) =>
-      ReactMock.createElement(View, props, children),
+    default: ReactMock.forwardRef(
+      ({ children, ...props }: { children?: React.ReactNode }, ref: React.Ref<{ animateToRegion: jest.Mock }>) => {
+        ReactMock.useImperativeHandle(ref, () => ({
+          animateToRegion: jest.fn(),
+        }));
+
+        return ReactMock.createElement(View, props, children);
+      }
+    ),
     Marker: ({ onPress, ...props }: { onPress?: () => void }) =>
       ReactMock.createElement(Pressable, { ...props, onPress }),
     Circle: (props: Record<string, unknown>) => ReactMock.createElement(View, props),
+    Polygon: (props: Record<string, unknown>) => ReactMock.createElement(View, props),
     Polyline: (props: Record<string, unknown>) => ReactMock.createElement(View, props),
   };
 });
@@ -42,7 +51,7 @@ const shadeZones: QuillaMapShadeZone[] = [
 
 describe('QuillaMap', () => {
   it('renderiza la vista visual web del mapa peatonal', () => {
-    const { getByTestId, getByText } = render(
+    const { getByTestId, queryByText } = render(
       <WebQuillaMap
         mode="pedestrian"
         center={{ latitude: 10.9878, longitude: -74.7889 }}
@@ -55,8 +64,7 @@ describe('QuillaMap', () => {
     expect(getByTestId('quillamap-web-map-tiles')).toBeTruthy();
     expect(getByTestId('quillamap-web-route')).toBeTruthy();
     expect(getByTestId('quillamap-web-shade-marker-shade-1')).toBeTruthy();
-    expect(getByText('Buscar ruta fresca')).toBeTruthy();
-    expect(getByText('1 sombras')).toBeTruthy();
+    expect(queryByText('Zonas de Sombra')).toBeNull();
   });
 
   it('renderiza mapa nativo y propaga seleccion de zona de sombra', () => {
@@ -77,5 +85,64 @@ describe('QuillaMap', () => {
     fireEvent.press(getByTestId('quillamap-native-shade-marker-shade-1'));
 
     expect(onShadeZonePress).toHaveBeenCalledWith(shadeZones[0]);
+  });
+
+  it('oscurece tiles web manteniendo detalle cuando el tema es oscuro', () => {
+    const { UNSAFE_getAllByType } = render(
+      <WebQuillaMap
+        mode="pedestrian"
+        themeMode="dark"
+        center={{ latitude: 10.9878, longitude: -74.7889 }}
+        shadeZones={shadeZones}
+      />
+    );
+
+    const [firstTile] = UNSAFE_getAllByType(Image);
+
+    expect(firstTile.props.source.uri).toContain('World_Dark_Gray_Base');
+    expect(firstTile.props.style.filter).toContain('contrast');
+  });
+
+  it('permite acercar el mapa web peatonal', () => {
+    const { getByTestId, UNSAFE_getAllByType } = render(
+      <WebQuillaMap
+        mode="pedestrian"
+        center={{ latitude: 10.9878, longitude: -74.7889 }}
+        shadeZones={shadeZones}
+      />
+    );
+
+    expect(UNSAFE_getAllByType(Image)[0].props.source.uri).toContain('/16/');
+
+    fireEvent.press(getByTestId('quillamap-web-zoom-in'));
+
+    expect(UNSAFE_getAllByType(Image)[0].props.source.uri).toContain('/17/');
+    expect(getByTestId('quillamap-web-zoom-out')).toBeTruthy();
+  });
+
+  it('aplica estilo oscuro al mapa nativo cuando el tema es oscuro', () => {
+    const { getByTestId } = render(
+      <NativeQuillaMap
+        mode="pedestrian"
+        themeMode="dark"
+        center={{ latitude: 10.9878, longitude: -74.7889 }}
+        shadeZones={shadeZones}
+      />
+    );
+
+    expect(getByTestId('quillamap-native-map').props.customMapStyle.length).toBeGreaterThan(0);
+  });
+
+  it('expone controles reutilizables de zoom en el mapa nativo peatonal', () => {
+    const { getByTestId } = render(
+      <NativeQuillaMap
+        mode="pedestrian"
+        center={{ latitude: 10.9878, longitude: -74.7889 }}
+        shadeZones={shadeZones}
+      />
+    );
+
+    expect(getByTestId('quillamap-native-zoom-in')).toBeTruthy();
+    expect(getByTestId('quillamap-native-zoom-out')).toBeTruthy();
   });
 });

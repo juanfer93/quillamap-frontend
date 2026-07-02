@@ -6,10 +6,12 @@ import type {
 } from './QuillaMap.types';
 
 export const defaultPedestrianRoute: QuillaMapRoutePoint[] = [
-  { id: 'route-1', latitude: 10.9869, longitude: -74.7897 },
-  { id: 'route-2', latitude: 10.9882, longitude: -74.7889 },
-  { id: 'route-3', latitude: 10.9891, longitude: -74.7894 },
-  { id: 'route-4', latitude: 10.9901, longitude: -74.7879 },
+  { id: 'route-1', latitude: 10.9849, longitude: -74.7907 },
+  { id: 'route-2', latitude: 10.9862, longitude: -74.7896 },
+  { id: 'route-3', latitude: 10.9875, longitude: -74.7898 },
+  { id: 'route-4', latitude: 10.9884, longitude: -74.7888 },
+  { id: 'route-5', latitude: 10.9895, longitude: -74.7881 },
+  { id: 'route-6', latitude: 10.9904, longitude: -74.7869 },
 ];
 
 export const defaultShadeZones: QuillaMapShadeZone[] = [
@@ -17,15 +19,22 @@ export const defaultShadeZones: QuillaMapShadeZone[] = [
     id: 'demo-shade-1',
     title: 'Zona de Sombra',
     description: 'Refugio solar cercano',
-    coordinate: { latitude: 10.9878, longitude: -74.7889 },
-    radiusMeters: 360,
+    coordinate: { latitude: 10.9901, longitude: -74.7893 },
+    radiusMeters: 280,
   },
   {
     id: 'demo-shade-2',
     title: 'Ruta arborizada',
     description: 'Tramo con cobertura vegetal',
-    coordinate: { latitude: 10.9893, longitude: -74.7879 },
-    radiusMeters: 260,
+    coordinate: { latitude: 10.9867, longitude: -74.7869 },
+    radiusMeters: 220,
+  },
+  {
+    id: 'demo-shade-3',
+    title: 'Parque fresco',
+    description: 'Cobertura vegetal cercana',
+    coordinate: { latitude: 10.9842, longitude: -74.7917 },
+    radiusMeters: 190,
   },
 ];
 

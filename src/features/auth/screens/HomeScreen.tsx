@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import tw from '@/lib/tailwind';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useThemeStore } from '@/store/useThemeStore';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '@/features/auth/types/auth.types';
@@ -14,6 +15,7 @@ const shadowZones: ShadowZone[] = [];
 
 const HomeScreen = () => {
   const { user, signOut } = useAuthStore();
+  const { mode } = useThemeStore();
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const mobilityMode = user?.mobility_mode ?? user?.mobilityMode;
   const isPedestrian = mobilityMode === 'peaton';
@@ -29,28 +31,14 @@ const HomeScreen = () => {
   if (isPedestrian) {
     return (
       <View style={tw`flex-1 bg-surface-light dark:bg-charcoal`}>
-        <View style={tw`px-m pt-l pb-s flex-row items-start justify-between`}>
-          <View style={tw`flex-1 pr-m`}>
-            <Text style={tw`text-primary dark:text-secondary text-2xl font-bold`}>
-              Modo Peaton
-            </Text>
-            <Text style={tw`text-dark-gray dark:text-light-gray mt-xs`}>
-              Rastreo de proximidad entre 300m y 500m
-            </Text>
-          </View>
-          <TouchableOpacity
-            testID="pedestrian-logout-button"
-            onPress={handleLogout}
-            style={tw`bg-primary dark:bg-secondary px-m py-s rounded-m`}
-          >
-            <Text style={tw`text-white dark:text-black font-bold`}>
-              Cerrar Sesion
-            </Text>
-          </TouchableOpacity>
-        </View>
-        <View style={tw`flex-1 px-m pb-m`}>
-          <PedestrianMapContainer shadowZones={shadowZones} showHeader={false} />
-        </View>
+        <PedestrianMapContainer shadowZones={shadowZones} themeMode={mode} showHeader={false} />
+        <TouchableOpacity
+          testID="pedestrian-logout-button"
+          accessibilityRole="button"
+          accessibilityLabel="Cerrar sesion"
+          onPress={handleLogout}
+          style={tw`absolute right-0 bottom-0 h-16 w-1/4 items-center justify-center`}
+        />
       </View>
     );
   }

@@ -22,6 +22,7 @@ export interface QuillaMapRoutePoint extends QuillaMapCoordinate {
 
 export interface QuillaMapProps {
   mode: QuillaMapMode;
+  themeMode?: 'light' | 'dark';
   center: QuillaMapCoordinate;
   shadeZones?: QuillaMapShadeZone[];
   routePoints?: QuillaMapRoutePoint[];

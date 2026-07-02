@@ -80,6 +80,7 @@ const PedestrianMapContainer = ({
       >
         <QuillaMap
           mode="pedestrian"
+          themeMode={themeMode}
           center={center}
           shadeZones={mapShadeZones}
           onShadeZonePress={(zone) => {

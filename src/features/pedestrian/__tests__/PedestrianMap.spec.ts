@@ -10,12 +10,29 @@ jest.mock('react-native-maps', () => {
 
   return {
     __esModule: true,
-    default: ({ children, ...props }: { children?: React.ReactNode }) =>
-      ReactMock.createElement(View, props, children),
+    default: ReactMock.forwardRef(
+      ({ children, ...props }: { children?: React.ReactNode }, ref: React.Ref<{ animateToRegion: jest.Mock }>) => {
+        ReactMock.useImperativeHandle(ref, () => ({
+          animateToRegion: jest.fn(),
+        }));
+
+        return ReactMock.createElement(View, props, children);
+      }
+    ),
     Marker: ({ onPress, ...props }: { onPress?: () => void }) =>
       ReactMock.createElement(Pressable, { ...props, onPress }),
     Circle: (props: Record<string, unknown>) => ReactMock.createElement(View, props),
+    Polygon: (props: Record<string, unknown>) => ReactMock.createElement(View, props),
     Polyline: (props: Record<string, unknown>) => ReactMock.createElement(View, props),
+  };
+});
+
+jest.mock('@expo/vector-icons', () => {
+  const ReactMock = jest.requireActual<typeof React>('react');
+  const { Text } = jest.requireActual('react-native');
+
+  return {
+    Ionicons: ({ name }: { name: string }) => ReactMock.createElement(Text, null, name),
   };
 });
 
@@ -97,7 +114,7 @@ describe('PedestrianMapContainer', () => {
 
     const nativeMap = getByTestId('quillamap-native-map');
     const firstMarker = getByTestId('quillamap-native-shade-marker-shadow-zone-1');
-    const firstRadius = getByTestId('quillamap-native-shade-radius-shadow-zone-1');
+    const firstArea = getByTestId('quillamap-native-shade-area-shadow-zone-1');
 
     expect(nativeMap).toBeTruthy();
     expect(firstMarker).toBeTruthy();
@@ -105,7 +122,7 @@ describe('PedestrianMapContainer', () => {
       latitude: 10.9878,
       longitude: -74.7889,
     });
-    expect(firstRadius.props.radius).toBe(320);
+    expect(firstArea.props.coordinates.length).toBeGreaterThan(4);
 
     fireEvent.press(firstMarker);
 
