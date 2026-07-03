@@ -1,38 +1,75 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import LoginScreen from '../screens/LoginScreen';
 import { authService } from '@/api/client';
 
-// Mock de API
 jest.mock('@/api/client', () => ({
   authService: { login: jest.fn() },
   authApi: { register: jest.fn() },
 }));
 
-// Mock de Navegación
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
     navigate: jest.fn(),
   }),
 }));
 
-describe('LoginScreen - Integración', () => {
+describe('LoginScreen - Integracion', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it('debe realizar el login correctamente', async () => {
-    (authService.login as jest.Mock).mockResolvedValue({
+    jest.mocked(authService.login).mockResolvedValue({
       accessToken: 'token-123',
-      user: { email: 'juan@test.com' }
+      user: {
+        id: 'profile-1',
+        full_name: 'Juan Tester',
+        email: 'juan@test.com',
+      },
     });
 
     const { getByPlaceholderText, getByText } = render(<LoginScreen />);
 
-    fireEvent.changeText(getByPlaceholderText('Correo electrónico'), 'juan@test.com');
+    fireEvent.changeText(getByPlaceholderText(/Correo/), 'juan@test.com');
     fireEvent.changeText(getByPlaceholderText('********'), '123456');
-    
-    // Usamos regex /entrar/i para que no importe si es ENTRAR o Entrar
     fireEvent.press(getByText(/entrar/i));
 
     await waitFor(() => {
       expect(authService.login).toHaveBeenCalledWith('juan@test.com', '123456');
-    }, { timeout: 10000 }); // Más tiempo para máquinas lentas
+    });
+  });
+
+  it('muestra un error visible cuando backend rechaza credenciales invalidas', async () => {
+    jest.mocked(authService.login).mockRejectedValue({
+      isAxiosError: true,
+      response: {
+        data: {
+          message: 'Credenciales invalidas',
+        },
+      },
+    });
+
+    const { getByPlaceholderText, getByText, getByTestId } = render(<LoginScreen />);
+
+    fireEvent.changeText(getByPlaceholderText(/Correo/), 'juan@test.com');
+    fireEvent.changeText(getByPlaceholderText('********'), '123456');
+    fireEvent.press(getByText(/entrar/i));
+
+    await waitFor(() => {
+      expect(getByTestId('login-form-error').props.children).toBe('Credenciales invalidas');
+    });
+  });
+
+  it('muestra errores de validacion sin llamar al backend', () => {
+    const { getByPlaceholderText, getByText, getByTestId } = render(<LoginScreen />);
+
+    fireEvent.changeText(getByPlaceholderText(/Correo/), 'correo-invalido');
+    fireEvent.changeText(getByPlaceholderText('********'), '123');
+    fireEvent.press(getByText(/entrar/i));
+
+    expect(getByTestId('login-email-error').props.children).toBe('Ingresa un correo electronico valido');
+    expect(getByTestId('login-password-error').props.children).toBe('La contrasena debe tener al menos 6 caracteres');
+    expect(authService.login).not.toHaveBeenCalled();
   });
 });

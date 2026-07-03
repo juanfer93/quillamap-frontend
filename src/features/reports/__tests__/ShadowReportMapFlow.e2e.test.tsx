@@ -1,9 +1,10 @@
 import React from 'react';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { reportsApi } from '@/api/client';
+import { useKarmaRewards } from '@/features/navigation/hooks/useKarmaRewards';
 import { useAuthStore } from '@/store/useAuthStore';
 import ShadowReportMapFlow from '../components/ShadowReportMapFlow';
-import { SHADOW_REPORTS_LOOKUP_RADIUS_METERS } from '../constants/shadow-report.constants';
+import { SHADOW_REPORTS_MAP_LOOKUP_RADIUS_METERS } from '../constants/shadow-report.constants';
 import { ReportStatus, ReportType, type CreateReportDto, type Report } from '../types/report.types';
 
 jest.mock('@expo/vector-icons', () => {
@@ -14,6 +15,24 @@ jest.mock('@expo/vector-icons', () => {
     Ionicons: ({ name }: { name: string }) => ReactMock.createElement(Text, null, name),
   };
 });
+
+jest.mock('@/features/pedestrian/hooks/useLocationPermissions', () => ({
+  useLocationPermissions: () => ({
+    permissionStatus: 'granted',
+    currentLocation: null,
+    isRequestingPermission: false,
+    errorMessage: null,
+  }),
+}));
+
+jest.mock('@/features/navigation/hooks/useLocationPermissions', () => ({
+  useLocationPermissions: () => ({
+    permissionStatus: 'granted',
+    currentLocation: null,
+    isRequestingPermission: false,
+    errorMessage: null,
+  }),
+}));
 
 jest.mock('react-native-maps', () => {
   const ReactMock = jest.requireActual<typeof React>('react');
@@ -47,17 +66,20 @@ jest.mock('@/api/client', () => ({
 
 describe('ShadowReportMapFlow e2e', () => {
   beforeEach(() => {
+    jest.useRealTimers();
     jest.clearAllMocks();
     useAuthStore.setState({
       user: {
         id: 'profile-1',
         full_name: 'Sombra Tester',
         email: 'sombra@test.com',
+        karma: 0,
         mobility_mode: 'peaton',
       },
       session: 'jwt-token',
       isLoading: false,
     });
+    useKarmaRewards.getState().resetKarma();
     jest.mocked(reportsApi.findNearby).mockResolvedValue([]);
   });
 
@@ -83,7 +105,13 @@ describe('ShadowReportMapFlow e2e', () => {
       return savedReport;
     });
 
-    const { getByTestId } = render(<ShadowReportMapFlow />);
+    const { getByTestId, queryByTestId } = render(<ShadowReportMapFlow canReportShadow onLogout={jest.fn()} />);
+
+    await waitFor(() => expect(reportsApi.findNearby).toHaveBeenCalled());
+
+    fireEvent.press(getByTestId('user-tools-profile-button'));
+    fireEvent.press(getByTestId('user-tools-report-shadow'));
+    await waitFor(() => expect(getByTestId('shadow-placement-hint')).toBeTruthy());
 
     fireEvent.press(getByTestId('quillamap-native-map'), {
       nativeEvent: {
@@ -91,12 +119,22 @@ describe('ShadowReportMapFlow e2e', () => {
       },
     });
 
-    expect(getByTestId('quillamap-native-shadow-draft-marker').props.coordinate).toEqual(tappedCoordinate);
-
-    fireEvent.press(getByTestId('shadow-report-submit'));
-
     await waitFor(() => expect(mockDbReports).toHaveLength(1));
 
+    expect(queryByTestId('shadow-placement-hint')).toBeNull();
+    expect(getByTestId('shadow-report-success').props.children).toBe('Sombra reportada');
+
+    await act(async () => {
+      await new Promise((resolve) => {
+        setTimeout(resolve, 3100);
+      });
+    });
+    await waitFor(() => {
+      expect(queryByTestId('shadow-report-success')).toBeNull();
+    });
+
+    fireEvent.press(getByTestId('user-tools-profile-button'));
+    expect(getByTestId('user-tools-karma-points').props.children).toBe(6);
     expect(mockDbReports[0]).toMatchObject({
       type: ReportType.SOMBRA,
       location: {
@@ -105,7 +143,7 @@ describe('ShadowReportMapFlow e2e', () => {
       },
     });
     expect(getByTestId('quillamap-native-shade-marker-db-shadow-1').props.coordinate).toEqual(tappedCoordinate);
-  });
+  }, 10000);
 
   it('mantiene la sombra guardada al abrir otra sesion cargando desde backend', async () => {
     const mockDbReports: Report[] = [];
@@ -132,19 +170,23 @@ describe('ShadowReportMapFlow e2e', () => {
       return savedReport;
     });
 
-    const firstSession = render(<ShadowReportMapFlow />);
+    const firstSession = render(<ShadowReportMapFlow canReportShadow onLogout={jest.fn()} />);
 
+    await waitFor(() => expect(reportsApi.findNearby).toHaveBeenCalled());
+
+    fireEvent.press(firstSession.getByTestId('user-tools-profile-button'));
+    fireEvent.press(firstSession.getByTestId('user-tools-report-shadow'));
+    await waitFor(() => expect(firstSession.getByTestId('shadow-placement-hint')).toBeTruthy());
     fireEvent.press(firstSession.getByTestId('quillamap-native-map'), {
       nativeEvent: {
         coordinate: tappedCoordinate,
       },
     });
-    fireEvent.press(firstSession.getByTestId('shadow-report-submit'));
 
     await waitFor(() => expect(mockDbReports).toHaveLength(1));
     firstSession.unmount();
 
-    const secondSession = render(<ShadowReportMapFlow />);
+    const secondSession = render(<ShadowReportMapFlow canReportShadow onLogout={jest.fn()} />);
 
     await waitFor(() => {
       expect(secondSession.getByTestId('quillamap-native-shade-marker-db-shadow-permanent').props.coordinate).toEqual(
@@ -154,7 +196,7 @@ describe('ShadowReportMapFlow e2e', () => {
     expect(reportsApi.findNearby).toHaveBeenCalledWith({
       lat: 10.9878,
       lng: -74.7889,
-      radius: SHADOW_REPORTS_LOOKUP_RADIUS_METERS,
+      radius: SHADOW_REPORTS_MAP_LOOKUP_RADIUS_METERS,
     });
   });
 
@@ -174,7 +216,7 @@ describe('ShadowReportMapFlow e2e', () => {
 
     jest.mocked(reportsApi.findNearby).mockResolvedValue([persistedReport]);
 
-    const { getByTestId } = render(<ShadowReportMapFlow />);
+    const { getByTestId } = render(<ShadowReportMapFlow canReportShadow onLogout={jest.fn()} />);
 
     await waitFor(() => {
       expect(getByTestId('quillamap-native-shade-marker-db-shadow-existing').props.coordinate).toEqual({
@@ -200,20 +242,64 @@ describe('ShadowReportMapFlow e2e', () => {
 
     jest.mocked(reportsApi.findNearby).mockResolvedValue([persistedReport]);
 
-    const { queryByTestId } = render(<ShadowReportMapFlow themeMode="dark" />);
+    const { getByTestId, queryByTestId } = render(
+      <ShadowReportMapFlow canReportShadow themeMode="dark" onLogout={jest.fn()} />
+    );
 
     await waitFor(() => expect(reportsApi.findNearby).toHaveBeenCalled());
 
+    fireEvent.press(getByTestId('user-tools-profile-button'));
+
     expect(queryByTestId('quillamap-native-shade-marker-db-shadow-night')).toBeNull();
     expect(queryByTestId('quillamap-native-shadow-draft-marker')).toBeNull();
-    expect(queryByTestId('shadow-report-submit')).toBeNull();
+    expect(queryByTestId('user-tools-report-shadow')).toBeTruthy();
   });
 
   it('no muestra zonas demo cuando backend no devuelve sombras persistidas', async () => {
-    const { queryByTestId } = render(<ShadowReportMapFlow />);
+    const { queryByTestId } = render(<ShadowReportMapFlow canReportShadow onLogout={jest.fn()} />);
 
     await waitFor(() => expect(reportsApi.findNearby).toHaveBeenCalled());
 
     expect(queryByTestId('quillamap-native-shade-marker-shade-1')).toBeNull();
+  });
+
+  it('no marca sombra al tocar el mapa antes de activar reportar sombra', async () => {
+    const { getByTestId, queryByTestId } = render(<ShadowReportMapFlow canReportShadow onLogout={jest.fn()} />);
+
+    await waitFor(() => expect(reportsApi.findNearby).toHaveBeenCalled());
+
+    fireEvent.press(getByTestId('quillamap-native-map'), {
+      nativeEvent: {
+        coordinate: {
+          latitude: 10.991234,
+          longitude: -74.781234,
+        },
+      },
+    });
+
+    expect(queryByTestId('quillamap-native-shadow-draft-marker')).toBeNull();
+    expect(reportsApi.create).not.toHaveBeenCalled();
+  });
+
+  it('no permite reportar sombra cuando el perfil no es vehicle_type peaton', async () => {
+    const tappedCoordinate = {
+      latitude: 10.991234,
+      longitude: -74.781234,
+    };
+
+    const { getByTestId, queryByTestId } = render(<ShadowReportMapFlow canReportShadow={false} onLogout={jest.fn()} />);
+
+    await waitFor(() => expect(reportsApi.findNearby).toHaveBeenCalled());
+
+    fireEvent.press(getByTestId('quillamap-native-map'), {
+      nativeEvent: {
+        coordinate: tappedCoordinate,
+      },
+    });
+    fireEvent.press(getByTestId('user-tools-profile-button'));
+
+    expect(queryByTestId('quillamap-native-shadow-draft-marker')).toBeNull();
+    expect(queryByTestId('user-tools-report-shadow')).toBeNull();
+    expect(reportsApi.create).not.toHaveBeenCalled();
   });
 });

@@ -1,11 +1,14 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import HomeScreen from '../screens/HomeScreen';
+import { useKarmaRewards } from '@/features/navigation/hooks/useKarmaRewards';
 import { useAuthStore, AuthUser } from '@/store/useAuthStore';
+
+const mockReset = jest.fn();
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
-    reset: jest.fn(),
+    reset: mockReset,
   }),
 }));
 
@@ -27,6 +30,15 @@ jest.mock('@/features/pedestrian/hooks/useLocationPermissions', () => ({
   }),
 }));
 
+jest.mock('@/features/navigation/hooks/useLocationPermissions', () => ({
+  useLocationPermissions: () => ({
+    permissionStatus: 'granted',
+    currentLocation: null,
+    isRequestingPermission: false,
+    errorMessage: null,
+  }),
+}));
+
 jest.mock('@/api/client', () => ({
   reportsApi: {
     findNearby: jest.fn(() => new Promise(() => {})),
@@ -38,7 +50,25 @@ const pedestrianUser: AuthUser = {
   id: 'user-peaton',
   full_name: 'Paula Peaton',
   email: 'paula@quillamap.com',
+  karma: 12,
   mobility_mode: 'peaton',
+  vehicle_type: 'peaton',
+};
+
+const legacyPedestrianUser: AuthUser = {
+  id: 'user-peaton-legacy',
+  full_name: 'Pedro Peaton Legacy',
+  email: 'legacy@quillamap.com',
+  mobility_mode: 'peaton',
+  vehicle_type: null,
+};
+
+const mismatchedPedestrianUser: AuthUser = {
+  id: 'user-peaton-mismatch',
+  full_name: 'Maria Peaton Mismatch',
+  email: 'mismatch@quillamap.com',
+  mobility_mode: 'peaton',
+  vehicle_type: 'moto',
 };
 
 const carUser: AuthUser = {
@@ -55,6 +85,8 @@ describe('HomeScreen', () => {
       session: null,
       isLoading: false,
     });
+    useKarmaRewards.getState().resetKarma();
+    mockReset.mockClear();
   });
 
   it('renderiza el Modo Peaton cuando inicia sesion un usuario peaton', () => {
@@ -67,7 +99,50 @@ describe('HomeScreen', () => {
     const { getByTestId } = render(<HomeScreen />);
 
     expect(getByTestId('pedestrian-map-container')).toBeTruthy();
-    expect(getByTestId('pedestrian-logout-button')).toBeTruthy();
+    expect(getByTestId('user-tools-profile-button')).toBeTruthy();
+  });
+
+  it('muestra reportar sombra para peatones legacy sin vehicle_type persistido', () => {
+    useAuthStore.setState({
+      user: legacyPedestrianUser,
+      session: 'token-peaton-legacy',
+      isLoading: false,
+    });
+
+    const { getByTestId } = render(<HomeScreen />);
+
+    fireEvent.press(getByTestId('user-tools-profile-button'));
+
+    expect(getByTestId('user-tools-report-shadow')).toBeTruthy();
+  });
+
+  it('muestra reportar sombra cuando el mapa activo es peaton aunque vehicle_type venga desalineado', () => {
+    useAuthStore.setState({
+      user: mismatchedPedestrianUser,
+      session: 'token-peaton-mismatch',
+      isLoading: false,
+    });
+
+    const { getByTestId } = render(<HomeScreen />);
+
+    fireEvent.press(getByTestId('user-tools-profile-button'));
+
+    expect(getByTestId('user-tools-report-shadow')).toBeTruthy();
+  });
+
+  it('muestra el karma total del perfil y los puntos ganados en la sesion', () => {
+    useAuthStore.setState({
+      user: pedestrianUser,
+      session: 'token-peaton',
+      isLoading: false,
+    });
+    useKarmaRewards.setState({ karmaPoints: 6 });
+
+    const { getByTestId } = render(<HomeScreen />);
+
+    fireEvent.press(getByTestId('user-tools-profile-button'));
+
+    expect(getByTestId('user-tools-karma-points').props.children).toBe(18);
   });
 
   it('mantiene el home general para perfiles no peatonales', () => {
@@ -99,5 +174,27 @@ describe('HomeScreen', () => {
 
     expect(queryByTestId('pedestrian-map-container')).toBeNull();
     expect(getByText('Hola Usuario Sin Modo, bienvenido a QuillaMap')).toBeTruthy();
+  });
+
+  it('abre perfil, cierra sesion y redirige a Login', async () => {
+    useAuthStore.setState({
+      user: pedestrianUser,
+      session: 'token-peaton',
+      isLoading: false,
+    });
+
+    const { getByTestId } = render(<HomeScreen />);
+
+    fireEvent.press(getByTestId('user-tools-profile-button'));
+    fireEvent.press(getByTestId('user-tools-logout'));
+
+    await waitFor(() => {
+      expect(mockReset).toHaveBeenCalledWith({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    });
+    expect(useAuthStore.getState().session).toBeNull();
+    expect(useAuthStore.getState().user).toBeNull();
   });
 });

@@ -13,6 +13,12 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   multiMerge: jest.fn(() => Promise.resolve()),
 }));
 
+jest.mock('react-native-keychain', () => ({
+  setGenericPassword: jest.fn(() => Promise.resolve(true)),
+  getGenericPassword: jest.fn(() => Promise.resolve(false)),
+  resetGenericPassword: jest.fn(() => Promise.resolve(true)),
+}));
+
 import { NativeModules } from 'react-native';
 NativeModules.UIManager = NativeModules.UIManager || {};
 NativeModules.UIManager.setLayoutAnimationEnabledExperimental = jest.fn();

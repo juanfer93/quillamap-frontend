@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { AuthResponse } from '@/features/auth/types/auth.types';
-import { getAuthStorage } from './authStorage';
+import { useKarmaRewards } from '@/features/navigation/hooks/useKarmaRewards';
+import { AUTH_STORAGE_KEY, clearAuthStorage, getAuthStorage } from './authStorage';
 
 export type AuthUser = AuthResponse['user'];
 
@@ -10,7 +11,7 @@ interface AuthState {
   session: string | null;
   isLoading: boolean;
   setSession: (session: string, user: AuthUser) => void;
-  signOut: () => void;
+  signOut: () => Promise<void>;
   finishHydration: () => void;
 }
 
@@ -21,11 +22,15 @@ export const useAuthStore = create<AuthState>()(
       session: null,
       isLoading: true,
       setSession: (session, user) => set({ session, user, isLoading: false }),
-      signOut: () => set({ user: null, session: null, isLoading: false }),
+      signOut: async () => {
+        set({ user: null, session: null, isLoading: false });
+        useKarmaRewards.getState().resetKarma();
+        await clearAuthStorage();
+      },
       finishHydration: () => set({ isLoading: false }),
     }),
     {
-      name: 'quillamap-auth',
+      name: AUTH_STORAGE_KEY,
       storage: createJSONStorage(getAuthStorage),
       onRehydrateStorage: () => (state) => {
         state?.finishHydration();

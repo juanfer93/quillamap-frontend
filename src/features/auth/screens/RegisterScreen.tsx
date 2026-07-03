@@ -57,6 +57,7 @@ const RegisterScreen = () => {
     email: '',
     password: '',
     mobility_mode: 'peaton',
+    vehicle_type: 'peaton',
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -81,7 +82,7 @@ const RegisterScreen = () => {
     setFormData(prev => ({
       ...prev,
       mobility_mode: type,
-      vehicle_type: undefined,
+      vehicle_type: type === 'peaton' ? 'peaton' : undefined,
       license_plate: undefined
     }));
 

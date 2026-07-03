@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import axios from 'axios';
 import { reportsApi } from '@/api/client';
+import { useKarmaRewards } from '@/features/navigation/hooks/useKarmaRewards';
 import { useAuthStore } from '@/store/useAuthStore';
 import type { CreateReportDto, Report } from '../types/report.types';
 
@@ -43,13 +44,14 @@ export const useCreateReport = (): CreateReportState => {
 
       try {
         const report = await reportsApi.create(reportData, accessToken);
+        useKarmaRewards.getState().awardTruthfulReport();
         setCreatedReport(report);
         return report;
       } catch (error) {
         const message = getErrorMessage(error);
         setErrorMessage(message);
         if (isUnauthorizedError(error)) {
-          signOut();
+          void signOut();
         }
         throw error;
       } finally {

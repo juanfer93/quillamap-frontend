@@ -15,8 +15,8 @@ describe('useAuthStore', () => {
     expect(useAuthStore.getState().isLoading).toBe(false);
   });
 
-  it('mantiene isLoading apagado al cerrar sesion', () => {
-    useAuthStore.getState().signOut();
+  it('mantiene isLoading apagado al cerrar sesion', async () => {
+    await useAuthStore.getState().signOut();
 
     expect(useAuthStore.getState().isLoading).toBe(false);
     expect(useAuthStore.getState().session).toBeNull();

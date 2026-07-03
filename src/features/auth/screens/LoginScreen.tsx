@@ -8,8 +8,8 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
+import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import tw from '@/lib/tailwind';
@@ -23,12 +23,27 @@ import AnimatedInput from 'src/features/auth/components/animated/AnimatedInput';
 
 type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Login'>;
 
+const getLoginErrorMessage = (error: unknown): string => {
+  if (axios.isAxiosError(error)) {
+    const apiMessage = error.response?.data?.message;
+
+    if (Array.isArray(apiMessage)) {
+      return apiMessage[0] ?? 'Credenciales invalidas';
+    }
+
+    return apiMessage ?? 'Credenciales invalidas';
+  }
+
+  return error instanceof Error ? error.message : 'Credenciales invalidas';
+};
+
 const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLocalLoading, setIsLocalLoading] = useState(false);
   const [isTransitioningToRegister, setIsTransitioningToRegister] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [formError, setFormError] = useState<string | null>(null);
 
   const navigation = useNavigation<LoginScreenNavigationProp>();
   const { setSession } = useAuthStore();
@@ -44,18 +59,19 @@ const LoginScreen = () => {
         email: fieldErrors.email ? fieldErrors.email[0] : undefined,
         password: fieldErrors.password ? fieldErrors.password[0] : undefined,
       });
+      setFormError(null);
       return;
     }
 
     setErrors({});
+    setFormError(null);
     setIsLocalLoading(true);
     try {
       const { accessToken, user } = await authService.login(email, password);
       setSession(accessToken, user);
       navigation.navigate('Home');
-    } catch (error: any) {
-      const message = error.response?.data?.message || 'Error al conectar con el servidor';
-      Alert.alert('Error de inicio de sesión', message);
+    } catch (error: unknown) {
+      setFormError(getLoginErrorMessage(error));
     } finally {
       setIsLocalLoading(false);
     }
@@ -128,12 +144,18 @@ const LoginScreen = () => {
                 onChangeText={(val: string) => {
                   setEmail(val);
                   if (errors.email) setErrors(prev => ({ ...prev, email: undefined }));
+                  if (formError) setFormError(null);
                 }}
                 hasError={!!errors.email}
                 isDark={isDark}
                 autoCapitalize="none"
                 keyboardType="email-address"
               />
+              {errors.email ? (
+                <Text testID="login-email-error" style={tw`-mt-s mb-s text-error font-semibold`}>
+                  {errors.email}
+                </Text>
+              ) : null}
 
               <AnimatedInput
                 label="Contraseña"
@@ -142,11 +164,23 @@ const LoginScreen = () => {
                 onChangeText={(val: string) => {
                   setPassword(val);
                   if (errors.password) setErrors(prev => ({ ...prev, password: undefined }));
+                  if (formError) setFormError(null);
                 }}
                 hasError={!!errors.password}
                 isDark={isDark}
                 secureTextEntry
               />
+              {errors.password ? (
+                <Text testID="login-password-error" style={tw`-mt-s mb-s text-error font-semibold`}>
+                  {errors.password}
+                </Text>
+              ) : null}
+
+              {formError ? (
+                <Text testID="login-form-error" style={tw`mb-m text-error text-center font-bold`}>
+                  {formError}
+                </Text>
+              ) : null}
 
               <TouchableOpacity
                 onPress={handleLogin}

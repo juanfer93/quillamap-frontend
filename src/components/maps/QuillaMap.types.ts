@@ -30,6 +30,7 @@ export interface QuillaMapProps {
   showUserLocation?: boolean;
   style?: StyleProp<ViewStyle>;
   children?: ReactNode;
+  profileTools?: ReactNode;
   onShadeZonePress?: (zone: QuillaMapShadeZone) => void;
   onMapPress?: (coordinate: QuillaMapCoordinate) => void;
   selectedCoordinate?: QuillaMapCoordinate | null;

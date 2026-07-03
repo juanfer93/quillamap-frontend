@@ -84,6 +84,12 @@ describe('RegisterScreen - Flujo Completo', () => {
         'El correo ya existe. Inicia sesion o usa otro correo.',
       );
     });
+    expect(authApi.register).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mobility_mode: 'peaton',
+        vehicle_type: 'peaton',
+      })
+    );
     expect(mockedNavigate).not.toHaveBeenCalledWith('Home');
   });
 });

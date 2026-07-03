@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
-import { getAuthStorage } from '../authStorage';
+import * as Keychain from 'react-native-keychain';
+import { AUTH_STORAGE_KEY, clearAuthStorage, getAuthStorage } from '../authStorage';
 
 const setPlatform = (os: typeof Platform.OS) => {
   Object.defineProperty(Platform, 'OS', {
@@ -45,11 +46,30 @@ describe('getAuthStorage', () => {
     expect(localStorageMock.removeItem).toHaveBeenCalledWith('quillamap-auth');
   });
 
-  it('usa AsyncStorage en movil', () => {
+  it('usa Keychain en movil', async () => {
     setPlatform('android');
 
     const storage = getAuthStorage();
 
-    expect(storage).toBe(AsyncStorage);
+    await storage.setItem(AUTH_STORAGE_KEY, 'secure-session');
+    await storage.removeItem(AUTH_STORAGE_KEY);
+
+    expect(Keychain.setGenericPassword).toHaveBeenCalledWith(AUTH_STORAGE_KEY, 'secure-session', {
+      service: 'quillamap.auth.session',
+    });
+    expect(Keychain.resetGenericPassword).toHaveBeenCalledWith({
+      service: 'quillamap.auth.session',
+    });
+    expect(storage).not.toBe(AsyncStorage);
+  });
+
+  it('limpia el token seguro desde el helper global', async () => {
+    setPlatform('ios');
+
+    await clearAuthStorage();
+
+    expect(Keychain.resetGenericPassword).toHaveBeenCalledWith({
+      service: 'quillamap.auth.session',
+    });
   });
 });

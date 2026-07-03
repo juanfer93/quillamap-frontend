@@ -1,30 +1,25 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Text, View } from 'react-native';
 import tw from '@/lib/tailwind';
 import { reportsApi } from '@/api/client';
 import PedestrianMapContainer from '@/features/pedestrian/components/PedestrianMapContainer';
+import UserToolsMenu from '@/features/navigation/components/UserToolsMenu';
+import { useLocationPermissions } from '@/features/navigation/hooks/useLocationPermissions';
 import {
   DEFAULT_PEDESTRIAN_CENTER,
   type PedestrianCoordinates,
   type ShadowZone,
 } from '@/features/pedestrian/schemas/pedestrian.schema';
 import { useCreateReport } from '../hooks/useCreateReport';
-import { SHADOW_REPORTS_LOOKUP_RADIUS_METERS } from '../constants/shadow-report.constants';
+import { SHADOW_REPORTS_MAP_LOOKUP_RADIUS_METERS } from '../constants/shadow-report.constants';
 import { ReportType, type Report } from '../types/report.types';
 
 interface ShadowReportMapFlowProps {
   initialShadowZones?: ShadowZone[];
   themeMode?: 'light' | 'dark';
+  canReportShadow?: boolean;
+  onLogout: () => void;
 }
-
-interface ReportIconProps {
-  name: string;
-  size: number;
-  color: string;
-}
-
-const ReportIcon = Ionicons as React.ComponentType<ReportIconProps>;
 
 const toShadowZone = (report: Report): ShadowZone => ({
   id: report.id,
@@ -51,12 +46,19 @@ const createShadowReportDto = (coordinate: PedestrianCoordinates) => ({
 const ShadowReportMapFlow = ({
   initialShadowZones = [],
   themeMode = 'light',
+  canReportShadow = false,
+  onLogout,
 }: ShadowReportMapFlowProps) => {
   const [selectedCoordinate, setSelectedCoordinate] = useState<PedestrianCoordinates | null>(null);
+  const [isSelectingShadowLocation, setIsSelectingShadowLocation] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [nearbyReports, setNearbyReports] = useState<Report[]>([]);
   const [createdReports, setCreatedReports] = useState<Report[]>([]);
   const { createReport, errorMessage, isCreating } = useCreateReport();
-  const isShadowReportingAvailable = themeMode !== 'dark';
+  const { currentLocation } = useLocationPermissions();
+  const lookupCenter = currentLocation ?? DEFAULT_PEDESTRIAN_CENTER;
+  const isShadowReportingAvailable = canReportShadow && themeMode !== 'dark';
+  const canSelectShadowLocation = isShadowReportingAvailable && isSelectingShadowLocation;
   const reportMap = useMemo(() => {
     const reports = new Map<string, Report>();
 
@@ -72,17 +74,16 @@ const ShadowReportMapFlow = ({
     () => [...initialShadowZones, ...Array.from(reportMap.values()).map(toShadowZone)],
     [initialShadowZones, reportMap]
   );
-  const markerColor = tw.color('secondary') ?? tw.color('brand-secondary') ?? '';
 
   const loadPersistedShadowReports = useCallback(async () => {
     const reports = await reportsApi
       .findNearby({
-        lat: DEFAULT_PEDESTRIAN_CENTER.latitude,
-        lng: DEFAULT_PEDESTRIAN_CENTER.longitude,
-        radius: SHADOW_REPORTS_LOOKUP_RADIUS_METERS,
-      })
+        lat: lookupCenter.latitude,
+        lng: lookupCenter.longitude,
+        radius: SHADOW_REPORTS_MAP_LOOKUP_RADIUS_METERS,
+      });
     return reports.filter((report) => report.type === ReportType.SOMBRA);
-  }, []);
+  }, [lookupCenter.latitude, lookupCenter.longitude]);
 
   useEffect(() => {
     let isMounted = true;
@@ -107,75 +108,110 @@ const ShadowReportMapFlow = ({
   useEffect(() => {
     if (!isShadowReportingAvailable) {
       setSelectedCoordinate(null);
+      setIsSelectingShadowLocation(false);
+      setSuccessMessage(null);
     }
   }, [isShadowReportingAvailable]);
 
-  const handleCreateShadowReport = async () => {
-    if (!selectedCoordinate || isCreating) {
+  useEffect(() => {
+    if (!successMessage) {
+      return undefined;
+    }
+
+    const timeoutId = setTimeout(() => {
+      setSuccessMessage(null);
+    }, 3000);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [successMessage]);
+
+  const handleShadowToolPress = async () => {
+    if (isCreating || themeMode === 'dark') {
       return;
     }
 
+    setSelectedCoordinate(null);
+    setSuccessMessage(null);
+    setIsSelectingShadowLocation(true);
+  };
+
+  const handleSelectShadowLocation = async (coordinate: PedestrianCoordinates) => {
+    if (!canSelectShadowLocation || isCreating) {
+      return;
+    }
+
+    setSelectedCoordinate(coordinate);
+    setIsSelectingShadowLocation(false);
+
     try {
-      const report = await createReport(createShadowReportDto(selectedCoordinate));
+      const report = await createReport(createShadowReportDto(coordinate));
       setCreatedReports((currentReports) => [...currentReports, report]);
       loadPersistedShadowReports()
         .then(setNearbyReports)
         .catch(() => undefined);
       setSelectedCoordinate(null);
+      setSuccessMessage('Sombra reportada');
     } catch {
       // The hook owns the visible error state and session cleanup.
+      setSelectedCoordinate(null);
+      setSuccessMessage(null);
     }
   };
+
+  const reportShadowLabel = isSelectingShadowLocation ? 'Seleccionando sombra' : 'Reportar sombra';
 
   return (
     <View testID="shadow-report-flow" style={tw`flex-1 bg-surface-light dark:bg-charcoal`}>
       <PedestrianMapContainer
         shadowZones={shadowZones}
         themeMode={themeMode}
+        initialCenter={lookupCenter}
         showHeader={false}
-        selectedShadowCoordinate={isShadowReportingAvailable ? selectedCoordinate : null}
-        onMapPress={isShadowReportingAvailable ? setSelectedCoordinate : undefined}
+        selectedShadowCoordinate={selectedCoordinate}
+        profileTools={(
+          <UserToolsMenu
+            canReportShadow={canReportShadow}
+            isReportShadowDisabled={isCreating || themeMode === 'dark'}
+            isReportingShadow={isCreating}
+            reportShadowLabel={reportShadowLabel}
+            onReportShadow={handleShadowToolPress}
+            onLogout={onLogout}
+          />
+        )}
+        onMapPress={canSelectShadowLocation ? handleSelectShadowLocation : undefined}
       />
 
-      {isShadowReportingAvailable ? (
-        <View
-          pointerEvents="box-none"
-          style={tw`absolute left-m right-m bottom-20 items-center`}
-        >
-        <Pressable
-          testID="shadow-report-submit"
-          accessibilityRole="button"
-          accessibilityLabel="Reportar zona de sombra"
-          disabled={!selectedCoordinate || isCreating}
-          onPress={handleCreateShadowReport}
-          style={[
-            tw`min-h-12 rounded-m px-m py-s flex-row items-center justify-center border`,
-            selectedCoordinate && !isCreating
-              ? tw`bg-primary border-primary dark:bg-secondary dark:border-secondary`
-              : tw`bg-medium-gray border-medium-gray`,
-          ]}
-        >
-          <ReportIcon
-            name="umbrella-outline"
-            size={18}
-            color={selectedCoordinate && !isCreating ? markerColor : tw.color('dark-gray') ?? ''}
-          />
+      {canSelectShadowLocation ? (
+        <View pointerEvents="none" style={tw`absolute left-m right-m bottom-24 items-center`}>
           <Text
-            numberOfLines={1}
-            style={[
-              tw`ml-s font-bold`,
-              selectedCoordinate && !isCreating ? tw`text-white dark:text-black` : tw`text-dark-gray`,
-            ]}
+            testID="shadow-placement-hint"
+            style={tw`rounded-m bg-white dark:bg-slate px-m py-s text-primary dark:text-secondary font-bold`}
           >
-            {isCreating ? 'Guardando sombra' : 'Reportar sombra'}
+            Toca el mapa para ubicar la sombra
           </Text>
-        </Pressable>
+        </View>
+      ) : null}
 
-        {errorMessage ? (
-          <Text testID="shadow-report-error" style={tw`mt-s text-error text-center`}>
-            {errorMessage}
+      {successMessage && !errorMessage ? (
+        <View pointerEvents="none" style={tw`absolute left-m right-m bottom-20 items-center`}>
+          <Text
+            testID="shadow-report-success"
+            style={tw`rounded-m bg-map-shade px-m py-s text-white font-bold`}
+          >
+            {successMessage}
           </Text>
-        ) : null}
+        </View>
+      ) : null}
+
+      {errorMessage ? (
+        <View pointerEvents="box-none" style={tw`absolute left-m right-m bottom-20 items-center`}>
+          {errorMessage ? (
+            <Text testID="shadow-report-error" style={tw`mt-s text-error text-center`}>
+              {errorMessage}
+            </Text>
+          ) : null}
         </View>
       ) : null}
     </View>

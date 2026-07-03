@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { PedestrianCoordinates, ShadowZone } from '../schemas/pedestrian.schema';
 
 export interface PedestrianMapContainerProps {
@@ -8,4 +9,5 @@ export interface PedestrianMapContainerProps {
   onShadowZonePress?: (zone: ShadowZone) => void;
   onMapPress?: (coordinate: PedestrianCoordinates) => void;
   selectedShadowCoordinate?: PedestrianCoordinates | null;
+  profileTools?: ReactNode;
 }

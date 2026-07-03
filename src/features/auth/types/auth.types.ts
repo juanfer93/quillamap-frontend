@@ -1,6 +1,6 @@
 export type MobilityMode = 'peaton' | 'turista' | 'moto' | 'carro';
 
-export type VehicleType = 'particular' | 'taxi' | 'moto';
+export type VehicleType = 'peaton' | 'particular' | 'taxi' | 'moto';
 
 export type RootStackParamList = {
   Welcome: undefined;
@@ -24,6 +24,7 @@ export interface AuthResponse {
     id: string;
     full_name: string | null;
     email: string;
+    karma?: number | null;
     mobility_mode?: MobilityMode | null;
     mobilityMode?: MobilityMode | null;
     vehicle_type?: VehicleType | null;

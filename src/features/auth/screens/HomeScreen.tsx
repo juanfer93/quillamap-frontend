@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text } from 'react-native';
 import tw from '@/lib/tailwind';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useThemeStore } from '@/store/useThemeStore';
@@ -7,6 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '@/features/auth/types/auth.types';
 import ShadowReportMapFlow from '@/features/reports/components/ShadowReportMapFlow';
+import UserToolsMenu from '@/features/navigation/components/UserToolsMenu';
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
 
@@ -17,8 +18,10 @@ const HomeScreen = () => {
   const mobilityMode = user?.mobility_mode ?? user?.mobilityMode;
   const isPedestrian = mobilityMode === 'peaton';
 
-  const handleLogout = () => {
-    signOut();
+  const canReportShadow = isPedestrian;
+
+  const handleLogout = async () => {
+    await signOut();
     navigation.reset({
       index: 0,
       routes: [{ name: 'Login' }],
@@ -28,13 +31,12 @@ const HomeScreen = () => {
   if (isPedestrian) {
     return (
       <View style={tw`flex-1 bg-surface-light dark:bg-charcoal`}>
-        <ShadowReportMapFlow themeMode={mode} />
-        <TouchableOpacity
-          testID="pedestrian-logout-button"
-          accessibilityRole="button"
-          accessibilityLabel="Cerrar sesion"
-          onPress={handleLogout}
-          style={tw`absolute right-0 bottom-0 h-16 w-1/4 items-center justify-center`}
+        <ShadowReportMapFlow
+          themeMode={mode}
+          canReportShadow={canReportShadow}
+          onLogout={() => {
+            void handleLogout();
+          }}
         />
       </View>
     );
@@ -46,14 +48,14 @@ const HomeScreen = () => {
         Hola {user?.full_name || 'Usuario'}, bienvenido a QuillaMap
       </Text>
 
-      <TouchableOpacity
-        onPress={handleLogout}
-        style={tw`mt-xl bg-primary dark:bg-secondary px-l py-m rounded-l`}
-      >
-        <Text style={tw`text-white dark:text-black font-bold`}>
-          Cerrar Sesion
-        </Text>
-      </TouchableOpacity>
+      <View style={tw`mt-xl`}>
+        <UserToolsMenu
+          canReportShadow={false}
+          onLogout={() => {
+            void handleLogout();
+          }}
+        />
+      </View>
     </View>
   );
 };

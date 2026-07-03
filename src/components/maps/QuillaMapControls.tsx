@@ -1,4 +1,5 @@
 import React from 'react';
+import type { ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import tw from '@/lib/tailwind';
@@ -27,6 +28,7 @@ interface QuillaMapControlsProps {
   zoomOutTestID?: string;
   onZoomIn?: () => void;
   onZoomOut?: () => void;
+  profileTools?: ReactNode;
 }
 
 const MapIcon = Ionicons as React.ComponentType<MapIconProps>;
@@ -48,6 +50,7 @@ const QuillaMapControls = ({
   zoomOutTestID,
   onZoomIn,
   onZoomOut,
+  profileTools,
 }: QuillaMapControlsProps) => {
   const isPedestrian = mode === 'pedestrian';
 
@@ -168,7 +171,9 @@ const QuillaMapControls = ({
         <MapIcon name="walk" size={isPedestrian ? 21 : 20} color={isDark ? controlText : mapRoute} />
         <MapIcon name={isPedestrian ? 'footsteps-outline' : 'location-outline'} size={isPedestrian ? 21 : 20} color={controlText} />
         <MapIcon name={isPedestrian ? 'bookmark' : 'bookmark-outline'} size={20} color={controlText} />
-        <MapIcon name={isPedestrian ? 'people' : 'person-outline'} size={20} color={isPedestrian ? controlText : darkText} />
+        {profileTools ?? (
+          <MapIcon name={isPedestrian ? 'people' : 'person-outline'} size={20} color={isPedestrian ? controlText : darkText} />
+        )}
       </View>
     </>
   );

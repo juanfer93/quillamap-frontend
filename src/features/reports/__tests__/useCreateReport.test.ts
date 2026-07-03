@@ -1,5 +1,6 @@
 import { act, renderHook } from '@testing-library/react-native';
 import { reportsApi } from '@/api/client';
+import { TRUTHFUL_REPORT_KARMA_POINTS, useKarmaRewards } from '@/features/navigation/hooks/useKarmaRewards';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useCreateReport } from '../hooks/useCreateReport';
 import { ReportStatus, ReportType, type CreateReportDto, type Report } from '../types/report.types';
@@ -37,6 +38,7 @@ describe('useCreateReport', () => {
       session: null,
       isLoading: false,
     });
+    useKarmaRewards.getState().resetKarma();
   });
 
   it('crea un reporte de sombra enviando el DTO GeoJSON exacto al backend', async () => {
@@ -62,6 +64,7 @@ describe('useCreateReport', () => {
     expect(result.current.createdReport).toEqual(createdReport);
     expect(result.current.errorMessage).toBeNull();
     expect(result.current.isCreating).toBe(false);
+    expect(useKarmaRewards.getState().karmaPoints).toBe(TRUTHFUL_REPORT_KARMA_POINTS);
   });
 
   it('rechaza la creacion cuando no existe sesion autenticada', async () => {

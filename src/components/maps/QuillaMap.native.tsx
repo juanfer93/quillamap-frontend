@@ -22,6 +22,7 @@ const QuillaMap = ({
   routePoints,
   showUserLocation = true,
   children,
+  profileTools,
   onShadeZonePress,
   onMapPress,
   selectedCoordinate,
@@ -181,6 +182,7 @@ const QuillaMap = ({
             zoomOutTestID="quillamap-native-zoom-out"
             onZoomIn={zoomIn}
             onZoomOut={zoomOut}
+            profileTools={profileTools}
           />
         ) : null}
         {children}

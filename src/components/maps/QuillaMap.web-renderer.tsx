@@ -38,6 +38,7 @@ const QuillaMapWebRenderer = ({
   showDefaultShadeZones,
   routePoints,
   children,
+  profileTools,
   onShadeZonePress,
   onMapPress,
   selectedCoordinate,
@@ -426,6 +427,7 @@ const QuillaMapWebRenderer = ({
           zoomOutTestID="quillamap-web-zoom-out"
           onZoomIn={zoomIn}
           onZoomOut={zoomOut}
+          profileTools={profileTools}
         />
 
         {children}
