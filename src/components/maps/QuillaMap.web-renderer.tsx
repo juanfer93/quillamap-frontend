@@ -17,12 +17,12 @@ import {
 import QuillaMapControls from './QuillaMapControls';
 import {
   getBuildingsFeatureCollection,
-  getCoordinateFeatureCollection,
   getPlacesFeatureCollection,
   getRouteFeature,
   getShadeZoneAreasFeatureCollection,
   getShadeZonesFeatureCollection,
   MAPLIBRE_STYLE,
+  SHADE_MARKER_EMOJI,
 } from './QuillaMap.maplibre';
 
 const MapIcon = Ionicons as React.ComponentType<MapIconProps>;
@@ -53,6 +53,30 @@ const createMarkerElement = (testID: string, iconName: string, color: string, la
   element.style.cursor = 'pointer';
   element.style.color = color;
   element.innerHTML = iconName === 'business-outline' ? '◆' : '•';
+  return element;
+};
+
+const createShadowMarkerElement = (testID: string, color: string, label: string) => {
+  const element = document.createElement('button');
+  element.type = 'button';
+  element.dataset.testid = testID;
+  element.setAttribute('aria-label', label);
+  element.textContent = SHADE_MARKER_EMOJI;
+  element.style.width = '36px';
+  element.style.height = '36px';
+  element.style.padding = '0';
+  element.style.borderRadius = '50%';
+  element.style.background = '#FFFFFF';
+  element.style.border = `2px solid ${color}`;
+  element.style.boxShadow = '0 6px 14px rgba(0, 69, 116, 0.2)';
+  element.style.display = 'flex';
+  element.style.alignItems = 'center';
+  element.style.justifyContent = 'center';
+  element.style.cursor = 'pointer';
+  element.style.fontFamily = 'sans-serif';
+  element.style.fontSize = '21px';
+  element.style.lineHeight = '1';
+  element.style.color = color;
   return element;
 };
 
@@ -92,7 +116,8 @@ const QuillaMapWebRenderer = ({
 }: QuillaMapProps) => {
   const mapHostRef = useRef<View | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
-  const markerRefs = useRef<MapLibreMarker[]>([]);
+  const placeMarkerRefs = useRef<MapLibreMarker[]>([]);
+  const shadowMarkerRefs = useRef<MapLibreMarker[]>([]);
   const route = getRouteCoordinates(routePoints, center);
   const isDark = themeMode === 'dark';
   const isPedestrian = mode === 'pedestrian';
@@ -104,6 +129,7 @@ const QuillaMapWebRenderer = ({
   const onMapPressRef = useRef(onMapPress);
   const onShadeZonePressRef = useRef(onShadeZonePress);
   const [zoomLevel, setZoomLevel] = useState(isPedestrian ? 16 : 15);
+  const [is3D, setIs3D] = useState(() => visiblePlaces.length > 0);
   const [selectedPlace, setSelectedPlace] = useState<PlaceMapFeature | null>(null);
   const mapShade = tokenColor('map-shade') || '#5DA271';
   const mapRoute = tokenColor('map-route') || '#2F8AC4';
@@ -118,10 +144,6 @@ const QuillaMapWebRenderer = ({
   const routeFeature = useMemo(() => getRouteFeature(route), [route]);
   const shadeFeatureCollection = useMemo(() => getShadeZonesFeatureCollection(zones), [zones]);
   const shadeAreaFeatureCollection = useMemo(() => getShadeZoneAreasFeatureCollection(zones), [zones]);
-  const draftFeatureCollection = useMemo(
-    () => getCoordinateFeatureCollection(shouldShowShadowZones ? selectedCoordinate : null, 'shadow-zone-draft'),
-    [selectedCoordinate, shouldShowShadowZones]
-  );
   const placesFeatureCollection = useMemo(() => getPlacesFeatureCollection(visiblePlaces), [visiblePlaces]);
   const buildingsFeatureCollection = useMemo(() => getBuildingsFeatureCollection(visiblePlaces), [visiblePlaces]);
 
@@ -132,6 +154,15 @@ const QuillaMapWebRenderer = ({
 
     setSelectedPlace(place);
     onPlacePress?.(place);
+  };
+
+  const togglePerspective = () => {
+    const nextIs3D = !is3D;
+    setIs3D(nextIs3D);
+    mapRef.current?.easeTo({
+      pitch: nextIs3D ? 48 : 0,
+      duration: 220,
+    });
   };
 
   useEffect(() => {
@@ -157,7 +188,7 @@ const QuillaMapWebRenderer = ({
       style: MAPLIBRE_STYLE,
       center: [center.longitude, center.latitude],
       zoom: zoomLevel,
-      pitch: visiblePlaces.length > 0 ? 48 : 0,
+      pitch: is3D ? 48 : 0,
       attributionControl: false,
     });
 
@@ -185,8 +216,10 @@ const QuillaMapWebRenderer = ({
 
     return () => {
       map.off('click', handleMapClick);
-      markerRefs.current.forEach((marker) => marker.remove());
-      markerRefs.current = [];
+      placeMarkerRefs.current.forEach((marker) => marker.remove());
+      placeMarkerRefs.current = [];
+      shadowMarkerRefs.current.forEach((marker) => marker.remove());
+      shadowMarkerRefs.current = [];
       map.remove();
       mapRef.current = null;
     };
@@ -201,9 +234,8 @@ const QuillaMapWebRenderer = ({
     map.jumpTo({
       center: [center.longitude, center.latitude],
       zoom: zoomLevel,
-      pitch: visiblePlaces.length > 0 ? 48 : 0,
     });
-  }, [center.latitude, center.longitude, visiblePlaces.length, zoomLevel]);
+  }, [center.latitude, center.longitude, zoomLevel]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -223,7 +255,6 @@ const QuillaMapWebRenderer = ({
       upsertGeoJsonSource(map, 'places-source', placesFeatureCollection);
       upsertGeoJsonSource(map, 'shade-zones-source', shadeFeatureCollection);
       upsertGeoJsonSource(map, 'shade-area-source', shadeAreaFeatureCollection);
-      upsertGeoJsonSource(map, 'shade-draft-source', draftFeatureCollection);
 
       addLayerIfMissing('places-buildings', {
         id: 'places-buildings',
@@ -277,55 +308,18 @@ const QuillaMapWebRenderer = ({
       map.setPaintProperty('shade-zone-area-outline', 'line-color', primary);
       map.setPaintProperty('shade-zone-area-outline', 'line-opacity', isPedestrian ? 0 : 0.9);
 
-      addLayerIfMissing('shade-zones-outline', {
-        id: 'shade-zones-outline',
-        type: 'circle',
-        source: 'shade-zones-source',
-        paint: {
-          'circle-color': '#FFFFFF',
-          'circle-radius': 16,
-          'circle-stroke-color': shadeMarkerColor,
-          'circle-stroke-width': 2,
-        },
-      });
       addLayerIfMissing('shade-zones', {
         id: 'shade-zones',
         type: 'circle',
         source: 'shade-zones-source',
         paint: {
-          'circle-color': shadeMarkerColor,
-          'circle-radius': 7,
-          'circle-stroke-color': '#FFFFFF',
-          'circle-stroke-width': 2,
-        },
-      });
-      map.setPaintProperty('shade-zones-outline', 'circle-stroke-color', shadeMarkerColor);
-      map.setPaintProperty('shade-zones', 'circle-color', shadeMarkerColor);
-
-      addLayerIfMissing('shade-draft-outline', {
-        id: 'shade-draft-outline',
-        type: 'circle',
-        source: 'shade-draft-source',
-        paint: {
           'circle-color': '#FFFFFF',
-          'circle-radius': 16,
-          'circle-stroke-color': shadowMarkerColor,
+          'circle-radius': 17,
+          'circle-stroke-color': shadeMarkerColor,
           'circle-stroke-width': 2,
         },
       });
-      addLayerIfMissing('shade-draft', {
-        id: 'shade-draft',
-        type: 'circle',
-        source: 'shade-draft-source',
-        paint: {
-          'circle-color': shadowMarkerColor,
-          'circle-radius': 7,
-          'circle-stroke-color': '#FFFFFF',
-          'circle-stroke-width': 2,
-        },
-      });
-      map.setPaintProperty('shade-draft-outline', 'circle-stroke-color', shadowMarkerColor);
-      map.setPaintProperty('shade-draft', 'circle-color', shadowMarkerColor);
+      map.setPaintProperty('shade-zones', 'circle-stroke-color', shadeMarkerColor);
 
       addLayerIfMissing('places-static-dots', {
         id: 'places-static-dots',
@@ -351,7 +345,6 @@ const QuillaMapWebRenderer = ({
     };
   }, [
     buildingsFeatureCollection,
-    draftFeatureCollection,
     isPedestrian,
     mapRoute,
     mapShade,
@@ -360,7 +353,6 @@ const QuillaMapWebRenderer = ({
     shadeAreaFeatureCollection,
     shadeFeatureCollection,
     shadeMarkerColor,
-    shadowMarkerColor,
   ]);
 
   useEffect(() => {
@@ -369,8 +361,8 @@ const QuillaMapWebRenderer = ({
       return;
     }
 
-    markerRefs.current.forEach((marker) => marker.remove());
-    markerRefs.current = [];
+    placeMarkerRefs.current.forEach((marker) => marker.remove());
+    placeMarkerRefs.current = [];
 
     visiblePlaces.forEach((place) => {
       const isTouristSite = place.source === 'tourist_site';
@@ -395,9 +387,51 @@ const QuillaMapWebRenderer = ({
       const marker = new maplibregl.Marker({ element })
         .setLngLat([place.coordinate.longitude, place.coordinate.latitude])
         .addTo(map);
-      markerRefs.current.push(marker);
+      placeMarkerRefs.current.push(marker);
     });
   }, [canOpenPlaces, visiblePlaces]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !hasDom()) {
+      return;
+    }
+
+    shadowMarkerRefs.current.forEach((marker) => marker.remove());
+    shadowMarkerRefs.current = [];
+
+    zones.forEach((zone) => {
+      const element = createShadowMarkerElement(
+        `quillamap-web-shade-marker-${zone.id}`,
+        shadeMarkerColor,
+        zone.title
+      );
+      element.addEventListener('click', (event) => {
+        event.stopPropagation();
+        onShadeZonePress?.(zone);
+      });
+
+      const marker = new maplibregl.Marker({ element, anchor: 'center' })
+        .setLngLat([zone.coordinate.longitude, zone.coordinate.latitude])
+        .addTo(map);
+      shadowMarkerRefs.current.push(marker);
+    });
+
+    if (selectedCoordinate && shouldShowShadowZones) {
+      const element = createShadowMarkerElement(
+        'quillamap-web-shadow-draft-marker',
+        shadowMarkerColor,
+        'Nueva zona de sombra'
+      );
+      element.disabled = true;
+      element.style.cursor = 'default';
+
+      const marker = new maplibregl.Marker({ element, anchor: 'center' })
+        .setLngLat([selectedCoordinate.longitude, selectedCoordinate.latitude])
+        .addTo(map);
+      shadowMarkerRefs.current.push(marker);
+    }
+  }, [onShadeZonePress, selectedCoordinate, shadeMarkerColor, shadowMarkerColor, shouldShowShadowZones, zones]);
 
   const zoomIn = () => setZoomLevel((currentZoom) => Math.min(currentZoom + 1, 19));
   const zoomOut = () => setZoomLevel((currentZoom) => Math.max(currentZoom - 1, 11));
@@ -500,6 +534,7 @@ const QuillaMapWebRenderer = ({
         <QuillaMapControls
           mode={mode}
           isDark={isDark}
+          is3D={is3D}
           controlBackground={controlBackground}
           controlBorder={controlBorder}
           controlText={controlText}
@@ -510,10 +545,12 @@ const QuillaMapWebRenderer = ({
           zonesCount={zones.length}
           showZoom={isPedestrian}
           showLocate
+          perspectiveToggleTestID="quillamap-web-perspective-toggle"
           zoomInTestID="quillamap-web-zoom-in"
           zoomOutTestID="quillamap-web-zoom-out"
           onZoomIn={zoomIn}
           onZoomOut={zoomOut}
+          onTogglePerspective={togglePerspective}
           profileTools={profileTools}
         />
 
