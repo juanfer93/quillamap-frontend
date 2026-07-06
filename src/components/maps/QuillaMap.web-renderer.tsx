@@ -16,12 +16,13 @@ import {
 } from './QuillaMap.shared';
 import QuillaMapControls from './QuillaMapControls';
 import {
+  DARK_MAP_THEME,
   getBuildingsFeatureCollection,
+  getMapLibreStyle,
   getPlacesFeatureCollection,
   getRouteFeature,
   getShadeZoneAreasFeatureCollection,
   getShadeZonesFeatureCollection,
-  MAPLIBRE_STYLE,
   SHADE_MARKER_EMOJI,
 } from './QuillaMap.maplibre';
 
@@ -121,6 +122,7 @@ const QuillaMapWebRenderer = ({
   const route = getRouteCoordinates(routePoints, center);
   const isDark = themeMode === 'dark';
   const isPedestrian = mode === 'pedestrian';
+  const mapStyle = getMapLibreStyle(themeMode);
   const shouldShowShadowZones = !(isPedestrian && isDark);
   const zones = shouldShowShadowZones ? getVisibleShadeZones(shadeZones, showDefaultShadeZones) : [];
   const visiblePlaces = getVisiblePlaces(places);
@@ -138,9 +140,9 @@ const QuillaMapWebRenderer = ({
   const culturalGold = '#D4AF37';
   const shadowMarkerColor = tokenColor('secondary') || culturalGold;
   const shadeMarkerColor = isPedestrian ? shadowMarkerColor : mapShade;
-  const controlBackground = isDark ? '#121212' : tokenColor('white');
-  const controlText = isDark ? culturalGold : darkGray;
-  const controlBorder = isDark ? '#3A3328' : tokenColor('medium-gray');
+  const controlBackground = isDark ? DARK_MAP_THEME.controlBackground : tokenColor('white') || '#FFFFFF';
+  const controlText = isDark ? DARK_MAP_THEME.controlText : darkGray;
+  const controlBorder = isDark ? DARK_MAP_THEME.controlBorder : tokenColor('medium-gray') || '#E0E0E0';
   const routeFeature = useMemo(() => getRouteFeature(route), [route]);
   const shadeFeatureCollection = useMemo(() => getShadeZonesFeatureCollection(zones), [zones]);
   const shadeAreaFeatureCollection = useMemo(() => getShadeZoneAreasFeatureCollection(zones), [zones]);
@@ -185,7 +187,7 @@ const QuillaMapWebRenderer = ({
     const host = mapHostRef.current as unknown as HTMLElement;
     const map = new maplibregl.Map({
       container: host,
-      style: MAPLIBRE_STYLE,
+      style: mapStyle,
       center: [center.longitude, center.latitude],
       zoom: zoomLevel,
       pitch: is3D ? 48 : 0,
@@ -223,7 +225,7 @@ const QuillaMapWebRenderer = ({
       map.remove();
       mapRef.current = null;
     };
-  }, []);
+  }, [mapStyle]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -348,6 +350,7 @@ const QuillaMapWebRenderer = ({
     isPedestrian,
     mapRoute,
     mapShade,
+    mapStyle,
     placesFeatureCollection,
     routeFeature,
     shadeAreaFeatureCollection,
@@ -389,7 +392,7 @@ const QuillaMapWebRenderer = ({
         .addTo(map);
       placeMarkerRefs.current.push(marker);
     });
-  }, [canOpenPlaces, visiblePlaces]);
+  }, [canOpenPlaces, mapStyle, visiblePlaces]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -431,7 +434,15 @@ const QuillaMapWebRenderer = ({
         .addTo(map);
       shadowMarkerRefs.current.push(marker);
     }
-  }, [onShadeZonePress, selectedCoordinate, shadeMarkerColor, shadowMarkerColor, shouldShowShadowZones, zones]);
+  }, [
+    mapStyle,
+    onShadeZonePress,
+    selectedCoordinate,
+    shadeMarkerColor,
+    shadowMarkerColor,
+    shouldShowShadowZones,
+    zones,
+  ]);
 
   const zoomIn = () => setZoomLevel((currentZoom) => Math.min(currentZoom + 1, 19));
   const zoomOut = () => setZoomLevel((currentZoom) => Math.max(currentZoom - 1, 11));
@@ -504,8 +515,14 @@ const QuillaMapWebRenderer = ({
         testID="quillamap-web"
         style={
           isPedestrian
-            ? (isDark ? tw`flex-1 overflow-hidden bg-charcoal` : tw`flex-1 overflow-hidden bg-surface-light`)
-            : tw`flex-1 overflow-hidden rounded-m border border-medium-gray bg-surface-light dark:bg-charcoal`
+            ? [
+                tw`flex-1 overflow-hidden`,
+                { backgroundColor: isDark ? DARK_MAP_THEME.background : tokenColor('surface-light') || '#F8FAFC' },
+              ]
+            : [
+                tw`flex-1 overflow-hidden rounded-m border border-medium-gray`,
+                { backgroundColor: isDark ? DARK_MAP_THEME.background : tokenColor('surface-light') || '#F8FAFC' },
+              ]
         }
       >
         <View
