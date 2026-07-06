@@ -15,11 +15,12 @@ import {
   getVisibleShadeZones,
 } from './QuillaMap.shared';
 import QuillaMapControls from './QuillaMapControls';
-import QuillaMapShadowMarker from './QuillaMapShadowMarker';
 import {
   getBuildingsFeatureCollection,
+  getCoordinateFeatureCollection,
   getPlacesFeatureCollection,
   getRouteFeature,
+  getShadeZoneAreasFeatureCollection,
   getShadeZonesFeatureCollection,
   MAPLIBRE_STYLE,
 } from './QuillaMap.maplibre';
@@ -99,6 +100,9 @@ const QuillaMapWebRenderer = ({
   const zones = shouldShowShadowZones ? getVisibleShadeZones(shadeZones, showDefaultShadeZones) : [];
   const visiblePlaces = getVisiblePlaces(places);
   const canOpenPlaces = canInteractWithPlaces(mode);
+  const zonesRef = useRef(zones);
+  const onMapPressRef = useRef(onMapPress);
+  const onShadeZonePressRef = useRef(onShadeZonePress);
   const [zoomLevel, setZoomLevel] = useState(isPedestrian ? 16 : 15);
   const [selectedPlace, setSelectedPlace] = useState<PlaceMapFeature | null>(null);
   const mapShade = tokenColor('map-shade') || '#5DA271';
@@ -107,11 +111,17 @@ const QuillaMapWebRenderer = ({
   const darkGray = tokenColor('dark-gray') || '#333333';
   const culturalGold = '#D4AF37';
   const shadowMarkerColor = tokenColor('secondary') || culturalGold;
+  const shadeMarkerColor = isPedestrian ? shadowMarkerColor : mapShade;
   const controlBackground = isDark ? '#121212' : tokenColor('white');
   const controlText = isDark ? culturalGold : darkGray;
   const controlBorder = isDark ? '#3A3328' : tokenColor('medium-gray');
   const routeFeature = useMemo(() => getRouteFeature(route), [route]);
   const shadeFeatureCollection = useMemo(() => getShadeZonesFeatureCollection(zones), [zones]);
+  const shadeAreaFeatureCollection = useMemo(() => getShadeZoneAreasFeatureCollection(zones), [zones]);
+  const draftFeatureCollection = useMemo(
+    () => getCoordinateFeatureCollection(shouldShowShadowZones ? selectedCoordinate : null, 'shadow-zone-draft'),
+    [selectedCoordinate, shouldShowShadowZones]
+  );
   const placesFeatureCollection = useMemo(() => getPlacesFeatureCollection(visiblePlaces), [visiblePlaces]);
   const buildingsFeatureCollection = useMemo(() => getBuildingsFeatureCollection(visiblePlaces), [visiblePlaces]);
 
@@ -123,6 +133,18 @@ const QuillaMapWebRenderer = ({
     setSelectedPlace(place);
     onPlacePress?.(place);
   };
+
+  useEffect(() => {
+    zonesRef.current = zones;
+  }, [zones]);
+
+  useEffect(() => {
+    onMapPressRef.current = onMapPress;
+  }, [onMapPress]);
+
+  useEffect(() => {
+    onShadeZonePressRef.current = onShadeZonePress;
+  }, [onShadeZonePress]);
 
   useEffect(() => {
     if (!hasDom() || mapRef.current || !mapHostRef.current) {
@@ -139,16 +161,30 @@ const QuillaMapWebRenderer = ({
       attributionControl: false,
     });
 
-    mapRef.current = map;
+    const handleMapClick = (event: maplibregl.MapMouseEvent) => {
+      const feature = map.getLayer('shade-zones')
+        ? map.queryRenderedFeatures(event.point, { layers: ['shade-zones'] })[0]
+        : undefined;
+      const rawId = feature?.properties?.id;
+      const zoneId = typeof rawId === 'string' ? rawId : typeof rawId === 'number' ? String(rawId) : null;
+      const zone = zoneId ? zonesRef.current.find((candidate) => candidate.id === zoneId) : undefined;
 
-    map.on('click', (event) => {
-      onMapPress?.({
+      if (zone) {
+        onShadeZonePressRef.current?.(zone);
+        return;
+      }
+
+      onMapPressRef.current?.({
         latitude: event.lngLat.lat,
         longitude: event.lngLat.lng,
       });
-    });
+    };
+
+    mapRef.current = map;
+    map.on('click', handleMapClick);
 
     return () => {
+      map.off('click', handleMapClick);
       markerRefs.current.forEach((marker) => marker.remove());
       markerRefs.current = [];
       map.remove();
@@ -175,70 +211,133 @@ const QuillaMapWebRenderer = ({
       return undefined;
     }
 
+    const addLayerIfMissing = (id: string, layer: any) => {
+      if (!map.getLayer(id)) {
+        map.addLayer(layer);
+      }
+    };
+
     const applyLayers = () => {
       upsertGeoJsonSource(map, 'route-source', routeFeature);
       upsertGeoJsonSource(map, 'buildings-source', buildingsFeatureCollection);
       upsertGeoJsonSource(map, 'places-source', placesFeatureCollection);
       upsertGeoJsonSource(map, 'shade-zones-source', shadeFeatureCollection);
+      upsertGeoJsonSource(map, 'shade-area-source', shadeAreaFeatureCollection);
+      upsertGeoJsonSource(map, 'shade-draft-source', draftFeatureCollection);
 
-      if (!map.getLayer('places-buildings')) {
-        map.addLayer({
-          id: 'places-buildings',
-          type: 'fill-extrusion',
-          source: 'buildings-source',
-          paint: {
-            'fill-extrusion-color': ['get', 'color'],
-            'fill-extrusion-height': ['get', 'height'],
-            'fill-extrusion-base': ['get', 'base'],
-            'fill-extrusion-opacity': 0.62,
-          },
-        });
-      }
+      addLayerIfMissing('places-buildings', {
+        id: 'places-buildings',
+        type: 'fill-extrusion',
+        source: 'buildings-source',
+        paint: {
+          'fill-extrusion-color': ['get', 'color'],
+          'fill-extrusion-height': ['get', 'height'],
+          'fill-extrusion-base': ['get', 'base'],
+          'fill-extrusion-opacity': 0.62,
+        },
+      });
 
-      if (!map.getLayer('route-line')) {
-        map.addLayer({
-          id: 'route-line',
-          type: 'line',
-          source: 'route-source',
-          paint: {
-            'line-color': mapRoute,
-            'line-width': isPedestrian ? 6 : 4,
-          },
-          layout: {
-            'line-cap': 'round',
-            'line-join': 'round',
-          },
-        });
-      }
+      addLayerIfMissing('route-line', {
+        id: 'route-line',
+        type: 'line',
+        source: 'route-source',
+        paint: {
+          'line-color': mapRoute,
+          'line-width': isPedestrian ? 6 : 4,
+        },
+        layout: {
+          'line-cap': 'round',
+          'line-join': 'round',
+        },
+      });
+      map.setPaintProperty('route-line', 'line-color', mapRoute);
+      map.setPaintProperty('route-line', 'line-width', isPedestrian ? 6 : 4);
 
-      if (!map.getLayer('shade-zones')) {
-        map.addLayer({
-          id: 'shade-zones',
-          type: 'circle',
-          source: 'shade-zones-source',
-          paint: {
-            'circle-color': mapShade,
-            'circle-opacity': isPedestrian ? 0 : 0.22,
-            'circle-radius': isPedestrian ? 0 : 22,
-            'circle-stroke-color': primary,
-            'circle-stroke-width': isPedestrian ? 0 : 2,
-          },
-        });
-      }
+      addLayerIfMissing('shade-zone-areas', {
+        id: 'shade-zone-areas',
+        type: 'fill',
+        source: 'shade-area-source',
+        paint: {
+          'fill-color': mapShade,
+          'fill-opacity': isPedestrian ? 0 : 0.22,
+        },
+      });
+      addLayerIfMissing('shade-zone-area-outline', {
+        id: 'shade-zone-area-outline',
+        type: 'line',
+        source: 'shade-area-source',
+        paint: {
+          'line-color': primary,
+          'line-width': 2,
+          'line-opacity': isPedestrian ? 0 : 0.9,
+        },
+      });
+      map.setPaintProperty('shade-zone-areas', 'fill-color', mapShade);
+      map.setPaintProperty('shade-zone-areas', 'fill-opacity', isPedestrian ? 0 : 0.22);
+      map.setPaintProperty('shade-zone-area-outline', 'line-color', primary);
+      map.setPaintProperty('shade-zone-area-outline', 'line-opacity', isPedestrian ? 0 : 0.9);
 
-      if (!map.getLayer('places-static-dots')) {
-        map.addLayer({
-          id: 'places-static-dots',
-          type: 'circle',
-          source: 'places-source',
-          paint: {
-            'circle-color': ['case', ['==', ['get', 'source'], 'tourist_site'], culturalGold, primary],
-            'circle-radius': 7,
-            'circle-stroke-color': '#FFFFFF',
-            'circle-stroke-width': 2,
-          },
-        });
-      }
+      addLayerIfMissing('shade-zones-outline', {
+        id: 'shade-zones-outline',
+        type: 'circle',
+        source: 'shade-zones-source',
+        paint: {
+          'circle-color': '#FFFFFF',
+          'circle-radius': 16,
+          'circle-stroke-color': shadeMarkerColor,
+          'circle-stroke-width': 2,
+        },
+      });
+      addLayerIfMissing('shade-zones', {
+        id: 'shade-zones',
+        type: 'circle',
+        source: 'shade-zones-source',
+        paint: {
+          'circle-color': shadeMarkerColor,
+          'circle-radius': 7,
+          'circle-stroke-color': '#FFFFFF',
+          'circle-stroke-width': 2,
+        },
+      });
+      map.setPaintProperty('shade-zones-outline', 'circle-stroke-color', shadeMarkerColor);
+      map.setPaintProperty('shade-zones', 'circle-color', shadeMarkerColor);
+
+      addLayerIfMissing('shade-draft-outline', {
+        id: 'shade-draft-outline',
+        type: 'circle',
+        source: 'shade-draft-source',
+        paint: {
+          'circle-color': '#FFFFFF',
+          'circle-radius': 16,
+          'circle-stroke-color': shadowMarkerColor,
+          'circle-stroke-width': 2,
+        },
+      });
+      addLayerIfMissing('shade-draft', {
+        id: 'shade-draft',
+        type: 'circle',
+        source: 'shade-draft-source',
+        paint: {
+          'circle-color': shadowMarkerColor,
+          'circle-radius': 7,
+          'circle-stroke-color': '#FFFFFF',
+          'circle-stroke-width': 2,
+        },
+      });
+      map.setPaintProperty('shade-draft-outline', 'circle-stroke-color', shadowMarkerColor);
+      map.setPaintProperty('shade-draft', 'circle-color', shadowMarkerColor);
+
+      addLayerIfMissing('places-static-dots', {
+        id: 'places-static-dots',
+        type: 'circle',
+        source: 'places-source',
+        paint: {
+          'circle-color': ['case', ['==', ['get', 'source'], 'tourist_site'], culturalGold, primary],
+          'circle-radius': 7,
+          'circle-stroke-color': '#FFFFFF',
+          'circle-stroke-width': 2,
+        },
+      });
     };
 
     if (map.isStyleLoaded()) {
@@ -250,7 +349,19 @@ const QuillaMapWebRenderer = ({
     return () => {
       map.off('load', applyLayers);
     };
-  }, [buildingsFeatureCollection, isPedestrian, mapRoute, mapShade, placesFeatureCollection, routeFeature, shadeFeatureCollection]);
+  }, [
+    buildingsFeatureCollection,
+    draftFeatureCollection,
+    isPedestrian,
+    mapRoute,
+    mapShade,
+    placesFeatureCollection,
+    routeFeature,
+    shadeAreaFeatureCollection,
+    shadeFeatureCollection,
+    shadeMarkerColor,
+    shadowMarkerColor,
+  ]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -291,7 +402,7 @@ const QuillaMapWebRenderer = ({
   const zoomIn = () => setZoomLevel((currentZoom) => Math.min(currentZoom + 1, 19));
   const zoomOut = () => setZoomLevel((currentZoom) => Math.max(currentZoom - 1, 11));
 
-  const fallbackMarkers = !hasDom() ? (
+  const fallbackFeatures = !hasDom() ? (
     <>
       {visiblePlaces.map((place) => {
         const isTouristSite = place.source === 'tourist_site';
@@ -326,6 +437,22 @@ const QuillaMapWebRenderer = ({
           </Pressable>
         );
       })}
+      {zones.map((zone) => (
+        <Pressable
+          key={zone.id}
+          testID={`quillamap-web-shade-marker-${zone.id}`}
+          accessibilityRole="button"
+          accessibilityLabel={zone.title}
+          onPress={() => onShadeZonePress?.(zone)}
+          style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }}
+        />
+      ))}
+      {selectedCoordinate && shouldShowShadowZones ? (
+        <View
+          testID="quillamap-web-shadow-draft-marker"
+          style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }}
+        />
+      ) : null}
       {buildingsFeatureCollection.features.map((feature) => (
         <View
           key={String(feature.id)}
@@ -368,42 +495,7 @@ const QuillaMapWebRenderer = ({
         <View testID="quillamap-web-map-art" style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }} />
         <View testID="quillamap-web-map-tiles" style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }} />
 
-        {fallbackMarkers}
-
-        {zones.map((zone, index) => (
-          <Pressable
-            key={zone.id}
-            testID={`quillamap-web-shade-marker-${zone.id}`}
-            accessibilityRole="button"
-            accessibilityLabel={zone.title}
-            onPress={() => onShadeZonePress?.(zone)}
-            style={[
-              isPedestrian
-                ? tw`absolute w-10 h-12 items-center justify-start`
-                : tw`absolute w-10 h-10 rounded-xl bg-white border-2 border-map-shade items-center justify-center`,
-              {
-                left: 24,
-                top: 160 + index * 48,
-                zIndex: 12,
-              },
-            ]}
-          >
-            {isPedestrian ? (
-              <QuillaMapShadowMarker color={shadowMarkerColor} />
-            ) : (
-              <MapIcon name="leaf-outline" size={18} color={mapShade} />
-            )}
-          </Pressable>
-        ))}
-
-        {selectedCoordinate && shouldShowShadowZones ? (
-          <View
-            testID="quillamap-web-shadow-draft-marker"
-            style={[tw`absolute w-11 items-center justify-start`, { height: 52, left: 72, top: 160, zIndex: 12 }]}
-          >
-            <QuillaMapShadowMarker color={shadowMarkerColor} size="draft" />
-          </View>
-        ) : null}
+        {fallbackFeatures}
 
         <QuillaMapControls
           mode={mode}
