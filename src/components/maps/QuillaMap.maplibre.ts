@@ -24,6 +24,8 @@ export const MAPLIBRE_STYLE: any = {
   ],
 };
 
+export const SHADE_MARKER_EMOJI = '☂';
+
 const EARTH_RADIUS_METERS = 6_371_008.8;
 const DEFAULT_CIRCLE_STEPS = 48;
 
