@@ -10,6 +10,7 @@ import {
   MapView,
   MarkerView,
   ShapeSource,
+  SymbolLayer,
   UserLocation,
   type CameraRef,
 } from '@maplibre/maplibre-react-native';
@@ -33,6 +34,7 @@ import {
   getShadeZoneAreasFeatureCollection,
   getShadeZonesFeatureCollection,
   MAPLIBRE_STYLE,
+  SHADE_MARKER_EMOJI,
 } from './QuillaMap.maplibre';
 
 const MapIcon = Ionicons as React.ComponentType<MapIconProps>;
@@ -71,6 +73,7 @@ const QuillaMap = ({
   const visiblePlaces = getVisiblePlaces(places);
   const canOpenPlaces = canInteractWithPlaces(mode);
   const [selectedPlace, setSelectedPlace] = useState<PlaceMapFeature | null>(null);
+  const [is3D, setIs3D] = useState(() => visiblePlaces.length > 0);
   const controlBackground = isDark ? tw.color('charcoal') ?? '#121212' : tw.color('white') ?? '#FFFFFF';
   const controlText = isDark ? culturalGold : darkGray;
   const controlBorder = isDark ? '#3A3328' : tw.color('medium-gray') ?? '#e0e0e0';
@@ -101,6 +104,15 @@ const QuillaMap = ({
   };
   const zoomIn = () => applyZoom(Math.min(zoomLevel + 1, 19));
   const zoomOut = () => applyZoom(Math.max(zoomLevel - 1, 11));
+  const togglePerspective = () => {
+    const nextIs3D = !is3D;
+    setIs3D(nextIs3D);
+    cameraRef.current?.setCamera({
+      pitch: nextIs3D ? 48 : 0,
+      animationDuration: 220,
+      animationMode: 'easeTo',
+    });
+  };
 
   return (
     <View testID="quillamap-container" style={[tw`flex-1`, style]}>
@@ -140,7 +152,7 @@ const QuillaMap = ({
             ref={cameraRef}
             centerCoordinate={[center.longitude, center.latitude]}
             zoomLevel={zoomLevel}
-            pitch={visiblePlaces.length > 0 ? 48 : 0}
+            pitch={is3D ? 48 : 0}
           />
           {showUserLocation ? <UserLocation /> : null}
 
@@ -257,19 +269,23 @@ const QuillaMap = ({
               id="shade-zones-outline"
               style={{
                 circleColor: '#FFFFFF',
-                circleRadius: 16,
+                circleRadius: 17,
                 circleStrokeColor: shadeMarkerColor,
                 circleStrokeWidth: 2,
               }}
             />
-            <CircleLayer
+            <SymbolLayer
               id="shade-zones"
               testID="quillamap-native-shade-layer"
               style={{
-                circleColor: shadeMarkerColor,
-                circleRadius: 7,
-                circleStrokeColor: '#FFFFFF',
-                circleStrokeWidth: 2,
+                textField: SHADE_MARKER_EMOJI,
+                textFont: ['sans-serif'],
+                textSize: 21,
+                textColor: shadeMarkerColor,
+                textAllowOverlap: true,
+                textIgnorePlacement: true,
+                textPitchAlignment: 'viewport',
+                textRotationAlignment: 'viewport',
               }}
             />
           </ShapeSource>
@@ -280,19 +296,23 @@ const QuillaMap = ({
                 id="shade-draft-outline"
                 style={{
                   circleColor: '#FFFFFF',
-                  circleRadius: 16,
+                  circleRadius: 17,
                   circleStrokeColor: shadowMarkerColor,
                   circleStrokeWidth: 2,
                 }}
               />
-              <CircleLayer
+              <SymbolLayer
                 id="shade-draft"
                 testID="quillamap-native-shadow-draft-marker"
                 style={{
-                  circleColor: shadowMarkerColor,
-                  circleRadius: 7,
-                  circleStrokeColor: '#FFFFFF',
-                  circleStrokeWidth: 2,
+                  textField: SHADE_MARKER_EMOJI,
+                  textFont: ['sans-serif'],
+                  textSize: 21,
+                  textColor: shadowMarkerColor,
+                  textAllowOverlap: true,
+                  textIgnorePlacement: true,
+                  textPitchAlignment: 'viewport',
+                  textRotationAlignment: 'viewport',
                 }}
               />
             </ShapeSource>
@@ -302,6 +322,7 @@ const QuillaMap = ({
         <QuillaMapControls
           mode={mode}
           isDark={isDark}
+          is3D={is3D}
           controlBackground={controlBackground}
           controlBorder={controlBorder}
           controlText={controlText}
@@ -311,10 +332,12 @@ const QuillaMap = ({
           primary={primary}
           zonesCount={zones.length}
           showZoom={isPedestrian}
+          perspectiveToggleTestID="quillamap-native-perspective-toggle"
           zoomInTestID="quillamap-native-zoom-in"
           zoomOutTestID="quillamap-native-zoom-out"
           onZoomIn={zoomIn}
           onZoomOut={zoomOut}
+          onTogglePerspective={togglePerspective}
           profileTools={profileTools}
         />
         {selectedPlace && canOpenPlaces ? (
