@@ -5,6 +5,7 @@ import {
   Camera,
   CircleLayer,
   FillExtrusionLayer,
+  FillLayer,
   LineLayer,
   MapView,
   MarkerView,
@@ -24,11 +25,12 @@ import {
 } from './QuillaMap.shared';
 import PlaceInfoBottomSheet from '@/features/places/components/PlaceInfoBottomSheet';
 import QuillaMapControls from './QuillaMapControls';
-import QuillaMapShadowMarker from './QuillaMapShadowMarker';
 import {
   getBuildingsFeatureCollection,
+  getCoordinateFeatureCollection,
   getPlacesFeatureCollection,
   getRouteFeature,
+  getShadeZoneAreasFeatureCollection,
   getShadeZonesFeatureCollection,
   MAPLIBRE_STYLE,
 } from './QuillaMap.maplibre';
@@ -75,8 +77,14 @@ const QuillaMap = ({
   const [zoomLevel, setZoomLevel] = useState(isPedestrian ? 16 : 15);
   const routeFeature = getRouteFeature(route);
   const shadeFeatureCollection = getShadeZonesFeatureCollection(zones);
+  const shadeAreaFeatureCollection = getShadeZoneAreasFeatureCollection(zones);
+  const draftFeatureCollection = getCoordinateFeatureCollection(
+    shouldShowShadowZones ? selectedCoordinate : null,
+    'shadow-zone-draft'
+  );
   const placesFeatureCollection = getPlacesFeatureCollection(visiblePlaces);
   const buildingsFeatureCollection = getBuildingsFeatureCollection(visiblePlaces);
+  const shadeMarkerColor = isPedestrian ? shadowMarkerColor : layerColor;
 
   const handlePlacePress = (place: PlaceMapFeature) => {
     if (!canOpenPlaces) {
@@ -175,20 +183,6 @@ const QuillaMap = ({
             />
           </ShapeSource>
 
-          <ShapeSource id="shade-zones-source" shape={shadeFeatureCollection}>
-            <CircleLayer
-              id="shade-zones"
-              testID="quillamap-native-shade-layer"
-              style={{
-                circleColor: layerColor,
-                circleOpacity: isPedestrian ? 0 : 0.22,
-                circleRadius: isPedestrian ? 0 : 22,
-                circleStrokeColor: primary,
-                circleStrokeWidth: isPedestrian ? 0 : 2,
-              }}
-            />
-          </ShapeSource>
-
           {visiblePlaces.map((place) => {
             const isTouristSite = place.source === 'tourist_site';
             const markerColor = isTouristSite ? culturalGold : primary;
@@ -224,40 +218,84 @@ const QuillaMap = ({
             );
           })}
 
-          {zones.map((zone) => (
-            <MarkerView
-              key={zone.id}
-              coordinate={[zone.coordinate.longitude, zone.coordinate.latitude]}
-              allowOverlap
-              anchor={{ x: 0.5, y: 0.5 }}
-            >
-              <Pressable
-                testID={`quillamap-native-shade-marker-${zone.id}`}
-                {...({ coordinate: zone.coordinate } as Record<string, unknown>)}
-                accessibilityRole="button"
-                accessibilityLabel={zone.title}
-                onPress={() => onShadeZonePress?.(zone)}
-              >
-                {isPedestrian ? (
-                  <QuillaMapShadowMarker color={shadowMarkerColor} />
-                ) : (
-                  <View style={tw`w-10 h-10 rounded-xl bg-white border-2 border-map-shade items-center justify-center`}>
-                    <MapIcon name="leaf-outline" size={18} color={layerColor} />
-                  </View>
-                )}
-              </Pressable>
-            </MarkerView>
-          ))}
+          <ShapeSource id="shade-area-source" shape={shadeAreaFeatureCollection}>
+            {!isPedestrian ? (
+              <>
+                <FillLayer
+                  id="shade-zone-areas"
+                  testID="quillamap-native-shade-areas"
+                  style={{
+                    fillColor: layerColor,
+                    fillOpacity: 0.22,
+                  }}
+                />
+                <LineLayer
+                  id="shade-zone-area-outline"
+                  style={{
+                    lineColor: primary,
+                    lineWidth: 2,
+                    lineOpacity: 0.9,
+                  }}
+                />
+              </>
+            ) : null}
+          </ShapeSource>
+
+          <ShapeSource
+            id="shade-zones-source"
+            shape={shadeFeatureCollection}
+            hitbox={{ width: 44, height: 44 }}
+            onPress={(event) => {
+              const id = event.features[0]?.properties?.id;
+              const zone = typeof id === 'string' ? zones.find((candidate) => candidate.id === id) : undefined;
+              if (zone) {
+                onShadeZonePress?.(zone);
+              }
+            }}
+          >
+            <CircleLayer
+              id="shade-zones-outline"
+              style={{
+                circleColor: '#FFFFFF',
+                circleRadius: 16,
+                circleStrokeColor: shadeMarkerColor,
+                circleStrokeWidth: 2,
+              }}
+            />
+            <CircleLayer
+              id="shade-zones"
+              testID="quillamap-native-shade-layer"
+              style={{
+                circleColor: shadeMarkerColor,
+                circleRadius: 7,
+                circleStrokeColor: '#FFFFFF',
+                circleStrokeWidth: 2,
+              }}
+            />
+          </ShapeSource>
 
           {selectedCoordinate && shouldShowShadowZones ? (
-            <MarkerView
+            <ShapeSource id="shade-draft-source" shape={draftFeatureCollection}>
+              <CircleLayer
+                id="shade-draft-outline"
+                style={{
+                  circleColor: '#FFFFFF',
+                  circleRadius: 16,
+                  circleStrokeColor: shadowMarkerColor,
+                  circleStrokeWidth: 2,
+                }}
+              />
+              <CircleLayer
+                id="shade-draft"
                 testID="quillamap-native-shadow-draft-marker"
-                coordinate={[selectedCoordinate.longitude, selectedCoordinate.latitude]}
-                allowOverlap
-                anchor={{ x: 0.5, y: 0.5 }}
-              >
-                <QuillaMapShadowMarker color={shadowMarkerColor} size="draft" />
-              </MarkerView>
+                style={{
+                  circleColor: shadowMarkerColor,
+                  circleRadius: 7,
+                  circleStrokeColor: '#FFFFFF',
+                  circleStrokeWidth: 2,
+                }}
+              />
+            </ShapeSource>
           ) : null}
         </MapView>
 
