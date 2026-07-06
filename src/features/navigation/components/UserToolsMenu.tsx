@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import tw from '@/lib/tailwind';
 import { useKarmaRewards } from '@/features/navigation/hooks/useKarmaRewards';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useThemeStore } from '@/store/useThemeStore';
 
 interface NavigationIconProps {
   name: string;
@@ -33,9 +34,12 @@ const UserToolsMenu = ({
   const [isOpen, setIsOpen] = useState(false);
   const profileKarma = useAuthStore((state) => state.user?.karma ?? 0);
   const earnedSessionKarma = useKarmaRewards((state) => state.karmaPoints);
+  const { mode } = useThemeStore();
+  const isDark = mode === 'dark';
   const totalKarma = profileKarma + earnedSessionKarma;
   const primaryText = tw.color('primary') ?? '';
   const mutedText = tw.color('dark-gray') ?? '';
+  const goldText = tw.color('secondary') ?? '#F9D84A';
 
   const handleReportShadow = async () => {
     if (!canReportShadow || isReportShadowDisabled) {
@@ -62,7 +66,7 @@ const UserToolsMenu = ({
             testID="user-tools-karma"
             style={tw`mb-s min-h-11 flex-row items-center rounded-s px-s py-s bg-surface-light dark:bg-charcoal`}
           >
-            <NavigationIcon name="star-outline" size={18} color={primaryText} />
+            <NavigationIcon name="star-outline" size={18} color={isDark ? goldText : primaryText} />
             <Text numberOfLines={1} style={tw`ml-s flex-1 font-bold text-primary dark:text-secondary`}>
               Karma
             </Text>
@@ -86,7 +90,7 @@ const UserToolsMenu = ({
               <NavigationIcon
                 name="umbrella-outline"
                 size={18}
-                color={isReportShadowDisabled ? mutedText : primaryText}
+                color={isReportShadowDisabled ? mutedText : isDark ? goldText : primaryText}
               />
               <Text
                 numberOfLines={1}
@@ -105,10 +109,10 @@ const UserToolsMenu = ({
             accessibilityRole="button"
             accessibilityLabel="Cerrar sesion"
             onPress={handleLogout}
-            style={tw`mt-s min-h-11 flex-row items-center rounded-s px-s py-s bg-primary dark:bg-secondary`}
+            style={tw`mt-s min-h-11 flex-row items-center rounded-s px-s py-s bg-primary dark:bg-charcoal border dark:border-secondary`}
           >
-            <NavigationIcon name="log-out-outline" size={18} color={tw.color('white') ?? ''} />
-            <Text numberOfLines={1} style={tw`ml-s font-bold text-white dark:text-black`}>
+            <NavigationIcon name="log-out-outline" size={18} color={isDark ? goldText : tw.color('white') ?? ''} />
+            <Text numberOfLines={1} style={tw`ml-s font-bold text-white dark:text-secondary`}>
               Cerrar Sesion
             </Text>
           </Pressable>
@@ -122,7 +126,7 @@ const UserToolsMenu = ({
         onPress={() => setIsOpen((current) => !current)}
         style={tw`h-10 w-10 items-center justify-center`}
       >
-        <NavigationIcon name="people" size={20} color={primaryText} />
+        <NavigationIcon name="people" size={20} color={isDark ? goldText : primaryText} />
       </Pressable>
     </View>
   );
