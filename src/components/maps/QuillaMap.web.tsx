@@ -1,1 +1,1 @@
-export { default } from './QuillaMap.web-renderer';
+export { default } from './components/QuillaMap.web';

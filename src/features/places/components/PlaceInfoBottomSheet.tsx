@@ -2,7 +2,10 @@ import React from 'react';
 import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import tw from '@/lib/tailwind';
-import type { PlaceMapFeature } from '@/types/contracts/places.contract';
+import {
+  PLACES_VISUAL_IDENTITY,
+  type PlaceMapFeature,
+} from '@/types/contracts/places.contract';
 import type { MapIconProps } from '@/components/maps/QuillaMap.icon.types';
 
 const SheetIcon = Ionicons as React.ComponentType<MapIconProps>;
@@ -21,9 +24,10 @@ const textOrFallback = (value?: { es: string; en?: string }): string => {
 };
 
 const PlaceInfoBottomSheet = ({ place, onClose }: PlaceInfoBottomSheetProps) => {
-  const primary = tw.color('shark-blue') ?? '#004574';
-  const culturalGold = '#D4AF37';
-  const history = textOrFallback(place.metadata?.history ?? place.description);
+  const primary = tw.color(PLACES_VISUAL_IDENTITY.sharkBlue.token) ?? PLACES_VISUAL_IDENTITY.sharkBlue.hex;
+  const culturalGold = tw.color(PLACES_VISUAL_IDENTITY.sandGold.token) ?? PLACES_VISUAL_IDENTITY.sandGold.hex;
+  const white = tw.color(PLACES_VISUAL_IDENTITY.white.token) ?? PLACES_VISUAL_IDENTITY.white.hex;
+  const description = textOrFallback(place.description ?? place.metadata?.history);
   const openingHours = textOrFallback(place.metadata?.openingHours);
   const photo = place.metadata?.photos?.[0];
 
@@ -53,7 +57,7 @@ const PlaceInfoBottomSheet = ({ place, onClose }: PlaceInfoBottomSheetProps) => 
           onPress={onClose}
           style={[tw`w-10 h-10 rounded-m items-center justify-center`, { backgroundColor: primary }]}
         >
-          <SheetIcon name="close" size={20} color="#FFFFFF" />
+          <SheetIcon name="close" size={20} color={white} />
         </Pressable>
       </View>
 
@@ -67,13 +71,13 @@ const PlaceInfoBottomSheet = ({ place, onClose }: PlaceInfoBottomSheetProps) => 
           />
         ) : null}
 
-        {history ? (
+        {description ? (
           <View style={tw`mb-m`}>
             <Text style={[tw`font-bold mb-xs`, { color: place.source === 'tourist_site' ? culturalGold : primary }]}>
-              Historia
+              Descripcion
             </Text>
             <Text style={tw`text-dark-gray leading-5`}>
-              {history}
+              {description}
             </Text>
           </View>
         ) : null}

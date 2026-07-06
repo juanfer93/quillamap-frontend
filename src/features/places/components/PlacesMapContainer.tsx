@@ -19,7 +19,8 @@ const PlacesMapContainer = ({ mode, themeMode = 'light', onLogout }: PlacesMapCo
   const { places } = usePlaces({
     lat: center.latitude,
     lng: center.longitude,
-    radius: 5000,
+    radius: 2500,
+    limit: 180,
   });
 
   return (

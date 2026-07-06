@@ -11,6 +11,26 @@ jest.mock('@maplibre/maplibre-react-native', () => {
   const passthrough = (props: Record<string, unknown>) =>
     ReactMock.createElement(View, props, props.children as React.ReactNode);
 
+  const pressableSource = ({
+    children,
+    onPress,
+    shape,
+    ...props
+  }: {
+    children?: React.ReactNode;
+    onPress?: (event: { features: Array<{ properties?: Record<string, unknown> }> }) => void;
+    shape?: { features?: Array<{ properties?: Record<string, unknown> }> };
+  }) =>
+    ReactMock.createElement(
+      Pressable,
+      {
+        ...props,
+        shape,
+        onPress: () => onPress?.({ features: shape?.features ?? [] }),
+      },
+      children
+    );
+
   return {
     __esModule: true,
     MapView: ReactMock.forwardRef(
@@ -29,10 +49,12 @@ jest.mock('@maplibre/maplibre-react-native', () => {
       return ReactMock.createElement(View, props);
     }),
     UserLocation: passthrough,
-    ShapeSource: passthrough,
+    ShapeSource: pressableSource,
     LineLayer: passthrough,
     CircleLayer: passthrough,
+    FillLayer: passthrough,
     FillExtrusionLayer: passthrough,
+    SymbolLayer: passthrough,
     MarkerView: ({ coordinate, children, ...props }: { coordinate: [number, number]; children?: React.ReactNode }) =>
       ReactMock.createElement(
         View,
@@ -108,8 +130,8 @@ describe('PedestrianMapContainer', () => {
     expect(getByTestId('pedestrian-map-container')).toHaveStyle(tw`bg-surface-light`);
     expect(getAllByText('Modo Peaton').length).toBeGreaterThan(0);
     expect(getByTestId('quillamap-container')).toBeTruthy();
-    expect(getByTestId('quillamap-native-shade-marker-shadow-zone-1')).toBeTruthy();
-    expect(getByTestId('quillamap-native-shade-marker-shadow-zone-2')).toBeTruthy();
+    expect(getByTestId('quillamap-native-shade-source').props.shape.features).toHaveLength(2);
+    expect(getByTestId('quillamap-native-shade-layer')).toBeTruthy();
   });
 
   it('usa el renderizado nativo en el entorno movil de pruebas', () => {
@@ -134,16 +156,12 @@ describe('PedestrianMapContainer', () => {
     );
 
     const nativeMap = getByTestId('quillamap-native-map');
-    const firstMarker = getByTestId('quillamap-native-shade-marker-shadow-zone-1');
+    const shadeSource = getByTestId('quillamap-native-shade-source');
 
     expect(nativeMap).toBeTruthy();
-    expect(firstMarker).toBeTruthy();
-    expect(firstMarker.props.coordinate).toEqual({
-      latitude: 10.9878,
-      longitude: -74.7889,
-    });
+    expect(shadeSource.props.shape.features[0].geometry.coordinates).toEqual([-74.7889, 10.9878]);
 
-    fireEvent.press(firstMarker);
+    fireEvent.press(shadeSource);
 
     expect(onShadowZonePress).toHaveBeenCalledWith(shadowZones[0]);
   });

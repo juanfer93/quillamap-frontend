@@ -12,6 +12,21 @@ export type PlaceSource = 'place' | 'tourist_site';
 
 export type PlacesNavigationMode = 'turista' | 'peaton' | 'carro' | 'moto';
 
+export const PLACES_VISUAL_IDENTITY = {
+  sharkBlue: {
+    token: 'shark-blue',
+    hex: '#004574',
+  },
+  sandGold: {
+    token: 'sand-gold',
+    hex: '#D4AF37',
+  },
+  white: {
+    token: 'white',
+    hex: '#FFFFFF',
+  },
+} as const;
+
 export interface BilingualText {
   es: string;
   en?: string;
@@ -57,6 +72,7 @@ export interface PlacesNearbyQuery {
   lat: number;
   lng: number;
   radius?: number;
+  limit?: number;
   category?: PlaceCategory;
 }
 

@@ -14,7 +14,7 @@ const normalizePlace = (place: PlaceMapFeature): PlaceMapFeature => ({
 export const usePlaces = (query: PlacesNearbyQuery) => {
   const [remotePlaces, setRemotePlaces] = useState<PlaceMapFeature[] | null>(null);
 
-  const queryKey = `${query.lat}:${query.lng}:${query.radius ?? 2500}:${query.category ?? 'all'}`;
+  const queryKey = `${query.lat}:${query.lng}:${query.radius ?? 2500}:${query.limit ?? 180}:${query.category ?? 'all'}`;
 
   useEffect(() => {
     let isMounted = true;

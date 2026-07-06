@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, Text, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import tw from '@/lib/tailwind';
-import type { MapIconProps } from './QuillaMap.icon.types';
+import type { MapIconProps } from './types/QuillaMap.icon.types';
 
 interface QuillaMapPerspectiveToggleProps {
   is3D: boolean;

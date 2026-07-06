@@ -102,10 +102,10 @@ const UserToolsMenu = ({
             accessibilityRole="button"
             accessibilityLabel="Cerrar sesion"
             onPress={handleLogout}
-            style={tw`mt-s min-h-11 flex-row items-center rounded-s px-s py-s bg-primary dark:bg-charcoal border dark:border-secondary`}
+            style={tw`mt-s min-h-11 flex-row items-center rounded-s px-s py-s bg-primary dark:bg-primary border dark:border-secondary`}
           >
-            <NavigationIcon name="log-out-outline" size={18} color={activeText} />
-            <Text numberOfLines={1} style={[tw`ml-s font-bold`, { color: activeText }]}>
+            <NavigationIcon name="log-out-outline" size={18} color={'#FFFFFF'} />
+            <Text numberOfLines={1} style={tw`ml-s font-bold text-white`}>
               Cerrar Sesion
             </Text>
           </Pressable>

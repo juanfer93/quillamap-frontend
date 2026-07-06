@@ -1,1 +1,1 @@
-export * from './QuillaMap.maplibre.bright';
+export * from './styles/QuillaMap.maplibre.native';

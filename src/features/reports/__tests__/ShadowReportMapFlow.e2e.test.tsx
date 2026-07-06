@@ -41,6 +41,26 @@ jest.mock('@maplibre/maplibre-react-native', () => {
   const passthrough = (props: Record<string, unknown>) =>
     ReactMock.createElement(View, props, props.children as React.ReactNode);
 
+  const pressableSource = ({
+    children,
+    onPress,
+    shape,
+    ...props
+  }: {
+    children?: React.ReactNode;
+    onPress?: (event: { features: Array<{ properties?: Record<string, unknown> }> }) => void;
+    shape?: { features?: Array<{ properties?: Record<string, unknown> }> };
+  }) =>
+    ReactMock.createElement(
+      Pressable,
+      {
+        ...props,
+        shape,
+        onPress: () => onPress?.({ features: shape?.features ?? [] }),
+      },
+      children
+    );
+
   return {
     __esModule: true,
     MapView: ReactMock.forwardRef(
@@ -79,10 +99,12 @@ jest.mock('@maplibre/maplibre-react-native', () => {
       return ReactMock.createElement(View, props);
     }),
     UserLocation: passthrough,
-    ShapeSource: passthrough,
+    ShapeSource: pressableSource,
     LineLayer: passthrough,
     CircleLayer: passthrough,
+    FillLayer: passthrough,
     FillExtrusionLayer: passthrough,
+    SymbolLayer: passthrough,
     MarkerView: ({ coordinate, children, ...props }: { coordinate: [number, number]; children?: React.ReactNode }) =>
       ReactMock.createElement(
         View,
@@ -188,7 +210,16 @@ describe('ShadowReportMapFlow e2e', () => {
         coordinates: [tappedCoordinate.longitude, tappedCoordinate.latitude],
       },
     });
-    expect(getByTestId('quillamap-native-shade-marker-db-shadow-1').props.coordinate).toEqual(tappedCoordinate);
+    expect(getByTestId('quillamap-native-shade-source').props.shape.features).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          properties: expect.objectContaining({ id: 'db-shadow-1' }),
+          geometry: expect.objectContaining({
+            coordinates: [tappedCoordinate.longitude, tappedCoordinate.latitude],
+          }),
+        }),
+      ])
+    );
   }, 10000);
 
   it('mantiene la sombra guardada al abrir otra sesion cargando desde backend', async () => {
@@ -235,8 +266,15 @@ describe('ShadowReportMapFlow e2e', () => {
     const secondSession = render(<ShadowReportMapFlow canReportShadow onLogout={jest.fn()} />);
 
     await waitFor(() => {
-      expect(secondSession.getByTestId('quillamap-native-shade-marker-db-shadow-permanent').props.coordinate).toEqual(
-        tappedCoordinate
+      expect(secondSession.getByTestId('quillamap-native-shade-source').props.shape.features).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            properties: expect.objectContaining({ id: 'db-shadow-permanent' }),
+            geometry: expect.objectContaining({
+              coordinates: [tappedCoordinate.longitude, tappedCoordinate.latitude],
+            }),
+          }),
+        ])
       );
     });
     expect(reportsApi.findNearby).toHaveBeenCalledWith({
@@ -265,10 +303,16 @@ describe('ShadowReportMapFlow e2e', () => {
     const { getByTestId } = render(<ShadowReportMapFlow canReportShadow onLogout={jest.fn()} />);
 
     await waitFor(() => {
-      expect(getByTestId('quillamap-native-shade-marker-db-shadow-existing').props.coordinate).toEqual({
-        latitude: 10.9878,
-        longitude: -74.7889,
-      });
+      expect(getByTestId('quillamap-native-shade-source').props.shape.features).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            properties: expect.objectContaining({ id: 'db-shadow-existing' }),
+            geometry: expect.objectContaining({
+              coordinates: [-74.7889, 10.9878],
+            }),
+          }),
+        ])
+      );
     });
   });
 
@@ -296,7 +340,7 @@ describe('ShadowReportMapFlow e2e', () => {
 
     fireEvent.press(getByTestId('user-tools-profile-button'));
 
-    expect(queryByTestId('quillamap-native-shade-marker-db-shadow-night')).toBeNull();
+    expect(queryByTestId('quillamap-native-shade-source')?.props.shape.features).toEqual([]);
     expect(queryByTestId('quillamap-native-shadow-draft-marker')).toBeNull();
     expect(queryByTestId('user-tools-report-shadow')).toBeTruthy();
   });
@@ -306,7 +350,7 @@ describe('ShadowReportMapFlow e2e', () => {
 
     await waitFor(() => expect(reportsApi.findNearby).toHaveBeenCalled());
 
-    expect(queryByTestId('quillamap-native-shade-marker-shade-1')).toBeNull();
+    expect(queryByTestId('quillamap-native-shade-source')?.props.shape.features).toEqual([]);
   });
 
   it('no marca sombra al tocar el mapa antes de activar reportar sombra', async () => {

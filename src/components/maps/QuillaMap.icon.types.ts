@@ -1,5 +1,1 @@
-export interface MapIconProps {
-  name: string;
-  size: number;
-  color: string;
-}
+export * from './types/QuillaMap.icon.types';
