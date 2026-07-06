@@ -4,6 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import tw from '@/lib/tailwind';
 import type { QuillaMapMode } from './QuillaMap.types';
+import QuillaMapPerspectiveToggle from './QuillaMapPerspectiveToggle';
 
 interface MapIconProps {
   name: string;
@@ -14,6 +15,7 @@ interface MapIconProps {
 interface QuillaMapControlsProps {
   mode: QuillaMapMode;
   isDark: boolean;
+  is3D: boolean;
   controlBackground: string;
   controlBorder: string;
   controlText: string;
@@ -26,8 +28,10 @@ interface QuillaMapControlsProps {
   showLocate?: boolean;
   zoomInTestID?: string;
   zoomOutTestID?: string;
+  perspectiveToggleTestID?: string;
   onZoomIn?: () => void;
   onZoomOut?: () => void;
+  onTogglePerspective: () => void;
   profileTools?: ReactNode;
 }
 
@@ -36,6 +40,7 @@ const MapIcon = Ionicons as React.ComponentType<MapIconProps>;
 const QuillaMapControls = ({
   mode,
   isDark,
+  is3D,
   controlBackground,
   controlBorder,
   controlText,
@@ -48,8 +53,10 @@ const QuillaMapControls = ({
   showLocate = false,
   zoomInTestID,
   zoomOutTestID,
+  perspectiveToggleTestID,
   onZoomIn,
   onZoomOut,
+  onTogglePerspective,
   profileTools,
 }: QuillaMapControlsProps) => {
   const isPedestrian = mode === 'pedestrian';
@@ -78,19 +85,20 @@ const QuillaMapControls = ({
         <MapIcon name="close" size={18} color={controlText} />
       </View>
 
-      <View
-        pointerEvents="box-none"
+      <QuillaMapPerspectiveToggle
+        is3D={is3D}
+        onPress={onTogglePerspective}
+        testID={perspectiveToggleTestID}
+        compact={isPedestrian}
+        backgroundColor={controlBackground}
+        borderColor={controlBorder}
+        color={isDark ? controlText : primary}
         style={
           isPedestrian
-            ? [
-                tw`absolute right-m top-16 w-11 h-11 rounded-xl border items-center justify-center`,
-                { backgroundColor: controlBackground, borderColor: controlBorder, zIndex: 20 },
-              ]
-            : tw`absolute right-m top-m w-10 h-10 rounded-m bg-white border border-medium-gray items-center justify-center`
+            ? [tw`absolute right-m top-16`, { zIndex: 20 }]
+            : [tw`absolute right-m top-m`, { zIndex: 20 }]
         }
-      >
-        <MapIcon name="layers-outline" size={18} color={isDark ? controlText : primary} />
-      </View>
+      />
 
       {!isPedestrian ? (
         <View style={tw`absolute right-m top-16 rounded-m bg-white border border-medium-gray px-s py-xs flex-row items-center`}>
