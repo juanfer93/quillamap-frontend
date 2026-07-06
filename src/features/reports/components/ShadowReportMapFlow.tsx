@@ -63,7 +63,7 @@ const ShadowReportMapFlow = ({
     lng: lookupCenter.longitude,
     radius: 5000,
   });
-  const isShadowReportingAvailable = canReportShadow && themeMode !== 'dark';
+  const isShadowReportingAvailable = canReportShadow;
   const canSelectShadowLocation = isShadowReportingAvailable && isSelectingShadowLocation;
   const reportMap = useMemo(() => {
     const reports = new Map<string, Report>();
@@ -134,7 +134,7 @@ const ShadowReportMapFlow = ({
   }, [successMessage]);
 
   const handleShadowToolPress = async () => {
-    if (isCreating || themeMode === 'dark') {
+    if (isCreating) {
       return;
     }
 
@@ -179,8 +179,8 @@ const ShadowReportMapFlow = ({
         selectedShadowCoordinate={selectedCoordinate}
         profileTools={(
           <UserToolsMenu
-            canReportShadow={canReportShadow}
-            isReportShadowDisabled={isCreating || themeMode === 'dark'}
+            canReportShadow={isShadowReportingAvailable}
+            isReportShadowDisabled={isCreating}
             isReportingShadow={isCreating}
             reportShadowLabel={reportShadowLabel}
             onReportShadow={handleShadowToolPress}
