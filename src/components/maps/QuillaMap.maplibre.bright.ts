@@ -2,9 +2,9 @@ import type { PlaceMapFeature } from '@/types/contracts/places.contract';
 import type { QuillaMapCoordinate, QuillaMapRoutePoint, QuillaMapShadeZone } from './QuillaMap.types';
 
 export const DARK_MAP_THEME = {
-  background: '#30415A',
-  controlBackground: '#162236',
-  controlBorder: '#4A5E7A',
+  background: '#26364D',
+  controlBackground: '#111B2A',
+  controlBorder: '#4B607C',
   controlText: '#F9D84A',
 };
 
@@ -19,7 +19,19 @@ export const DARK_MAPLIBRE_STYLE: any = {
   sources: { cartoDark: { type: 'raster', tiles: ['https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'] as string[], tileSize: 256, maxzoom: 20, attribution: '© OpenStreetMap contributors © CARTO' } },
   layers: [
     { id: 'dark-background', type: 'background', paint: { 'background-color': DARK_MAP_THEME.background } },
-    { id: 'carto-dark', type: 'raster', source: 'cartoDark', paint: { 'raster-hue-rotate': -1, 'raster-saturation': 0.14, 'raster-contrast': -0.35, 'raster-brightness-min': 0.42, 'raster-brightness-max': 1 } },
+    {
+      id: 'carto-dark',
+      type: 'raster',
+      source: 'cartoDark',
+      paint: {
+        'raster-hue-rotate': 0,
+        'raster-saturation': 0.08,
+        'raster-contrast': -0.8,
+        'raster-brightness-min': 0.56,
+        'raster-brightness-max': 0.94,
+        'raster-opacity': 0.88,
+      },
+    },
   ],
 };
 
