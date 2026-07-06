@@ -37,9 +37,11 @@ const UserToolsMenu = ({
   const { mode } = useThemeStore();
   const isDark = mode === 'dark';
   const totalKarma = profileKarma + earnedSessionKarma;
-  const primaryText = tw.color('primary') ?? '';
-  const mutedText = tw.color('dark-gray') ?? '';
+  const primaryText = tw.color('primary') ?? '#004574';
+  const mutedText = tw.color('dark-gray') ?? '#333333';
   const goldText = tw.color('secondary') ?? '#F9D84A';
+  const activeText = isDark ? goldText : primaryText;
+  const reportText = isDark ? goldText : isReportShadowDisabled ? mutedText : primaryText;
 
   const handleReportShadow = async () => {
     if (!canReportShadow || isReportShadowDisabled) {
@@ -66,11 +68,11 @@ const UserToolsMenu = ({
             testID="user-tools-karma"
             style={tw`mb-s min-h-11 flex-row items-center rounded-s px-s py-s bg-surface-light dark:bg-charcoal`}
           >
-            <NavigationIcon name="star-outline" size={18} color={isDark ? goldText : primaryText} />
-            <Text numberOfLines={1} style={tw`ml-s flex-1 font-bold text-primary dark:text-secondary`}>
+            <NavigationIcon name="star-outline" size={18} color={activeText} />
+            <Text numberOfLines={1} style={[tw`ml-s flex-1 font-bold`, { color: activeText }]}>
               Karma
             </Text>
-            <Text testID="user-tools-karma-points" numberOfLines={1} style={tw`font-bold text-primary dark:text-secondary`}>
+            <Text testID="user-tools-karma-points" numberOfLines={1} style={[tw`font-bold`, { color: activeText }]}>
               {totalKarma}
             </Text>
           </View>
@@ -85,20 +87,11 @@ const UserToolsMenu = ({
               style={[
                 tw`min-h-11 flex-row items-center rounded-s px-s py-s`,
                 isReportShadowDisabled ? tw`bg-light-gray dark:bg-charcoal` : tw`bg-surface-light dark:bg-charcoal`,
+                isDark && isReportShadowDisabled ? { opacity: 0.7 } : null,
               ]}
             >
-              <NavigationIcon
-                name="umbrella-outline"
-                size={18}
-                color={isReportShadowDisabled ? mutedText : isDark ? goldText : primaryText}
-              />
-              <Text
-                numberOfLines={1}
-                style={[
-                  tw`ml-s font-bold`,
-                  isReportShadowDisabled ? tw`text-dark-gray dark:text-light-gray` : tw`text-primary dark:text-secondary`,
-                ]}
-              >
+              <NavigationIcon name="umbrella-outline" size={18} color={reportText} />
+              <Text numberOfLines={1} style={[tw`ml-s font-bold`, { color: reportText }]}>
                 {isReportingShadow ? 'Guardando sombra' : reportShadowLabel}
               </Text>
             </Pressable>
@@ -111,8 +104,8 @@ const UserToolsMenu = ({
             onPress={handleLogout}
             style={tw`mt-s min-h-11 flex-row items-center rounded-s px-s py-s bg-primary dark:bg-charcoal border dark:border-secondary`}
           >
-            <NavigationIcon name="log-out-outline" size={18} color={isDark ? goldText : tw.color('white') ?? ''} />
-            <Text numberOfLines={1} style={tw`ml-s font-bold text-white dark:text-secondary`}>
+            <NavigationIcon name="log-out-outline" size={18} color={activeText} />
+            <Text numberOfLines={1} style={[tw`ml-s font-bold`, { color: activeText }]}>
               Cerrar Sesion
             </Text>
           </Pressable>
@@ -126,7 +119,7 @@ const UserToolsMenu = ({
         onPress={() => setIsOpen((current) => !current)}
         style={tw`h-10 w-10 items-center justify-center`}
       >
-        <NavigationIcon name="people" size={20} color={isDark ? goldText : primaryText} />
+        <NavigationIcon name="people" size={20} color={activeText} />
       </Pressable>
     </View>
   );
