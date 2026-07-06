@@ -60,25 +60,34 @@ const QuillaMapControls = ({
   profileTools,
 }: QuillaMapControlsProps) => {
   const isPedestrian = mode === 'pedestrian';
+  const searchSurfaceStyle = {
+    backgroundColor: controlBackground,
+    borderColor: controlBorder,
+    borderRadius: isPedestrian ? 22 : 10,
+    zIndex: 20,
+  };
+  const buttonSurfaceStyle = {
+    backgroundColor: controlBackground,
+    borderColor: controlBorder,
+    zIndex: 20,
+  };
 
   return (
     <>
       <View
         pointerEvents="box-none"
-        style={
+        style={[
           isPedestrian
-            ? [
-                tw`absolute left-m right-m top-m h-10 border flex-row items-center px-s`,
-                { backgroundColor: controlBackground, borderColor: controlBorder, borderRadius: 22, zIndex: 20 },
-              ]
-            : tw`absolute left-m right-16 top-m h-10 rounded-m bg-white border border-medium-gray flex-row items-center px-s`
-        }
+            ? tw`absolute left-m right-m top-m h-10 border flex-row items-center px-s`
+            : tw`absolute left-m right-16 top-m h-10 border flex-row items-center px-s`,
+          searchSurfaceStyle,
+        ]}
       >
         <MapIcon name="search" size={17} color={controlText} />
         {isPedestrian ? (
           <View style={tw`flex-1`} />
         ) : (
-          <Text numberOfLines={1} style={tw`ml-s flex-1 text-dark-gray text-sm font-semibold`}>
+          <Text numberOfLines={1} style={[tw`ml-s flex-1 text-sm font-semibold`, { color: controlText }]}>
             Buscar ruta fresca
           </Text>
         )}
@@ -101,9 +110,14 @@ const QuillaMapControls = ({
       />
 
       {!isPedestrian ? (
-        <View style={tw`absolute right-m top-16 rounded-m bg-white border border-medium-gray px-s py-xs flex-row items-center`}>
+        <View
+          style={[
+            tw`absolute right-m top-16 border px-s py-xs flex-row items-center`,
+            { ...buttonSurfaceStyle, borderRadius: 10 },
+          ]}
+        >
           <MapIcon name="leaf-outline" size={15} color={mapShade} />
-          <Text style={tw`ml-xs text-primary text-xs font-bold`}>
+          <Text style={[tw`ml-xs text-xs font-bold`, { color: controlText }]}>
             {zonesCount} sombras
           </Text>
         </View>
@@ -114,7 +128,7 @@ const QuillaMapControls = ({
           pointerEvents="box-none"
           style={[
             tw`absolute right-m top-32 w-11 rounded-xl border overflow-hidden`,
-            { backgroundColor: controlBackground, borderColor: controlBorder, zIndex: 20 },
+            buttonSurfaceStyle,
           ]}
         >
           <Pressable
@@ -140,14 +154,12 @@ const QuillaMapControls = ({
 
       <View
         pointerEvents="box-none"
-        style={
+        style={[
           isPedestrian
-            ? [
-                tw`absolute right-m bottom-24 w-12 h-12 rounded-xl border items-center justify-center`,
-                { backgroundColor: controlBackground, borderColor: controlBorder, zIndex: 20 },
-              ]
-            : tw`absolute right-m bottom-20 w-11 h-11 rounded-xl bg-white border border-medium-gray items-center justify-center`
-        }
+            ? tw`absolute right-m bottom-24 w-12 h-12 rounded-xl border items-center justify-center`
+            : tw`absolute right-m bottom-20 w-11 h-11 rounded-xl border items-center justify-center`,
+          buttonSurfaceStyle,
+        ]}
       >
         <MapIcon name="navigate" size={isPedestrian ? 19 : 18} color={controlText} />
       </View>
@@ -155,14 +167,12 @@ const QuillaMapControls = ({
       {showLocate ? (
         <View
           pointerEvents="box-none"
-          style={
+          style={[
             isPedestrian
-              ? [
-                  tw`absolute left-m bottom-24 w-10 h-10 rounded-xl border items-center justify-center`,
-                  { backgroundColor: controlBackground, borderColor: controlBorder, zIndex: 20 },
-                ]
-              : tw`absolute left-m bottom-20 w-10 h-10 rounded-xl bg-white border border-medium-gray items-center justify-center`
-          }
+              ? tw`absolute left-m bottom-24 w-10 h-10 rounded-xl border items-center justify-center`
+              : tw`absolute left-m bottom-20 w-10 h-10 rounded-xl border items-center justify-center`,
+            buttonSurfaceStyle,
+          ]}
         >
           <MapIcon name="locate-outline" size={18} color={isDark ? controlText : primary} />
         </View>
