@@ -5,6 +5,13 @@ import type {
   QuillaMapShadeZone,
 } from './QuillaMap.types';
 
+export const DARK_MAP_THEME = {
+  background: '#1D2737',
+  controlBackground: '#101622',
+  controlBorder: '#2D3A4F',
+  controlText: '#F4CD2F',
+};
+
 export const MAPLIBRE_STYLE: any = {
   version: 8,
   sources: {
@@ -23,6 +30,50 @@ export const MAPLIBRE_STYLE: any = {
     },
   ],
 };
+
+/**
+ * Waze-inspired dark basemap: deep navy surface, desaturated slate roads and
+ * muted green land areas. It intentionally uses a separate raster source so
+ * web and native render the same dark cartography instead of dimming controls
+ * over the light OpenStreetMap tiles.
+ */
+export const DARK_MAPLIBRE_STYLE: any = {
+  version: 8,
+  sources: {
+    cartoDark: {
+      type: 'raster',
+      tiles: ['https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'] as string[],
+      tileSize: 256,
+      maxzoom: 20,
+      attribution: '© OpenStreetMap contributors © CARTO',
+    },
+  },
+  layers: [
+    {
+      id: 'dark-background',
+      type: 'background',
+      paint: {
+        'background-color': DARK_MAP_THEME.background,
+      },
+    },
+    {
+      id: 'carto-dark',
+      type: 'raster',
+      source: 'cartoDark',
+      paint: {
+        'raster-hue-rotate': -8,
+        'raster-saturation': -0.18,
+        'raster-contrast': 0.16,
+        'raster-brightness-min': 0.08,
+        'raster-brightness-max': 0.72,
+      },
+    },
+  ],
+};
+
+export const getMapLibreStyle = (themeMode: 'light' | 'dark' = 'light') => (
+  themeMode === 'dark' ? DARK_MAPLIBRE_STYLE : MAPLIBRE_STYLE
+);
 
 export const SHADE_MARKER_EMOJI = '☂';
 

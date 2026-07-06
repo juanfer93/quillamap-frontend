@@ -27,13 +27,14 @@ import {
 import PlaceInfoBottomSheet from '@/features/places/components/PlaceInfoBottomSheet';
 import QuillaMapControls from './QuillaMapControls';
 import {
+  DARK_MAP_THEME,
   getBuildingsFeatureCollection,
   getCoordinateFeatureCollection,
+  getMapLibreStyle,
   getPlacesFeatureCollection,
   getRouteFeature,
   getShadeZoneAreasFeatureCollection,
   getShadeZonesFeatureCollection,
-  MAPLIBRE_STYLE,
   SHADE_MARKER_EMOJI,
 } from './QuillaMap.maplibre';
 
@@ -68,15 +69,16 @@ const QuillaMap = ({
   const shadowMarkerColor = tw.color('secondary') ?? culturalGold;
   const isPedestrian = mode === 'pedestrian';
   const isDark = themeMode === 'dark';
+  const mapStyle = getMapLibreStyle(themeMode);
   const shouldShowShadowZones = !(isPedestrian && isDark);
   const zones = shouldShowShadowZones ? getVisibleShadeZones(shadeZones, showDefaultShadeZones) : [];
   const visiblePlaces = getVisiblePlaces(places);
   const canOpenPlaces = canInteractWithPlaces(mode);
   const [selectedPlace, setSelectedPlace] = useState<PlaceMapFeature | null>(null);
   const [is3D, setIs3D] = useState(() => visiblePlaces.length > 0);
-  const controlBackground = isDark ? tw.color('charcoal') ?? '#121212' : tw.color('white') ?? '#FFFFFF';
-  const controlText = isDark ? culturalGold : darkGray;
-  const controlBorder = isDark ? '#3A3328' : tw.color('medium-gray') ?? '#e0e0e0';
+  const controlBackground = isDark ? DARK_MAP_THEME.controlBackground : tw.color('white') ?? '#FFFFFF';
+  const controlText = isDark ? DARK_MAP_THEME.controlText : darkGray;
+  const controlBorder = isDark ? DARK_MAP_THEME.controlBorder : tw.color('medium-gray') ?? '#e0e0e0';
   const [zoomLevel, setZoomLevel] = useState(isPedestrian ? 16 : 15);
   const routeFeature = getRouteFeature(route);
   const shadeFeatureCollection = getShadeZonesFeatureCollection(zones);
@@ -122,15 +124,16 @@ const QuillaMap = ({
           isPedestrian
             ? [
                 tw`flex-1 overflow-hidden`,
-                { backgroundColor: isDark ? '#1D2D3B' : tw.color('surface-light') ?? '#F8FAFC' },
+                { backgroundColor: isDark ? DARK_MAP_THEME.background : tw.color('surface-light') ?? '#F8FAFC' },
               ]
             : tw`flex-1 rounded-m overflow-hidden`
         }
       >
         <MapView
+          key={isDark ? 'quillamap-native-dark' : 'quillamap-native-light'}
           testID="quillamap-native-map"
           style={tw`flex-1`}
-          mapStyle={MAPLIBRE_STYLE}
+          mapStyle={mapStyle}
           logoEnabled={false}
           attributionEnabled={false}
           compassEnabled={false}
