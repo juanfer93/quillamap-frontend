@@ -1,77 +1,98 @@
 import React, { useRef, useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import MapView, { Circle, Marker, Polyline, Region } from 'react-native-maps';
+import {
+  Camera,
+  CircleLayer,
+  FillExtrusionLayer,
+  LineLayer,
+  MapView,
+  MarkerView,
+  ShapeSource,
+  UserLocation,
+  type CameraRef,
+} from '@maplibre/maplibre-react-native';
 import tw from '@/lib/tailwind';
 import type { QuillaMapProps } from './QuillaMap.types';
+import type { PlaceMapFeature } from '@/types/contracts/places.contract';
 import type { MapIconProps } from './QuillaMap.icon.types';
-import { MAX_NATIVE_DELTA, MIN_NATIVE_DELTA } from './QuillaMap.constants';
-import { getRouteCoordinates, getVisibleShadeZones } from './QuillaMap.shared';
-import { darkMapStyle } from './QuillaMap.native-style';
+import {
+  canInteractWithPlaces,
+  getRouteCoordinates,
+  getVisiblePlaces,
+  getVisibleShadeZones,
+} from './QuillaMap.shared';
+import PlaceInfoBottomSheet from '@/features/places/components/PlaceInfoBottomSheet';
 import QuillaMapControls from './QuillaMapControls';
 import QuillaMapShadowMarker from './QuillaMapShadowMarker';
+import {
+  getBuildingsFeatureCollection,
+  getPlacesFeatureCollection,
+  getRouteFeature,
+  getShadeZonesFeatureCollection,
+  MAPLIBRE_STYLE,
+} from './QuillaMap.maplibre';
 
 const MapIcon = Ionicons as React.ComponentType<MapIconProps>;
+
+const getPlaceTitle = (place: PlaceMapFeature): string => place.name.es;
 
 const QuillaMap = ({
   mode,
   themeMode = 'light',
   center,
   shadeZones,
+  places,
   showDefaultShadeZones,
   routePoints,
   showUserLocation = true,
   children,
   profileTools,
   onShadeZonePress,
+  onPlacePress,
   onMapPress,
   selectedCoordinate,
   style,
 }: QuillaMapProps) => {
   const route = getRouteCoordinates(routePoints, center);
-  const layerColor = tw.color('map-shade') ?? '';
-  const routeColor = tw.color('map-route') ?? '';
-  const strokeColor = tw.color('primary') ?? '';
+  const cameraRef = useRef<CameraRef | null>(null);
+  const layerColor = tw.color('map-shade') ?? '#5DA271';
+  const routeColor = tw.color('map-route') ?? '#2F8AC4';
   const darkGray = tw.color('dark-gray') ?? '#333333';
-  const primary = tw.color('primary') ?? '#004574';
-  const sandGold = tw.color('sand-gold') ?? tw.color('gold') ?? '';
-  const shadowMarkerColor = tw.color('secondary') ?? tw.color('brand-secondary') ?? sandGold;
+  const primary = '#004574';
+  const culturalGold = '#D4AF37';
+  const shadowMarkerColor = tw.color('secondary') ?? culturalGold;
   const isPedestrian = mode === 'pedestrian';
   const isDark = themeMode === 'dark';
   const shouldShowShadowZones = !(isPedestrian && isDark);
   const zones = shouldShowShadowZones ? getVisibleShadeZones(shadeZones, showDefaultShadeZones) : [];
-  const initialRegion: Region = {
-    latitude: center.latitude,
-    longitude: center.longitude,
-    latitudeDelta: isPedestrian ? 0.012 : 0.018,
-    longitudeDelta: isPedestrian ? 0.012 : 0.018,
-  };
-  const mapRef = useRef<MapView | null>(null);
-  const currentRegionRef = useRef<Region>(initialRegion);
-  const [mapDelta, setMapDelta] = useState({
-    latitudeDelta: initialRegion.latitudeDelta,
-    longitudeDelta: initialRegion.longitudeDelta,
-  });
+  const visiblePlaces = getVisiblePlaces(places);
+  const canOpenPlaces = canInteractWithPlaces(mode);
+  const [selectedPlace, setSelectedPlace] = useState<PlaceMapFeature | null>(null);
   const controlBackground = isDark ? tw.color('charcoal') ?? '#121212' : tw.color('white') ?? '#FFFFFF';
-  const controlText = isDark ? sandGold : darkGray;
+  const controlText = isDark ? culturalGold : darkGray;
   const controlBorder = isDark ? '#3A3328' : tw.color('medium-gray') ?? '#e0e0e0';
-  const applyZoom = (factor: number) => {
-    const currentRegion = currentRegionRef.current;
-    const nextRegion: Region = {
-      ...currentRegion,
-      latitudeDelta: Math.min(Math.max(mapDelta.latitudeDelta * factor, MIN_NATIVE_DELTA), MAX_NATIVE_DELTA),
-      longitudeDelta: Math.min(Math.max(mapDelta.longitudeDelta * factor, MIN_NATIVE_DELTA), MAX_NATIVE_DELTA),
-    };
+  const [zoomLevel, setZoomLevel] = useState(isPedestrian ? 16 : 15);
+  const routeFeature = getRouteFeature(route);
+  const shadeFeatureCollection = getShadeZonesFeatureCollection(zones);
+  const placesFeatureCollection = getPlacesFeatureCollection(visiblePlaces);
+  const buildingsFeatureCollection = getBuildingsFeatureCollection(visiblePlaces);
 
-    currentRegionRef.current = nextRegion;
-    setMapDelta({
-      latitudeDelta: nextRegion.latitudeDelta,
-      longitudeDelta: nextRegion.longitudeDelta,
-    });
-    mapRef.current?.animateToRegion(nextRegion, 180);
+  const handlePlacePress = (place: PlaceMapFeature) => {
+    if (!canOpenPlaces) {
+      return;
+    }
+
+    setSelectedPlace(place);
+    onPlacePress?.(place);
   };
-  const zoomIn = () => applyZoom(0.62);
-  const zoomOut = () => applyZoom(1.45);
+
+  const applyZoom = (nextZoom: number) => {
+    setZoomLevel(nextZoom);
+    cameraRef.current?.zoomTo(nextZoom, 180);
+  };
+  const zoomIn = () => applyZoom(Math.min(zoomLevel + 1, 19));
+  const zoomOut = () => applyZoom(Math.max(zoomLevel - 1, 11));
 
   return (
     <View testID="quillamap-container" style={[tw`flex-1`, style]}>
@@ -87,102 +108,181 @@ const QuillaMap = ({
         }
       >
         <MapView
-          ref={mapRef}
           testID="quillamap-native-map"
           style={tw`flex-1`}
-          initialRegion={initialRegion}
-          onRegionChangeComplete={(region) => {
-            currentRegionRef.current = region;
-            setMapDelta({
-              latitudeDelta: region.latitudeDelta,
-              longitudeDelta: region.longitudeDelta,
-            });
-          }}
-          showsUserLocation={showUserLocation}
-          showsMyLocationButton={!isPedestrian && showUserLocation}
-          customMapStyle={isDark ? darkMapStyle : []}
-          userInterfaceStyle={isDark ? 'dark' : 'light'}
+          mapStyle={MAPLIBRE_STYLE}
+          logoEnabled={false}
+          attributionEnabled={false}
+          compassEnabled={false}
           scrollEnabled
           zoomEnabled
           rotateEnabled
           pitchEnabled
-          onPress={(event) => onMapPress?.(event.nativeEvent.coordinate)}
+          onPress={(feature) => {
+            const coordinates = feature.geometry.type === 'Point' ? feature.geometry.coordinates : null;
+            if (coordinates && typeof coordinates[0] === 'number' && typeof coordinates[1] === 'number') {
+              onMapPress?.({
+                longitude: coordinates[0],
+                latitude: coordinates[1],
+              });
+            }
+          }}
         >
-          <Polyline
-            testID="quillamap-native-route"
-            coordinates={route}
-            strokeColor={routeColor}
-            strokeWidth={isPedestrian ? 6 : 4}
+          <Camera
+            ref={cameraRef}
+            centerCoordinate={[center.longitude, center.latitude]}
+            zoomLevel={zoomLevel}
+            pitch={visiblePlaces.length > 0 ? 48 : 0}
           />
+          {showUserLocation ? <UserLocation /> : null}
+
+          <ShapeSource id="route-source" shape={routeFeature}>
+            <LineLayer
+              id="route-line"
+              testID="quillamap-native-route"
+              style={{
+                lineColor: routeColor,
+                lineWidth: isPedestrian ? 6 : 4,
+                lineCap: 'round',
+                lineJoin: 'round',
+              }}
+            />
+          </ShapeSource>
+
+          <ShapeSource id="buildings-source" shape={buildingsFeatureCollection}>
+            <FillExtrusionLayer
+              id="places-buildings"
+              testID="quillamap-native-building-extrusions"
+              style={{
+                fillExtrusionColor: ['get', 'color'],
+                fillExtrusionHeight: ['get', 'height'],
+                fillExtrusionBase: ['get', 'base'],
+                fillExtrusionOpacity: 0.62,
+              }}
+            />
+          </ShapeSource>
+
+          <ShapeSource id="places-source" shape={placesFeatureCollection}>
+            <CircleLayer
+              id="places-static-dots"
+              testID="quillamap-native-places-layer"
+              style={{
+                circleColor: ['case', ['==', ['get', 'source'], 'tourist_site'], culturalGold, primary],
+                circleRadius: 7,
+                circleStrokeColor: '#FFFFFF',
+                circleStrokeWidth: 2,
+              }}
+            />
+          </ShapeSource>
+
+          <ShapeSource id="shade-zones-source" shape={shadeFeatureCollection}>
+            <CircleLayer
+              id="shade-zones"
+              testID="quillamap-native-shade-layer"
+              style={{
+                circleColor: layerColor,
+                circleOpacity: isPedestrian ? 0 : 0.22,
+                circleRadius: isPedestrian ? 0 : 22,
+                circleStrokeColor: primary,
+                circleStrokeWidth: isPedestrian ? 0 : 2,
+              }}
+            />
+          </ShapeSource>
+
+          {visiblePlaces.map((place) => {
+            const isTouristSite = place.source === 'tourist_site';
+            const markerColor = isTouristSite ? culturalGold : primary;
+
+            return (
+              <MarkerView
+                key={place.id}
+                coordinate={[place.coordinate.longitude, place.coordinate.latitude]}
+                allowOverlap
+              >
+                <Pressable
+                  testID={`quillamap-native-place-marker-${place.id}`}
+                  {...({ coordinate: place.coordinate } as Record<string, unknown>)}
+                  accessibilityRole={canOpenPlaces ? 'button' : undefined}
+                  accessibilityLabel={getPlaceTitle(place)}
+                  disabled={!canOpenPlaces}
+                  onPress={canOpenPlaces ? () => handlePlacePress(place) : undefined}
+                  style={[
+                    tw`w-10 h-10 rounded-xl bg-white border-2 items-center justify-center`,
+                    { borderColor: markerColor },
+                  ]}
+                >
+                  <MapIcon
+                    name={isTouristSite ? 'business-outline' : 'location-outline'}
+                    size={17}
+                    color={markerColor}
+                  />
+                  <Text style={{ position: 'absolute', opacity: 0, height: 1, width: 1 }}>
+                    {getPlaceTitle(place)}
+                  </Text>
+                </Pressable>
+              </MarkerView>
+            );
+          })}
+
           {zones.map((zone) => (
-            <React.Fragment key={zone.id}>
-              {!isPedestrian ? (
-                <Circle
-                  testID={`quillamap-native-shade-radius-${zone.id}`}
-                  center={zone.coordinate}
-                  radius={zone.radiusMeters}
-                  fillColor={layerColor}
-                  strokeColor={strokeColor}
-                  strokeWidth={2}
-                />
-              ) : null}
-              <Marker
+            <MarkerView
+              key={zone.id}
+              coordinate={[zone.coordinate.longitude, zone.coordinate.latitude]}
+              allowOverlap
+              anchor={{ x: 0.5, y: 0.5 }}
+            >
+              <Pressable
                 testID={`quillamap-native-shade-marker-${zone.id}`}
-                coordinate={zone.coordinate}
-                title={zone.title}
-                description={zone.description}
-                pinColor={layerColor}
+                {...({ coordinate: zone.coordinate } as Record<string, unknown>)}
+                accessibilityRole="button"
+                accessibilityLabel={zone.title}
                 onPress={() => onShadeZonePress?.(zone)}
               >
                 {isPedestrian ? (
                   <QuillaMapShadowMarker color={shadowMarkerColor} />
-                ) : null}
-              </Marker>
-            </React.Fragment>
-          ))}
-          {selectedCoordinate && shouldShowShadowZones ? (
-            <Marker
-              testID="quillamap-native-shadow-draft-marker"
-              coordinate={selectedCoordinate}
-              title="Zona de sombra"
-              pinColor={shadowMarkerColor}
-            >
-              <QuillaMapShadowMarker color={shadowMarkerColor} size="draft" />
-            </Marker>
-          ) : null}
-          {isPedestrian
-            ? route.slice(1, 5).map((point) => (
-                <Marker key={`route-marker-${point.latitude}-${point.longitude}`} coordinate={point}>
-                  <View
-                    style={[
-                      tw`w-8 h-8 rounded-xl border items-center justify-center`,
-                      { backgroundColor: controlBackground, borderColor: controlBorder },
-                    ]}
-                  >
-                    <MapIcon name="walk-outline" size={16} color={controlText} />
+                ) : (
+                  <View style={tw`w-10 h-10 rounded-xl bg-white border-2 border-map-shade items-center justify-center`}>
+                    <MapIcon name="leaf-outline" size={18} color={layerColor} />
                   </View>
-                </Marker>
-              ))
-            : null}
+                )}
+              </Pressable>
+            </MarkerView>
+          ))}
+
+          {selectedCoordinate && shouldShowShadowZones ? (
+            <MarkerView
+                testID="quillamap-native-shadow-draft-marker"
+                coordinate={[selectedCoordinate.longitude, selectedCoordinate.latitude]}
+                allowOverlap
+                anchor={{ x: 0.5, y: 0.5 }}
+              >
+                <QuillaMapShadowMarker color={shadowMarkerColor} size="draft" />
+              </MarkerView>
+          ) : null}
         </MapView>
-        {isPedestrian ? (
-          <QuillaMapControls
-            mode={mode}
-            isDark={isDark}
-            controlBackground={controlBackground}
-            controlBorder={controlBorder}
-            controlText={controlText}
-            darkText={darkGray}
-            mapRoute={routeColor}
-            mapShade={layerColor}
-            primary={primary}
-            zonesCount={zones.length}
-            showZoom
-            zoomInTestID="quillamap-native-zoom-in"
-            zoomOutTestID="quillamap-native-zoom-out"
-            onZoomIn={zoomIn}
-            onZoomOut={zoomOut}
-            profileTools={profileTools}
+
+        <QuillaMapControls
+          mode={mode}
+          isDark={isDark}
+          controlBackground={controlBackground}
+          controlBorder={controlBorder}
+          controlText={controlText}
+          darkText={darkGray}
+          mapRoute={routeColor}
+          mapShade={layerColor}
+          primary={primary}
+          zonesCount={zones.length}
+          showZoom={isPedestrian}
+          zoomInTestID="quillamap-native-zoom-in"
+          zoomOutTestID="quillamap-native-zoom-out"
+          onZoomIn={zoomIn}
+          onZoomOut={zoomOut}
+          profileTools={profileTools}
+        />
+        {selectedPlace && canOpenPlaces ? (
+          <PlaceInfoBottomSheet
+            place={selectedPlace}
+            onClose={() => setSelectedPlace(null)}
           />
         ) : null}
         {children}

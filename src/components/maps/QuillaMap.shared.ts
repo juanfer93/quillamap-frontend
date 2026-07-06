@@ -1,9 +1,15 @@
 import type {
   QuillaMapCoordinate,
+  QuillaMapMode,
   QuillaMapProps,
   QuillaMapRoutePoint,
   QuillaMapShadeZone,
 } from './QuillaMap.types';
+import type { PlaceMapFeature } from '@/types/contracts/places.contract';
+import {
+  canOpenPlaceDetails,
+  toPlacesNavigationMode,
+} from '@/types/contracts/places.contract';
 import { defaultPedestrianRoute, defaultShadeZones } from './QuillaMap.constants';
 
 export const getRouteCoordinates = (
@@ -31,3 +37,9 @@ export const getModeTitle = (mode: QuillaMapProps['mode']): string => {
   if (mode === 'motorcycle') return 'Modo Moto';
   return 'Modo Carro';
 };
+
+export const getVisiblePlaces = (places: PlaceMapFeature[] | undefined): PlaceMapFeature[] =>
+  places ?? [];
+
+export const canInteractWithPlaces = (mode: QuillaMapMode): boolean =>
+  canOpenPlaceDetails(toPlacesNavigationMode(mode));

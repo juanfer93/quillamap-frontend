@@ -6,6 +6,7 @@ module.exports = {
   moduleNameMapper: {
     '^expo/src/winter/runtime\\.native\\.ts$': '<rootDir>/emptyMock.js',
     '^expo/src/winter/installGlobal\\.ts$': '<rootDir>/emptyMock.js',
+    '\\.(css)$': '<rootDir>/emptyMock.js',
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   // Nuestra corrección para la variable de entorno y gesture handler también son necesarias.

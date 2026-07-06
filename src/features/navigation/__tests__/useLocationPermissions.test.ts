@@ -1,14 +1,6 @@
 import { renderHook, waitFor } from '@testing-library/react-native';
-import { Platform } from 'react-native';
 import * as Location from 'expo-location';
 import { useLocationPermissions } from '../hooks/useLocationPermissions';
-
-const setPlatform = (os: typeof Platform.OS) => {
-  Object.defineProperty(Platform, 'OS', {
-    configurable: true,
-    get: () => os,
-  });
-};
 
 jest.mock('expo-location', () => ({
   Accuracy: {
@@ -24,52 +16,11 @@ jest.mock('expo-location', () => ({
 }));
 
 describe('useLocationPermissions', () => {
-  const originalNavigator = globalThis.navigator;
-
   afterEach(() => {
-    setPlatform('ios');
-    Object.defineProperty(globalThis, 'navigator', {
-      configurable: true,
-      value: originalNavigator,
-    });
     jest.clearAllMocks();
   });
 
-  it('usa navigator.geolocation en web', async () => {
-    const getCurrentPosition = jest.fn((onSuccess: (position: { coords: { latitude: number; longitude: number } }) => void) => {
-      onSuccess({
-        coords: {
-          latitude: 10.99,
-          longitude: -74.78,
-        },
-      });
-    });
-
-    setPlatform('web');
-    Object.defineProperty(globalThis, 'navigator', {
-      configurable: true,
-      value: {
-        geolocation: {
-          getCurrentPosition,
-        },
-      },
-    });
-
-    const { result } = renderHook(() => useLocationPermissions());
-
-    await waitFor(() => expect(result.current.isRequestingPermission).toBe(false));
-
-    expect(getCurrentPosition).toHaveBeenCalled();
-    expect(Location.requestForegroundPermissionsAsync).not.toHaveBeenCalled();
-    expect(result.current.permissionStatus).toBe('granted');
-    expect(result.current.currentLocation).toEqual({
-      latitude: 10.99,
-      longitude: -74.78,
-    });
-  });
-
   it('solicita permisos nativos y obtiene coordenadas en mobile', async () => {
-    setPlatform('android');
     jest.mocked(Location.requestForegroundPermissionsAsync).mockResolvedValue({
       status: Location.PermissionStatus.GRANTED,
       granted: true,

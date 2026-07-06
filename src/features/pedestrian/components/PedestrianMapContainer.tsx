@@ -32,6 +32,7 @@ const toMapShadeZone = (zone: ShadowZone): QuillaMapShadeZone => ({
 
 const PedestrianMapContainer = ({
   shadowZones,
+  places,
   themeMode = 'light',
   initialCenter,
   showHeader = true,
@@ -98,6 +99,7 @@ const PedestrianMapContainer = ({
           themeMode={themeMode}
           center={center}
           shadeZones={mapShadeZones}
+          places={places}
           showDefaultShadeZones={false}
           selectedCoordinate={shouldShowShadowZones ? selectedShadowCoordinate : null}
           profileTools={profileTools}

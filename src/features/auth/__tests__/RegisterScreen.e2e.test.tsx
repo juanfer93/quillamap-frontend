@@ -17,9 +17,11 @@ describe('PRUEBA E2E REAL - Registro QuillaMap (Diagnóstico Profundo)', () => {
     const { getByText, getByPlaceholderText, queryByText, debug } = render(<RegisterScreen />);
 
     fireEvent.press(getByText('Peatón'));
-    fireEvent.changeText(getByPlaceholderText('Nombre completo'), 'Juan Test E2E');
-    fireEvent.changeText(getByPlaceholderText('Correo electrónico'), emailDinamico);
-    fireEvent.changeText(getByPlaceholderText('Contraseña'), 'password123');
+    await waitFor(() => expect(getByPlaceholderText('Tu nombre')).toBeTruthy());
+
+    fireEvent.changeText(getByPlaceholderText('Tu nombre'), 'Juan Test E2E');
+    fireEvent.changeText(getByPlaceholderText('ejemplo@correo.com'), emailDinamico);
+    fireEvent.changeText(getByPlaceholderText('********'), 'password123');
 
     console.log('⏳ Disparando petición a NestJS...');
     fireEvent.press(getByText('Finalizar Registro'));

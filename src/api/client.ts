@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { RegisterRequest, RegisterResponse, AuthResponse } from '@/features/auth/types/auth.types';
 import type { CreateReportDto, Report } from '@/features/reports/types/report.types';
+import type { PlaceMapFeature, PlacesNearbyQuery } from '@/types/contracts/places.contract';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.26:3000/api';
 
@@ -47,6 +48,13 @@ export const reportsApi = {
 
   findNearby: async (params: { lat: number; lng: number; radius?: number }): Promise<Report[]> => {
     const response = await client.get<Report[]>('/reports', { params });
+    return response.data;
+  },
+};
+
+export const placesApi = {
+  findNearby: async (params: PlacesNearbyQuery): Promise<PlaceMapFeature[]> => {
+    const response = await client.get<PlaceMapFeature[]>('/places', { params });
     return response.data;
   },
 };

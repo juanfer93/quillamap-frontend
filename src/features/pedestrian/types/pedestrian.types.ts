@@ -1,10 +1,12 @@
 import type { ReactNode } from 'react';
+import type { PlaceMapFeature } from '@/types/contracts/places.contract';
 import type { PedestrianCoordinates, ShadowZone } from '../schemas/pedestrian.schema';
 
 export interface PedestrianMapContainerProps {
   shadowZones: ShadowZone[];
   themeMode?: 'light' | 'dark';
   initialCenter?: PedestrianCoordinates;
+  places?: PlaceMapFeature[];
   showHeader?: boolean;
   onShadowZonePress?: (zone: ShadowZone) => void;
   onMapPress?: (coordinate: PedestrianCoordinates) => void;

@@ -34,26 +34,67 @@ jest.mock('@/features/navigation/hooks/useLocationPermissions', () => ({
   }),
 }));
 
-jest.mock('react-native-maps', () => {
+jest.mock('@maplibre/maplibre-react-native', () => {
   const ReactMock = jest.requireActual<typeof React>('react');
   const { Pressable, View } = jest.requireActual('react-native');
 
+  const passthrough = (props: Record<string, unknown>) =>
+    ReactMock.createElement(View, props, props.children as React.ReactNode);
+
   return {
     __esModule: true,
-    default: ReactMock.forwardRef(
-      ({ children, onPress, ...props }: { children?: React.ReactNode; onPress?: (event: unknown) => void }, ref: React.Ref<{ animateToRegion: jest.Mock }>) => {
+    MapView: ReactMock.forwardRef(
+      (
+        { children, onPress, ...props }: { children?: React.ReactNode; onPress?: (feature: unknown) => void },
+        ref: React.Ref<{}>
+      ) => {
         ReactMock.useImperativeHandle(ref, () => ({
-          animateToRegion: jest.fn(),
+          setCamera: jest.fn(),
         }));
 
-        return ReactMock.createElement(Pressable, { ...props, onPress }, children);
+        return ReactMock.createElement(
+          Pressable,
+          {
+            ...props,
+            onPress: (event: { nativeEvent?: { coordinate?: { latitude: number; longitude: number } } }) => {
+              const coordinate = event.nativeEvent?.coordinate;
+              onPress?.({
+                type: 'Feature',
+                properties: {},
+                geometry: {
+                  type: 'Point',
+                  coordinates: coordinate ? [coordinate.longitude, coordinate.latitude] : [0, 0],
+                },
+              });
+            },
+          },
+          children
+        );
       }
     ),
-    Marker: ({ onPress, ...props }: { onPress?: () => void }) =>
-      ReactMock.createElement(Pressable, { ...props, onPress }),
-    Circle: (props: Record<string, unknown>) => ReactMock.createElement(View, props),
-    Polygon: (props: Record<string, unknown>) => ReactMock.createElement(View, props),
-    Polyline: (props: Record<string, unknown>) => ReactMock.createElement(View, props),
+    Camera: ReactMock.forwardRef((props: Record<string, unknown>, ref: React.Ref<{ zoomTo: jest.Mock }>) => {
+      ReactMock.useImperativeHandle(ref, () => ({
+        zoomTo: jest.fn(),
+      }));
+      return ReactMock.createElement(View, props);
+    }),
+    UserLocation: passthrough,
+    ShapeSource: passthrough,
+    LineLayer: passthrough,
+    CircleLayer: passthrough,
+    FillExtrusionLayer: passthrough,
+    MarkerView: ({ coordinate, children, ...props }: { coordinate: [number, number]; children?: React.ReactNode }) =>
+      ReactMock.createElement(
+        View,
+        {
+          ...props,
+          coordinate: {
+            longitude: coordinate[0],
+            latitude: coordinate[1],
+          },
+        },
+        children
+      ),
   };
 });
 
@@ -61,6 +102,9 @@ jest.mock('@/api/client', () => ({
   reportsApi: {
     create: jest.fn(),
     findNearby: jest.fn(),
+  },
+  placesApi: {
+    findNearby: jest.fn().mockResolvedValue([]),
   },
 }));
 
@@ -121,8 +165,10 @@ describe('ShadowReportMapFlow e2e', () => {
 
     await waitFor(() => expect(mockDbReports).toHaveLength(1));
 
-    expect(queryByTestId('shadow-placement-hint')).toBeNull();
-    expect(getByTestId('shadow-report-success').props.children).toBe('Sombra reportada');
+    await waitFor(() => {
+      expect(queryByTestId('shadow-placement-hint')).toBeNull();
+      expect(getByTestId('shadow-report-success').props.children).toBe('Sombra reportada');
+    });
 
     await act(async () => {
       await new Promise((resolve) => {

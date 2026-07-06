@@ -44,6 +44,9 @@ jest.mock('@/api/client', () => ({
     findNearby: jest.fn(() => new Promise(() => {})),
     create: jest.fn(),
   },
+  placesApi: {
+    findNearby: jest.fn().mockResolvedValue([]),
+  },
 }));
 
 const pedestrianUser: AuthUser = {
@@ -145,17 +148,18 @@ describe('HomeScreen', () => {
     expect(getByTestId('user-tools-karma-points').props.children).toBe(18);
   });
 
-  it('mantiene el home general para perfiles no peatonales', () => {
+  it('renderiza el mapa de lugares para perfiles no peatonales', () => {
     useAuthStore.setState({
       user: carUser,
       session: 'token-carro',
       isLoading: false,
     });
 
-    const { getByText, queryByTestId } = render(<HomeScreen />);
+    const { getByTestId, queryByText, queryByTestId } = render(<HomeScreen />);
 
     expect(queryByTestId('pedestrian-map-container')).toBeNull();
-    expect(getByText('Hola Carlos Carro, bienvenido a QuillaMap')).toBeTruthy();
+    expect(getByTestId('places-map-container')).toBeTruthy();
+    expect(queryByText('Hola Carlos Carro, bienvenido a QuillaMap')).toBeNull();
   });
 
   it('mantiene el home general cuando el backend devuelve mobility_mode null', () => {

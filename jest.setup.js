@@ -19,6 +19,105 @@ jest.mock('react-native-keychain', () => ({
   resetGenericPassword: jest.fn(() => Promise.resolve(true)),
 }));
 
+jest.mock('@expo/vector-icons', () => {
+  const React = require('react');
+  const { Text } = require('react-native');
+
+  return {
+    Ionicons: ({ name }) => React.createElement(Text, null, name),
+    MaterialIcons: ({ name }) => React.createElement(Text, null, name),
+    FontAwesome: ({ name }) => React.createElement(Text, null, name),
+  };
+});
+
+jest.mock('@maplibre/maplibre-react-native', () => {
+  const React = require('react');
+  const { Pressable, View } = require('react-native');
+  const passthrough = (props) => React.createElement(View, props, props.children);
+
+  return {
+    __esModule: true,
+    MapView: React.forwardRef(({ children, onPress, ...props }, ref) => {
+      React.useImperativeHandle(ref, () => ({
+        setCamera: jest.fn(),
+      }));
+
+      return React.createElement(
+        Pressable,
+        {
+          ...props,
+          onPress: (event) => {
+            const coordinate = event.nativeEvent?.coordinate;
+            onPress?.({
+              type: 'Feature',
+              properties: {},
+              geometry: {
+                type: 'Point',
+                coordinates: coordinate ? [coordinate.longitude, coordinate.latitude] : [0, 0],
+              },
+            });
+          },
+        },
+        children
+      );
+    }),
+    Camera: React.forwardRef((props, ref) => {
+      React.useImperativeHandle(ref, () => ({
+        zoomTo: jest.fn(),
+      }));
+      return React.createElement(View, props);
+    }),
+    UserLocation: passthrough,
+    ShapeSource: passthrough,
+    LineLayer: passthrough,
+    CircleLayer: passthrough,
+    FillExtrusionLayer: passthrough,
+    MarkerView: ({ coordinate, children, ...props }) =>
+      React.createElement(
+        View,
+        {
+          ...props,
+          coordinate: {
+            longitude: coordinate[0],
+            latitude: coordinate[1],
+          },
+        },
+        children
+      ),
+  };
+});
+
+jest.mock('maplibre-gl', () => {
+  const mapInstance = {
+    on: jest.fn(),
+    off: jest.fn(),
+    once: jest.fn(),
+    remove: jest.fn(),
+    jumpTo: jest.fn(),
+    isStyleLoaded: jest.fn(() => true),
+    getSource: jest.fn(),
+    addSource: jest.fn(),
+    getLayer: jest.fn(),
+    addLayer: jest.fn(),
+  };
+  const MapMock = jest.fn(() => mapInstance);
+  const MarkerMock = jest.fn().mockImplementation(() => ({
+    setLngLat: jest.fn().mockReturnThis(),
+    addTo: jest.fn().mockReturnThis(),
+    remove: jest.fn(),
+  }));
+
+  return {
+    __esModule: true,
+    default: {
+      Map: MapMock,
+      Marker: MarkerMock,
+    },
+    Map: MapMock,
+    Marker: MarkerMock,
+  };
+});
+
 import { NativeModules } from 'react-native';
 NativeModules.UIManager = NativeModules.UIManager || {};
 NativeModules.UIManager.setLayoutAnimationEnabledExperimental = jest.fn();

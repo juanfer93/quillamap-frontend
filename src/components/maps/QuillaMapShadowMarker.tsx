@@ -45,8 +45,9 @@ const QuillaMapShadowMarker = ({
           tw`absolute w-3 h-3 bg-white border-r-2 border-b-2`,
           {
             borderColor: color,
-            bottom: -4,
-            transform: [{ rotate: '45deg' }],
+            // Center horizontally and offset vertically for proper placement in 3D view
+            left: '50%',
+            transform: [{ translateX: -6 }, { translateY: -4 }, { rotate: '45deg' }],
           },
         ]}
       />

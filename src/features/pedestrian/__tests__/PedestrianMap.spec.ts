@@ -4,26 +4,47 @@ import tw from '@/lib/tailwind';
 import PedestrianMapContainer from '../components/PedestrianMapContainer';
 import { ShadowZone } from '../schemas/pedestrian.schema';
 
-jest.mock('react-native-maps', () => {
+jest.mock('@maplibre/maplibre-react-native', () => {
   const ReactMock = jest.requireActual<typeof React>('react');
   const { Pressable, View } = jest.requireActual('react-native');
 
+  const passthrough = (props: Record<string, unknown>) =>
+    ReactMock.createElement(View, props, props.children as React.ReactNode);
+
   return {
     __esModule: true,
-    default: ReactMock.forwardRef(
-      ({ children, ...props }: { children?: React.ReactNode }, ref: React.Ref<{ animateToRegion: jest.Mock }>) => {
+    MapView: ReactMock.forwardRef(
+      ({ children, ...props }: { children?: React.ReactNode }, ref: React.Ref<{}>) => {
         ReactMock.useImperativeHandle(ref, () => ({
-          animateToRegion: jest.fn(),
+          setCamera: jest.fn(),
         }));
 
-        return ReactMock.createElement(View, props, children);
+        return ReactMock.createElement(Pressable, props, children);
       }
     ),
-    Marker: ({ onPress, ...props }: { onPress?: () => void }) =>
-      ReactMock.createElement(Pressable, { ...props, onPress }),
-    Circle: (props: Record<string, unknown>) => ReactMock.createElement(View, props),
-    Polygon: (props: Record<string, unknown>) => ReactMock.createElement(View, props),
-    Polyline: (props: Record<string, unknown>) => ReactMock.createElement(View, props),
+    Camera: ReactMock.forwardRef((props: Record<string, unknown>, ref: React.Ref<{ zoomTo: jest.Mock }>) => {
+      ReactMock.useImperativeHandle(ref, () => ({
+        zoomTo: jest.fn(),
+      }));
+      return ReactMock.createElement(View, props);
+    }),
+    UserLocation: passthrough,
+    ShapeSource: passthrough,
+    LineLayer: passthrough,
+    CircleLayer: passthrough,
+    FillExtrusionLayer: passthrough,
+    MarkerView: ({ coordinate, children, ...props }: { coordinate: [number, number]; children?: React.ReactNode }) =>
+      ReactMock.createElement(
+        View,
+        {
+          ...props,
+          coordinate: {
+            longitude: coordinate[0],
+            latitude: coordinate[1],
+          },
+        },
+        children
+      ),
   };
 });
 

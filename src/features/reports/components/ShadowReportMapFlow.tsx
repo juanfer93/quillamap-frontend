@@ -5,6 +5,7 @@ import { reportsApi } from '@/api/client';
 import PedestrianMapContainer from '@/features/pedestrian/components/PedestrianMapContainer';
 import UserToolsMenu from '@/features/navigation/components/UserToolsMenu';
 import { useLocationPermissions } from '@/features/navigation/hooks/useLocationPermissions';
+import { usePlaces } from '@/features/places/hooks/usePlaces';
 import {
   DEFAULT_PEDESTRIAN_CENTER,
   type PedestrianCoordinates,
@@ -57,6 +58,11 @@ const ShadowReportMapFlow = ({
   const { createReport, errorMessage, isCreating } = useCreateReport();
   const { currentLocation } = useLocationPermissions();
   const lookupCenter = currentLocation ?? DEFAULT_PEDESTRIAN_CENTER;
+  const { places } = usePlaces({
+    lat: lookupCenter.latitude,
+    lng: lookupCenter.longitude,
+    radius: 5000,
+  });
   const isShadowReportingAvailable = canReportShadow && themeMode !== 'dark';
   const canSelectShadowLocation = isShadowReportingAvailable && isSelectingShadowLocation;
   const reportMap = useMemo(() => {
@@ -168,6 +174,7 @@ const ShadowReportMapFlow = ({
         shadowZones={shadowZones}
         themeMode={themeMode}
         initialCenter={lookupCenter}
+        places={places}
         showHeader={false}
         selectedShadowCoordinate={selectedCoordinate}
         profileTools={(

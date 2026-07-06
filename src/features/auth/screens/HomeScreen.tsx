@@ -7,6 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '@/features/auth/types/auth.types';
 import ShadowReportMapFlow from '@/features/reports/components/ShadowReportMapFlow';
+import PlacesMapContainer from '@/features/places/components/PlacesMapContainer';
 import UserToolsMenu from '@/features/navigation/components/UserToolsMenu';
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
@@ -17,6 +18,11 @@ const HomeScreen = () => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const mobilityMode = user?.mobility_mode ?? user?.mobilityMode;
   const isPedestrian = mobilityMode === 'peaton';
+  const mapMode = mobilityMode === 'turista'
+    ? 'tourist'
+    : mobilityMode === 'moto'
+      ? 'motorcycle'
+      : 'car';
 
   const canReportShadow = isPedestrian;
 
@@ -39,6 +45,18 @@ const HomeScreen = () => {
           }}
         />
       </View>
+    );
+  }
+
+  if (mobilityMode === 'turista' || mobilityMode === 'moto' || mobilityMode === 'carro') {
+    return (
+      <PlacesMapContainer
+        mode={mapMode}
+        themeMode={mode}
+        onLogout={() => {
+          void handleLogout();
+        }}
+      />
     );
   }
 

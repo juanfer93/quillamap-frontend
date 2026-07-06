@@ -15,7 +15,7 @@ module.exports = {
         'map-route': '#2F8AC4',
         'map-road': '#E0E7EF',
         'gold': '#D4AF37',
-        'sand-gold': '#c7ad8c',
+        'sand-gold': '#D4AF37',
         'shark-blue': '#004574',
         'status-danger': '#DC2626',
         'status-warning': '#FBBF24',
