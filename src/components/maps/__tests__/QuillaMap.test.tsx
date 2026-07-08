@@ -1,10 +1,14 @@
 import React from 'react';
+import { Pressable } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import tw from '@/lib/tailwind';
 import WebQuillaMap from '../components/QuillaMap.web-renderer';
 import NativeQuillaMap from '../components/QuillaMap.native';
 import { QuillaMapShadeZone } from '../types/QuillaMap.types';
-import type { PlaceMapFeature } from '@/types/contracts/places.contract';
+import {
+  PLACES_VISUAL_IDENTITY,
+  type PlaceMapFeature,
+} from '@/types/contracts/places.contract';
 
 jest.mock('maplibre-gl', () => {
   const mapInstance = {
@@ -18,6 +22,11 @@ jest.mock('maplibre-gl', () => {
     addSource: jest.fn(),
     getLayer: jest.fn(),
     addLayer: jest.fn(),
+    setLayoutProperty: jest.fn(),
+    setPaintProperty: jest.fn(),
+    easeTo: jest.fn(),
+    getZoom: jest.fn(() => 15),
+    getBearing: jest.fn(() => 0),
   };
   const MapMock = jest.fn(() => mapInstance);
   const MarkerMock = jest.fn().mockImplementation(() => ({
@@ -82,6 +91,7 @@ jest.mock('@maplibre/maplibre-react-native', () => {
       ) => {
         ReactMock.useImperativeHandle(ref, () => ({
           setCamera: jest.fn(),
+          getZoom: jest.fn(() => Promise.resolve(15)),
         }));
 
         return ReactMock.createElement(
@@ -107,6 +117,7 @@ jest.mock('@maplibre/maplibre-react-native', () => {
     Camera: ReactMock.forwardRef((props: Record<string, unknown>, ref: React.Ref<{ zoomTo: jest.Mock }>) => {
       ReactMock.useImperativeHandle(ref, () => ({
         zoomTo: jest.fn(),
+        setCamera: jest.fn(),
       }));
       return ReactMock.createElement(View, props);
     }),
@@ -204,6 +215,7 @@ describe('QuillaMap', () => {
     expect(getByTestId('quillamap-web-map-tiles')).toBeTruthy();
     expect(getByTestId('quillamap-web-route')).toBeTruthy();
     expect(getByTestId('quillamap-web-shade-marker-shade-1')).toBeTruthy();
+    expect(getByTestId('quillamap-web-compass-toggle')).toBeTruthy();
     expect(queryByTestId('quillamap-web-shadow-draft-marker')).toBeNull();
     expect(queryByText('partly-sunny-outline')).toBeNull();
     expect(queryByText('Zonas de Sombra')).toBeNull();
@@ -224,6 +236,7 @@ describe('QuillaMap', () => {
     expect(getByTestId('quillamap-native')).toBeTruthy();
     expect(queryByTestId('quillamap-web')).toBeNull();
     expect(getByTestId('quillamap-native-shade-layer')).toBeTruthy();
+    expect(getByTestId('quillamap-native-compass-toggle')).toBeTruthy();
 
     fireEvent.press(getByTestId('quillamap-native-shade-source'));
 
@@ -281,17 +294,54 @@ describe('QuillaMap', () => {
     expect(getByTestId('quillamap-web-zoom-out')).toBeTruthy();
   });
 
-  it('aplica estilo oscuro al mapa nativo cuando el tema es oscuro', () => {
-    const { getByTestId, queryByTestId } = render(
+  it('cicla la orientacion cardinal con brujula en web y nativo sin abrir tarjetas', () => {
+    const web = render(
+      <WebQuillaMap
+        mode="pedestrian"
+        center={{ latitude: 10.9878, longitude: -74.7889 }}
+        shadeZones={shadeZones}
+      />
+    );
+    const native = render(
       <NativeQuillaMap
         mode="pedestrian"
-        themeMode="dark"
         center={{ latitude: 10.9878, longitude: -74.7889 }}
         shadeZones={shadeZones}
       />
     );
 
-    expect(getByTestId('quillamap-native-map').props.mapStyle.sources.cartoDark).toBeTruthy();
+    fireEvent.press(web.getByTestId('quillamap-web-compass-toggle'));
+    fireEvent.press(native.getByTestId('quillamap-native-compass-toggle'));
+
+    expect(web.queryByTestId('place-bottom-sheet')).toBeNull();
+    expect(native.queryByTestId('place-bottom-sheet')).toBeNull();
+  });
+
+  it('aplica estilo oscuro al mapa nativo cuando el tema es oscuro', () => {
+    const sandGold = tw.color(PLACES_VISUAL_IDENTITY.sandGold.token) ?? PLACES_VISUAL_IDENTITY.sandGold.hex;
+    const { getByTestId, getByText, queryByTestId } = render(
+      <NativeQuillaMap
+        mode="pedestrian"
+        themeMode="dark"
+        center={{ latitude: 10.9878, longitude: -74.7889 }}
+        shadeZones={shadeZones}
+        places={places}
+      />
+    );
+
+    const mapStyle = getByTestId('quillamap-native-map').props.mapStyle as {
+      layers: Array<{ id: string; paint?: Record<string, number> }>;
+      sources: Record<string, unknown>;
+    };
+    const darkRasterLayer = mapStyle.layers.find((layer) => layer.id === 'carto-dark');
+
+    expect(mapStyle.sources.cartoDark).toBeTruthy();
+    expect(darkRasterLayer?.paint?.['raster-contrast']).toBeGreaterThan(0);
+    expect(darkRasterLayer?.paint?.['raster-brightness-min']).toBeGreaterThan(0.3);
+    expect(darkRasterLayer?.paint?.['raster-brightness-max']).toBe(1);
+    expect(getByTestId('quillamap-native-places-layer').props.style.textColor).toBe(sandGold);
+    expect(getByTestId('quillamap-native-places-source')).toBeTruthy();
+    expect(getByText('N').props.style.color).toBe(sandGold);
     expect(queryByTestId('quillamap-native-shade-source')?.props.shape.features).toEqual([]);
   });
 
@@ -414,10 +464,93 @@ describe('QuillaMap', () => {
     expect(getByText('Monumento urbano\nUrban monument')).toBeTruthy();
   });
 
-  it('bloquea la tarjeta de lugares en modos de conduccion y peaton', () => {
+  it('muestra la tarjeta de lugar con superficie oscura y borde dorado en modo oscuro', () => {
+    const sandGold = tw.color(PLACES_VISUAL_IDENTITY.sandGold.token) ?? PLACES_VISUAL_IDENTITY.sandGold.hex;
+    const { getByTestId } = render(
+      <NativeQuillaMap
+        mode="tourist"
+        themeMode="dark"
+        center={{ latitude: 11.01902, longitude: -74.82134 }}
+        places={places}
+        showDefaultShadeZones={false}
+      />
+    );
+
+    fireEvent.press(getByTestId('quillamap-native-places-source'));
+
+    expect(getByTestId('place-bottom-sheet').props.style).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          backgroundColor: '#111B2A',
+          borderTopColor: sandGold,
+        }),
+      ])
+    );
+    expect(getByTestId('place-bottom-sheet-title').props.style).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ color: sandGold }),
+      ])
+    );
+  });
+
+  it('abre la tarjeta multimedia de lugares en modo peaton nativo', () => {
+    const onNativePlacePress = jest.fn<void, [PlaceMapFeature]>();
+
+    const native = render(
+      <NativeQuillaMap
+        mode="pedestrian"
+        center={{ latitude: 11.01902, longitude: -74.82134 }}
+        places={places}
+        showDefaultShadeZones={false}
+        onPlacePress={onNativePlacePress}
+      />
+    );
+
+    fireEvent.press(native.getByTestId('quillamap-native-places-source'));
+
+    expect(onNativePlacePress).toHaveBeenCalledWith(places[0]);
+    expect(native.getByTestId('place-bottom-sheet')).toBeTruthy();
+  });
+
+  it('cierra la tarjeta del lugar al tocar herramientas de perfil en web y nativo', () => {
+    const profileTools = <Pressable testID="profile-action" />;
+    const web = render(
+      <WebQuillaMap
+        mode="tourist"
+        center={{ latitude: 11.01902, longitude: -74.82134 }}
+        places={places}
+        showDefaultShadeZones={false}
+        profileTools={profileTools}
+      />
+    );
+
+    fireEvent.press(web.getByTestId('quillamap-web-place-marker-tourist-ventana-al-mundo'));
+    expect(web.getByTestId('place-bottom-sheet')).toBeTruthy();
+
+    fireEvent(web.getByTestId('quillamap-profile-tools-slot'), 'touchStart');
+    expect(web.queryByTestId('place-bottom-sheet')).toBeNull();
+
+    const native = render(
+      <NativeQuillaMap
+        mode="pedestrian"
+        center={{ latitude: 11.01902, longitude: -74.82134 }}
+        places={places}
+        showDefaultShadeZones={false}
+        profileTools={profileTools}
+      />
+    );
+
+    fireEvent.press(native.getByTestId('quillamap-native-places-source'));
+    expect(native.getByTestId('place-bottom-sheet')).toBeTruthy();
+
+    fireEvent(native.getByTestId('quillamap-profile-tools-slot'), 'touchStart');
+    expect(native.queryByTestId('place-bottom-sheet')).toBeNull();
+  });
+
+  it('bloquea la tarjeta de lugares en modos de conduccion', () => {
     const onPlacePress = jest.fn<void, [PlaceMapFeature]>();
 
-    const { getByTestId, queryByTestId } = render(
+    const web = render(
       <WebQuillaMap
         mode="car"
         center={{ latitude: 11.01902, longitude: -74.82134 }}
@@ -426,11 +559,22 @@ describe('QuillaMap', () => {
         onPlacePress={onPlacePress}
       />
     );
+    const native = render(
+      <NativeQuillaMap
+        mode="motorcycle"
+        center={{ latitude: 11.01902, longitude: -74.82134 }}
+        places={places}
+        showDefaultShadeZones={false}
+        onPlacePress={onPlacePress}
+      />
+    );
 
-    fireEvent.press(getByTestId('quillamap-web-place-marker-tourist-ventana-al-mundo'));
+    fireEvent.press(web.getByTestId('quillamap-web-place-marker-tourist-ventana-al-mundo'));
+    fireEvent.press(native.getByTestId('quillamap-native-places-source'));
 
     expect(onPlacePress).not.toHaveBeenCalled();
-    expect(queryByTestId('place-bottom-sheet')).toBeNull();
+    expect(web.queryByTestId('place-bottom-sheet')).toBeNull();
+    expect(native.queryByTestId('place-bottom-sheet')).toBeNull();
   });
 
   it('mantiene marcadores y edificios de lugares equivalentes en web y nativo', () => {
@@ -455,11 +599,25 @@ describe('QuillaMap', () => {
     expect(native.getByTestId('quillamap-native-places-source').props.shape.features).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          properties: expect.objectContaining({ id: 'tourist-ventana-al-mundo' }),
+          properties: expect.objectContaining({
+            id: 'tourist-ventana-al-mundo',
+            icon: '\u2692',
+            iconName: 'construct-outline',
+          }),
         }),
       ])
     );
-    expect(web.getByTestId('quillamap-web-building-extrusion-tourist-ventana-al-mundo').props.fill).toBeTruthy();
+    expect(web.queryByTestId('quillamap-web-building-extrusion-tourist-ventana-al-mundo')).toBeNull();
+    expect(native.queryByTestId('quillamap-native-buildings-source')).toBeNull();
+
+    fireEvent.press(web.getByTestId('quillamap-web-perspective-toggle'));
+    fireEvent.press(native.getByTestId('quillamap-native-perspective-toggle'));
+
+    expect(native.getByTestId('quillamap-native-buildings-source').props.shape.features[0].properties.height).toBe(47);
+    expect(native.getByTestId('quillamap-native-building-extrusions').props.style.fillExtrusionHeight).toEqual(['get', 'height']);
+    expect(native.getByTestId('quillamap-native-building-outline')).toBeTruthy();
     expect(native.getByTestId('quillamap-native-building-extrusions').props.style.fillExtrusionColor).toEqual(['get', 'color']);
+    expect(native.getByTestId('quillamap-native-building-extrusions').props.style.fillExtrusionOpacity).toBe(0.88);
+    expect(native.getByTestId('quillamap-native-building-outline').props.style.lineColor).toEqual(['get', 'color']);
   });
 });

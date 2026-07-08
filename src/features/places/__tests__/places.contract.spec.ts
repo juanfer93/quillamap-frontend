@@ -1,13 +1,15 @@
 import {
+  PLACE_CATEGORY_VISUALS,
   PLACES_VISUAL_IDENTITY,
   canOpenPlaceDetails,
+  getPlaceCategoryVisual,
   toPlacesNavigationMode,
 } from '@/types/contracts/places.contract';
 
 describe('places contract RF5', () => {
-  it('allows multimedia cards only in tourist navigation mode', () => {
+  it('allows multimedia cards in walking/tourist modes and blocks driving modes', () => {
     expect(canOpenPlaceDetails('turista')).toBe(true);
-    expect(canOpenPlaceDetails('peaton')).toBe(false);
+    expect(canOpenPlaceDetails('peaton')).toBe(true);
     expect(canOpenPlaceDetails('moto')).toBe(false);
     expect(canOpenPlaceDetails('carro')).toBe(false);
   });
@@ -28,5 +30,27 @@ describe('places contract RF5', () => {
       token: 'sand-gold',
       hex: '#D4AF37',
     });
+  });
+
+  it('publishes semantic Waze-like category icons through the shared contract', () => {
+    expect(getPlaceCategoryVisual('comida')).toMatchObject({
+      iconName: 'restaurant-outline',
+      iconGlyph: '\u{1F374}',
+    });
+    expect(getPlaceCategoryVisual('salud')).toMatchObject({
+      iconName: 'medkit-outline',
+      iconGlyph: '\u271A',
+    });
+    expect(getPlaceCategoryVisual('transporte')).toMatchObject({
+      iconName: 'bus-outline',
+      iconGlyph: '\u{1F68C}',
+    });
+    expect(Object.keys(PLACE_CATEGORY_VISUALS).sort()).toEqual([
+      'comida',
+      'compras',
+      'salud',
+      'servicios',
+      'transporte',
+    ]);
   });
 });

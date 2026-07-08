@@ -29,9 +29,13 @@ interface QuillaMapControlsProps {
   zoomInTestID?: string;
   zoomOutTestID?: string;
   perspectiveToggleTestID?: string;
+  compassTestID?: string;
+  compassBearing?: number;
   onZoomIn?: () => void;
   onZoomOut?: () => void;
   onTogglePerspective: () => void;
+  onToggleCompass: () => void;
+  onControlsInteraction?: () => void;
   profileTools?: ReactNode;
 }
 
@@ -54,9 +58,13 @@ const QuillaMapControls = ({
   zoomInTestID,
   zoomOutTestID,
   perspectiveToggleTestID,
+  compassTestID,
+  compassBearing = 0,
   onZoomIn,
   onZoomOut,
   onTogglePerspective,
+  onToggleCompass,
+  onControlsInteraction,
   profileTools,
 }: QuillaMapControlsProps) => {
   const isPedestrian = mode === 'pedestrian';
@@ -70,6 +78,11 @@ const QuillaMapControls = ({
     backgroundColor: controlBackground,
     borderColor: controlBorder,
     zIndex: 20,
+  };
+  const compassAccent = isDark ? controlText : primary;
+  const runControlAction = (action?: () => void) => {
+    onControlsInteraction?.();
+    action?.();
   };
 
   return (
@@ -96,7 +109,7 @@ const QuillaMapControls = ({
 
       <QuillaMapPerspectiveToggle
         is3D={is3D}
-        onPress={onTogglePerspective}
+        onPress={() => runControlAction(onTogglePerspective)}
         testID={perspectiveToggleTestID}
         compact={isPedestrian}
         backgroundColor={controlBackground}
@@ -123,11 +136,40 @@ const QuillaMapControls = ({
         </View>
       ) : null}
 
+      <Pressable
+        testID={compassTestID}
+        accessibilityRole="button"
+        accessibilityLabel="Cambiar orientacion cardinal del mapa"
+        onPress={() => runControlAction(onToggleCompass)}
+        style={[
+          tw`absolute right-m top-28 w-11 h-11 rounded-xl border items-center justify-center`,
+          buttonSurfaceStyle,
+        ]}
+      >
+        <View style={tw`absolute inset-0 items-center justify-center`}>
+          <Text style={{ position: 'absolute', top: 2, color: compassAccent, fontSize: 9, fontWeight: '900', lineHeight: 10 }}>
+            N
+          </Text>
+          <Text style={{ position: 'absolute', bottom: 2, color: controlText, fontSize: 8, fontWeight: '800', lineHeight: 9 }}>
+            S
+          </Text>
+          <Text style={{ position: 'absolute', right: 4, color: controlText, fontSize: 8, fontWeight: '800', lineHeight: 9 }}>
+            E
+          </Text>
+          <Text style={{ position: 'absolute', left: 4, color: controlText, fontSize: 8, fontWeight: '800', lineHeight: 9 }}>
+            O
+          </Text>
+          <View style={{ transform: [{ rotate: `${compassBearing}deg` }] }}>
+            <MapIcon name="arrow-up" size={14} color={compassAccent} />
+          </View>
+        </View>
+      </Pressable>
+
       {isPedestrian && showZoom ? (
         <View
           pointerEvents="box-none"
           style={[
-            tw`absolute right-m top-32 w-11 rounded-xl border overflow-hidden`,
+            tw`absolute right-m top-44 w-11 rounded-xl border overflow-hidden`,
             buttonSurfaceStyle,
           ]}
         >
@@ -135,7 +177,7 @@ const QuillaMapControls = ({
             testID={zoomInTestID}
             accessibilityRole="button"
             accessibilityLabel="Acercar mapa"
-            onPress={onZoomIn}
+            onPress={() => runControlAction(onZoomIn)}
             style={[tw`h-10 items-center justify-center border-b`, { borderBottomColor: controlBorder }]}
           >
             <MapIcon name="add" size={21} color={controlText} />
@@ -144,7 +186,7 @@ const QuillaMapControls = ({
             testID={zoomOutTestID}
             accessibilityRole="button"
             accessibilityLabel="Alejar mapa"
-            onPress={onZoomOut}
+            onPress={() => runControlAction(onZoomOut)}
             style={tw`h-10 items-center justify-center`}
           >
             <MapIcon name="remove" size={21} color={controlText} />
@@ -189,9 +231,18 @@ const QuillaMapControls = ({
         <MapIcon name="walk" size={isPedestrian ? 21 : 20} color={isDark ? controlText : mapRoute} />
         <MapIcon name={isPedestrian ? 'footsteps-outline' : 'location-outline'} size={isPedestrian ? 21 : 20} color={controlText} />
         <MapIcon name={isPedestrian ? 'bookmark' : 'bookmark-outline'} size={20} color={controlText} />
-        {profileTools ?? (
-          <MapIcon name={isPedestrian ? 'people' : 'person-outline'} size={20} color={isPedestrian ? controlText : darkText} />
-        )}
+        <View
+          testID="quillamap-profile-tools-slot"
+          onTouchStart={onControlsInteraction}
+          onStartShouldSetResponderCapture={() => {
+            onControlsInteraction?.();
+            return false;
+          }}
+        >
+          {profileTools ?? (
+            <MapIcon name={isPedestrian ? 'people' : 'person-outline'} size={20} color={isPedestrian ? controlText : darkText} />
+          )}
+        </View>
       </View>
     </>
   );

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 import {
   Camera,
@@ -11,6 +11,7 @@ import {
   SymbolLayer,
   UserLocation,
   type CameraRef,
+  type MapViewRef,
 } from '@maplibre/maplibre-react-native';
 import tw from '@/lib/tailwind';
 import type { QuillaMapProps } from '../types/QuillaMap.types';
@@ -28,6 +29,7 @@ import PlaceInfoBottomSheet from '@/features/places/components/PlaceInfoBottomSh
 import QuillaMapControls from './QuillaMapControls';
 import {
   DARK_MAP_THEME,
+  MAP_3D_PITCH,
   getBuildingsFeatureCollection,
   getCoordinateFeatureCollection,
   getMapLibreStyle,
@@ -38,7 +40,22 @@ import {
   SHADE_MARKER_EMOJI,
 } from '../styles/QuillaMap.maplibre';
 
-const getPlaceTitle = (place: PlaceMapFeature): string => place.name.es;
+const INITIAL_PEDESTRIAN_ZOOM = 16;
+const INITIAL_DEFAULT_ZOOM = 15;
+const CAMERA_ANIMATION_DURATION_MS = 520;
+const CARDINAL_BEARINGS = [0, 90, 180, 270] as const;
+type CardinalBearing = typeof CARDINAL_BEARINGS[number];
+
+const normalizeBearing = (bearing: number): number => ((bearing % 360) + 360) % 360;
+
+const getCompassBearing = (cameraBearing: number): number => normalizeBearing(-cameraBearing);
+
+const getNextCardinalBearing = (cameraBearing: number): CardinalBearing => {
+  const normalizedBearing = normalizeBearing(cameraBearing);
+  const currentIndex = CARDINAL_BEARINGS.findIndex((bearing) => Math.abs(bearing - normalizedBearing) < 0.5);
+
+  return currentIndex >= 0 ? CARDINAL_BEARINGS[(currentIndex + 1) % CARDINAL_BEARINGS.length] : 0;
+};
 
 const QuillaMap = ({
   mode,
@@ -58,6 +75,11 @@ const QuillaMap = ({
   style,
 }: QuillaMapProps) => {
   const route = getRouteCoordinates(routePoints, center);
+  const cameraCenterCoordinate = useMemo(
+    () => [center.longitude, center.latitude] as [number, number],
+    [center.latitude, center.longitude]
+  );
+  const mapRef = useRef<MapViewRef | null>(null);
   const cameraRef = useRef<CameraRef | null>(null);
   const layerColor = tw.color('map-shade') ?? '#5DA271';
   const routeColor = tw.color('map-route') ?? '#2F8AC4';
@@ -74,11 +96,14 @@ const QuillaMap = ({
   const visiblePlaces = getVisiblePlaces(places);
   const canOpenPlaces = canInteractWithPlaces(mode);
   const [selectedPlace, setSelectedPlace] = useState<PlaceMapFeature | null>(null);
-  const [is3D, setIs3D] = useState(() => visiblePlaces.length > 0);
+  const [is3D, setIs3D] = useState(false);
+  const [cameraBearing, setCameraBearing] = useState<number>(0);
   const controlBackground = isDark ? DARK_MAP_THEME.controlBackground : white;
   const controlText = isDark ? DARK_MAP_THEME.controlText : darkGray;
   const controlBorder = isDark ? DARK_MAP_THEME.controlBorder : tw.color('medium-gray') ?? '#e0e0e0';
-  const [zoomLevel, setZoomLevel] = useState(isPedestrian ? 16 : 15);
+  const lightPlaceMarkerColor = ['case', ['==', ['get', 'source'], 'tourist_site'], culturalGold, primary] as const;
+  const placeMarkerColor = isDark ? culturalGold : lightPlaceMarkerColor;
+  const zoomLevelRef = useRef(isPedestrian ? INITIAL_PEDESTRIAN_ZOOM : INITIAL_DEFAULT_ZOOM);
   const routeFeature = getRouteFeature(route);
   const shadeFeatureCollection = getShadeZonesFeatureCollection(zones);
   const shadeAreaFeatureCollection = getShadeZoneAreasFeatureCollection(zones);
@@ -89,6 +114,7 @@ const QuillaMap = ({
   const placesFeatureCollection = getPlacesFeatureCollection(visiblePlaces);
   const buildingsFeatureCollection = getBuildingsFeatureCollection(visiblePlaces);
   const shadeMarkerColor = isPedestrian ? shadowMarkerColor : layerColor;
+  const compassBearing = getCompassBearing(cameraBearing);
 
   const handlePlacePress = (place: PlaceMapFeature) => {
     if (!canOpenPlaces) {
@@ -98,21 +124,44 @@ const QuillaMap = ({
     setSelectedPlace(place);
     onPlacePress?.(place);
   };
-
-  const applyZoom = (nextZoom: number) => {
-    setZoomLevel(nextZoom);
-    cameraRef.current?.zoomTo(nextZoom, 180);
+  const closeSelectedPlace = () => {
+    setSelectedPlace(null);
   };
-  const zoomIn = () => applyZoom(Math.min(zoomLevel + 1, 19));
-  const zoomOut = () => applyZoom(Math.max(zoomLevel - 1, 11));
+
+  const applyZoom = async (delta: number) => {
+    const currentZoom = await mapRef.current?.getZoom().catch(() => zoomLevelRef.current) ?? zoomLevelRef.current;
+    const nextZoom = Math.max(11, Math.min(currentZoom + delta, 19));
+    zoomLevelRef.current = nextZoom;
+    cameraRef.current?.zoomTo(nextZoom, CAMERA_ANIMATION_DURATION_MS);
+  };
+  const zoomIn = () => applyZoom(1);
+  const zoomOut = () => applyZoom(-1);
   const togglePerspective = () => {
     const nextIs3D = !is3D;
     setIs3D(nextIs3D);
     cameraRef.current?.setCamera({
-      pitch: nextIs3D ? 48 : 0,
-      animationDuration: 220,
+      pitch: nextIs3D ? MAP_3D_PITCH : 0,
+      heading: cameraBearing,
+      animationDuration: CAMERA_ANIMATION_DURATION_MS,
       animationMode: 'easeTo',
     });
+  };
+  const toggleCompass = () => {
+    const nextCameraBearing = getNextCardinalBearing(cameraBearing);
+    setCameraBearing(nextCameraBearing);
+    cameraRef.current?.setCamera({
+      heading: nextCameraBearing,
+      animationDuration: CAMERA_ANIMATION_DURATION_MS,
+      animationMode: 'easeTo',
+    });
+  };
+
+  const handleRegionDidChange = (feature: GeoJSON.Feature<GeoJSON.Point, { heading?: number }>) => {
+    const nextHeading = feature.properties?.heading;
+
+    if (typeof nextHeading === 'number') {
+      setCameraBearing(normalizeBearing(nextHeading));
+    }
   };
 
   return (
@@ -129,6 +178,7 @@ const QuillaMap = ({
         }
       >
         <MapView
+          ref={mapRef}
           key={isDark ? 'quillamap-native-dark' : 'quillamap-native-light'}
           testID="quillamap-native-map"
           style={tw`flex-1`}
@@ -140,9 +190,11 @@ const QuillaMap = ({
           zoomEnabled
           rotateEnabled
           pitchEnabled
+          onRegionDidChange={handleRegionDidChange}
           onPress={(feature) => {
             const coordinates = feature.geometry.type === 'Point' ? feature.geometry.coordinates : null;
             if (coordinates && typeof coordinates[0] === 'number' && typeof coordinates[1] === 'number') {
+              closeSelectedPlace();
               onMapPress?.({
                 longitude: coordinates[0],
                 latitude: coordinates[1],
@@ -152,9 +204,8 @@ const QuillaMap = ({
         >
           <Camera
             ref={cameraRef}
-            centerCoordinate={[center.longitude, center.latitude]}
-            zoomLevel={zoomLevel}
-            pitch={is3D ? 48 : 0}
+            centerCoordinate={cameraCenterCoordinate}
+            zoomLevel={zoomLevelRef.current}
           />
           {showUserLocation ? <UserLocation /> : null}
 
@@ -171,18 +222,49 @@ const QuillaMap = ({
             />
           </ShapeSource>
 
-          <ShapeSource id="buildings-source" shape={buildingsFeatureCollection}>
-            <FillExtrusionLayer
-              id="places-buildings"
-              testID="quillamap-native-building-extrusions"
-              style={{
-                fillExtrusionColor: ['get', 'color'],
-                fillExtrusionHeight: ['get', 'height'],
-                fillExtrusionBase: ['get', 'base'],
-                fillExtrusionOpacity: 0.62,
+          {is3D ? (
+            <ShapeSource
+              id="buildings-source"
+              testID="quillamap-native-buildings-source"
+              shape={buildingsFeatureCollection}
+              hitbox={{ width: 48, height: 48 }}
+              onPress={(event) => {
+                if (!canOpenPlaces) {
+                  return;
+                }
+
+                const id = event.features[0]?.properties?.id;
+                const place = typeof id === 'string'
+                  ? visiblePlaces.find((candidate) => candidate.id === id)
+                  : undefined;
+
+                if (place) {
+                  handlePlacePress(place);
+                }
               }}
-            />
-          </ShapeSource>
+            >
+              <FillExtrusionLayer
+                id="places-buildings"
+                testID="quillamap-native-building-extrusions"
+                style={{
+                  fillExtrusionColor: ['get', 'color'],
+                  fillExtrusionHeight: ['get', 'height'],
+                  fillExtrusionBase: ['get', 'base'],
+                  fillExtrusionOpacity: 0.88,
+                  fillExtrusionVerticalGradient: true,
+                }}
+              />
+              <LineLayer
+                id="places-building-outline"
+                testID="quillamap-native-building-outline"
+                style={{
+                  lineColor: ['get', 'color'],
+                  lineWidth: 2,
+                  lineOpacity: 0.95,
+                }}
+              />
+            </ShapeSource>
+          ) : null}
 
           <ShapeSource
             id="places-source"
@@ -217,16 +299,22 @@ const QuillaMap = ({
               style={{
                 circleColor: white,
                 circleRadius: 15,
-                circleStrokeColor: ['case', ['==', ['get', 'source'], 'tourist_site'], culturalGold, primary],
+                circleStrokeColor: placeMarkerColor,
                 circleStrokeWidth: 2,
               }}
             />
-            <CircleLayer
+            <SymbolLayer
               id="places-static-dots"
               testID="quillamap-native-places-layer"
               style={{
-                circleColor: ['case', ['==', ['get', 'source'], 'tourist_site'], culturalGold, primary],
-                circleRadius: 2.5,
+                textField: ['get', 'icon'],
+                textFont: ['Open Sans Regular'],
+                textSize: 18,
+                textColor: placeMarkerColor,
+                textHaloColor: white,
+                textHaloWidth: 1,
+                textAllowOverlap: true,
+                textIgnorePlacement: true,
               }}
             />
           </ShapeSource>
@@ -260,6 +348,7 @@ const QuillaMap = ({
             shape={shadeFeatureCollection}
             hitbox={{ width: 44, height: 44 }}
             onPress={(event) => {
+              closeSelectedPlace();
               const id = event.features[0]?.properties?.id;
               const zone = typeof id === 'string' ? zones.find((candidate) => candidate.id === id) : undefined;
               if (zone) {
@@ -335,16 +424,21 @@ const QuillaMap = ({
           zonesCount={zones.length}
           showZoom={isPedestrian}
           perspectiveToggleTestID="quillamap-native-perspective-toggle"
+          compassTestID="quillamap-native-compass-toggle"
+          compassBearing={compassBearing}
           zoomInTestID="quillamap-native-zoom-in"
           zoomOutTestID="quillamap-native-zoom-out"
           onZoomIn={zoomIn}
           onZoomOut={zoomOut}
           onTogglePerspective={togglePerspective}
+          onToggleCompass={toggleCompass}
+          onControlsInteraction={closeSelectedPlace}
           profileTools={profileTools}
         />
         {selectedPlace && canOpenPlaces ? (
           <PlaceInfoBottomSheet
             place={selectedPlace}
+            themeMode={themeMode}
             onClose={() => setSelectedPlace(null)}
           />
         ) : null}

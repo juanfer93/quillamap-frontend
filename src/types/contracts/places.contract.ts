@@ -12,6 +12,15 @@ export type PlaceSource = 'place' | 'tourist_site';
 
 export type PlacesNavigationMode = 'turista' | 'peaton' | 'carro' | 'moto';
 
+export type PlaceIconName =
+  | 'restaurant-outline'
+  | 'medkit-outline'
+  | 'bus-outline'
+  | 'cart-outline'
+  | 'construct-outline'
+  | 'business-outline'
+  | 'location-outline';
+
 export const PLACES_VISUAL_IDENTITY = {
   sharkBlue: {
     token: 'shark-blue',
@@ -31,6 +40,55 @@ export interface BilingualText {
   es: string;
   en?: string;
 }
+
+export interface PlaceCategoryVisual {
+  iconName: PlaceIconName;
+  iconGlyph: string;
+  label: BilingualText;
+}
+
+export const PLACE_CATEGORY_VISUALS = {
+  comida: {
+    iconName: 'restaurant-outline',
+    iconGlyph: '\u{1F374}',
+    label: {
+      es: 'Comida',
+      en: 'Food',
+    },
+  },
+  salud: {
+    iconName: 'medkit-outline',
+    iconGlyph: '\u271A',
+    label: {
+      es: 'Salud',
+      en: 'Health',
+    },
+  },
+  transporte: {
+    iconName: 'bus-outline',
+    iconGlyph: '\u{1F68C}',
+    label: {
+      es: 'Transporte',
+      en: 'Transport',
+    },
+  },
+  compras: {
+    iconName: 'cart-outline',
+    iconGlyph: '\u{1F6D2}',
+    label: {
+      es: 'Compras',
+      en: 'Shopping',
+    },
+  },
+  servicios: {
+    iconName: 'construct-outline',
+    iconGlyph: '\u2692',
+    label: {
+      es: 'Servicios',
+      en: 'Services',
+    },
+  },
+} as const satisfies Record<PlaceCategory, PlaceCategoryVisual>;
 
 export interface PlaceOpeningHours {
   es: string;
@@ -65,6 +123,8 @@ export interface PlaceContract {
   category: PlaceCategory;
   source: PlaceSource;
   location: GeoJsonPoint;
+  iconName?: PlaceIconName;
+  iconGlyph?: string;
   metadata?: PlaceMetadata;
 }
 
@@ -91,4 +151,7 @@ export const toPlacesNavigationMode = (mode: 'tourist' | 'pedestrian' | 'car' | 
 };
 
 export const canOpenPlaceDetails = (navigationMode: PlacesNavigationMode): boolean =>
-  navigationMode === 'turista';
+  navigationMode === 'turista' || navigationMode === 'peaton';
+
+export const getPlaceCategoryVisual = (category: PlaceCategory): PlaceCategoryVisual =>
+  PLACE_CATEGORY_VISUALS[category];

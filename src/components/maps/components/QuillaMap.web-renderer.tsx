@@ -1,11 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import maplibregl, { type Map as MapLibreMap, type Marker as MapLibreMarker } from 'maplibre-gl';
+import maplibregl, {
+  type ExpressionSpecification,
+  type Map as MapLibreMap,
+  type Marker as MapLibreMarker,
+} from 'maplibre-gl';
 import tw from '@/lib/tailwind';
 import type { QuillaMapProps } from '../types/QuillaMap.types';
 import {
   PLACES_VISUAL_IDENTITY,
+  getPlaceCategoryVisual,
   type PlaceMapFeature,
 } from '@/types/contracts/places.contract';
 import type { MapIconProps } from '../types/QuillaMap.icon.types';
@@ -19,6 +24,7 @@ import {
 import QuillaMapControls from './QuillaMapControls';
 import {
   DARK_MAP_THEME,
+  MAP_3D_PITCH,
   getBuildingsFeatureCollection,
   getMapLibreStyle,
   getPlacesFeatureCollection,
@@ -29,6 +35,12 @@ import {
 } from '../styles/QuillaMap.maplibre';
 
 const MapIcon = Ionicons as React.ComponentType<MapIconProps>;
+type AddLayerObject = Parameters<MapLibreMap['addLayer']>[0];
+const INITIAL_PEDESTRIAN_ZOOM = 16;
+const INITIAL_DEFAULT_ZOOM = 15;
+const CAMERA_ANIMATION_DURATION_MS = 520;
+const CARDINAL_BEARINGS = [0, 90, 180, 270] as const;
+type CardinalBearing = typeof CARDINAL_BEARINGS[number];
 
 const tokenColor = (name: string, fallback = ''): string => {
   const value = tw.color(name);
@@ -37,38 +49,23 @@ const tokenColor = (name: string, fallback = ''): string => {
 
 const getPlaceTitle = (place: PlaceMapFeature): string => place.name.es;
 
+const normalizeBearing = (bearing: number): number => ((bearing % 360) + 360) % 360;
+
+const getCompassBearing = (cameraBearing: number): number => normalizeBearing(-cameraBearing);
+
+const getNextCardinalBearing = (cameraBearing: number): CardinalBearing => {
+  const normalizedBearing = normalizeBearing(cameraBearing);
+  const currentIndex = CARDINAL_BEARINGS.findIndex((bearing) => Math.abs(bearing - normalizedBearing) < 0.5);
+
+  return currentIndex >= 0 ? CARDINAL_BEARINGS[(currentIndex + 1) % CARDINAL_BEARINGS.length] : 0;
+};
+
+const getFallbackIcon = (place: PlaceMapFeature): string =>
+  place.source === 'tourist_site'
+    ? 'business-outline'
+    : place.iconName ?? getPlaceCategoryVisual(place.category).iconName;
+
 const hasDom = () => typeof document !== 'undefined';
-
-const placeMarkerMetrics = {
-  size: 40,
-  borderRadius: 10,
-};
-
-const createMarkerElement = (
-  testID: string,
-  iconName: string,
-  color: string,
-  label: string,
-  surfaceColor: string
-) => {
-  const element = document.createElement('button');
-  element.type = 'button';
-  element.dataset.testid = testID;
-  element.setAttribute('aria-label', label);
-  element.style.width = `${placeMarkerMetrics.size}px`;
-  element.style.height = `${placeMarkerMetrics.size}px`;
-  element.style.borderRadius = `${placeMarkerMetrics.borderRadius}px`;
-  element.style.background = surfaceColor;
-  element.style.border = `2px solid ${color}`;
-  element.style.boxShadow = '0 8px 16px rgba(0, 69, 116, 0.18)';
-  element.style.display = 'flex';
-  element.style.alignItems = 'center';
-  element.style.justifyContent = 'center';
-  element.style.cursor = 'pointer';
-  element.style.color = color;
-  element.innerHTML = iconName === 'business-outline' ? '◆' : '•';
-  return element;
-};
 
 const createShadowMarkerElement = (testID: string, color: string, label: string) => {
   const element = document.createElement('button');
@@ -142,9 +139,12 @@ const QuillaMapWebRenderer = ({
   const placesRef = useRef(visiblePlaces);
   const zonesRef = useRef(zones);
   const onMapPressRef = useRef(onMapPress);
+  const onPlacePressRef = useRef(onPlacePress);
   const onShadeZonePressRef = useRef(onShadeZonePress);
-  const [zoomLevel, setZoomLevel] = useState(isPedestrian ? 16 : 15);
-  const [is3D, setIs3D] = useState(() => visiblePlaces.length > 0);
+  const canOpenPlacesRef = useRef(canOpenPlaces);
+  const zoomLevelRef = useRef(isPedestrian ? INITIAL_PEDESTRIAN_ZOOM : INITIAL_DEFAULT_ZOOM);
+  const [is3D, setIs3D] = useState(false);
+  const [cameraBearing, setCameraBearing] = useState<number>(0);
   const [selectedPlace, setSelectedPlace] = useState<PlaceMapFeature | null>(null);
   const mapShade = tokenColor('map-shade', '#5DA271');
   const mapRoute = tokenColor('map-route', '#2F8AC4');
@@ -152,6 +152,8 @@ const QuillaMapWebRenderer = ({
   const darkGray = tokenColor('dark-gray', '#333333');
   const culturalGold = tokenColor(PLACES_VISUAL_IDENTITY.sandGold.token, PLACES_VISUAL_IDENTITY.sandGold.hex);
   const white = tokenColor(PLACES_VISUAL_IDENTITY.white.token, PLACES_VISUAL_IDENTITY.white.hex);
+  const lightPlaceMarkerColor: ExpressionSpecification = ['case', ['==', ['get', 'source'], 'tourist_site'], culturalGold, primary];
+  const placeMarkerColor = isDark ? culturalGold : lightPlaceMarkerColor;
   const shadowMarkerColor = tokenColor('secondary') || culturalGold;
   const shadeMarkerColor = isPedestrian ? shadowMarkerColor : mapShade;
   const controlBackground = isDark ? DARK_MAP_THEME.controlBackground : white;
@@ -162,6 +164,7 @@ const QuillaMapWebRenderer = ({
   const shadeAreaFeatureCollection = useMemo(() => getShadeZoneAreasFeatureCollection(zones), [zones]);
   const placesFeatureCollection = useMemo(() => getPlacesFeatureCollection(visiblePlaces), [visiblePlaces]);
   const buildingsFeatureCollection = useMemo(() => getBuildingsFeatureCollection(visiblePlaces), [visiblePlaces]);
+  const compassBearing = getCompassBearing(cameraBearing);
 
   const handlePlacePress = (place: PlaceMapFeature) => {
     if (!canOpenPlaces) {
@@ -172,12 +175,28 @@ const QuillaMapWebRenderer = ({
     onPlacePress?.(place);
   };
 
+  const closeSelectedPlace = () => {
+    setSelectedPlace(null);
+  };
+
   const togglePerspective = () => {
     const nextIs3D = !is3D;
     setIs3D(nextIs3D);
     mapRef.current?.easeTo({
-      pitch: nextIs3D ? 48 : 0,
-      duration: 220,
+      pitch: nextIs3D ? MAP_3D_PITCH : 0,
+      bearing: cameraBearing,
+      duration: CAMERA_ANIMATION_DURATION_MS,
+      easing: (time) => 1 - Math.pow(1 - time, 3),
+    });
+  };
+
+  const toggleCompass = () => {
+    const nextCameraBearing = getNextCardinalBearing(cameraBearing);
+    setCameraBearing(nextCameraBearing);
+    mapRef.current?.easeTo({
+      bearing: nextCameraBearing,
+      duration: CAMERA_ANIMATION_DURATION_MS,
+      easing: (time) => 1 - Math.pow(1 - time, 3),
     });
   };
 
@@ -190,8 +209,16 @@ const QuillaMapWebRenderer = ({
   }, [visiblePlaces]);
 
   useEffect(() => {
+    canOpenPlacesRef.current = canOpenPlaces;
+  }, [canOpenPlaces]);
+
+  useEffect(() => {
     onMapPressRef.current = onMapPress;
   }, [onMapPress]);
+
+  useEffect(() => {
+    onPlacePressRef.current = onPlacePress;
+  }, [onPlacePress]);
 
   useEffect(() => {
     onShadeZonePressRef.current = onShadeZonePress;
@@ -207,14 +234,25 @@ const QuillaMapWebRenderer = ({
       container: host,
       style: mapStyle,
       center: [center.longitude, center.latitude],
-      zoom: zoomLevel,
-      pitch: is3D ? 48 : 0,
+      zoom: zoomLevelRef.current,
+      pitch: is3D ? MAP_3D_PITCH : 0,
+      bearing: cameraBearing,
       attributionControl: false,
     });
 
+    const syncCompassBearing = () => {
+      setCameraBearing(normalizeBearing(map.getBearing()));
+    };
+
     const handleMapClick = (event: maplibregl.MapMouseEvent) => {
-      const placeFeature = map.getLayer('places-hitbox')
-        ? map.queryRenderedFeatures(event.point, { layers: ['places-hitbox'] })[0]
+      const placeLayers = [
+        'places-hitbox',
+        'places-static-dots',
+        'places-marker-background',
+        'places-buildings',
+      ].filter((layerId) => map.getLayer(layerId));
+      const placeFeature = placeLayers.length > 0
+        ? map.queryRenderedFeatures(event.point, { layers: placeLayers })[0]
         : undefined;
       const rawPlaceId = placeFeature?.properties?.id;
       const placeId = typeof rawPlaceId === 'string'
@@ -224,8 +262,9 @@ const QuillaMapWebRenderer = ({
           : null;
       const place = placeId ? placesRef.current.find((candidate) => candidate.id === placeId) : undefined;
 
-      if (place && canInteractWithPlaces(mode)) {
-        handlePlacePress(place);
+      if (place && canOpenPlacesRef.current) {
+        setSelectedPlace(place);
+        onPlacePressRef.current?.(place);
         return;
       }
 
@@ -237,10 +276,12 @@ const QuillaMapWebRenderer = ({
       const zone = zoneId ? zonesRef.current.find((candidate) => candidate.id === zoneId) : undefined;
 
       if (zone) {
+        setSelectedPlace(null);
         onShadeZonePressRef.current?.(zone);
         return;
       }
 
+      setSelectedPlace(null);
       onMapPressRef.current?.({
         latitude: event.lngLat.lat,
         longitude: event.lngLat.lng,
@@ -249,9 +290,13 @@ const QuillaMapWebRenderer = ({
 
     mapRef.current = map;
     map.on('click', handleMapClick);
+    map.on('rotateend', syncCompassBearing);
+    map.on('moveend', syncCompassBearing);
 
     return () => {
       map.off('click', handleMapClick);
+      map.off('rotateend', syncCompassBearing);
+      map.off('moveend', syncCompassBearing);
       shadowMarkerRefs.current.forEach((marker) => marker.remove());
       shadowMarkerRefs.current = [];
       map.remove();
@@ -267,9 +312,9 @@ const QuillaMapWebRenderer = ({
 
     map.jumpTo({
       center: [center.longitude, center.latitude],
-      zoom: zoomLevel,
+      zoom: zoomLevelRef.current,
     });
-  }, [center.latitude, center.longitude, zoomLevel]);
+  }, [center.latitude, center.longitude]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -277,7 +322,7 @@ const QuillaMapWebRenderer = ({
       return undefined;
     }
 
-    const addLayerIfMissing = (id: string, layer: any) => {
+    const addLayerIfMissing = (id: string, layer: AddLayerObject) => {
       if (!map.getLayer(id)) {
         map.addLayer(layer);
       }
@@ -294,13 +339,33 @@ const QuillaMapWebRenderer = ({
         id: 'places-buildings',
         type: 'fill-extrusion',
         source: 'buildings-source',
+        layout: {
+          visibility: is3D ? 'visible' : 'none',
+        },
         paint: {
           'fill-extrusion-color': ['get', 'color'],
           'fill-extrusion-height': ['get', 'height'],
           'fill-extrusion-base': ['get', 'base'],
-          'fill-extrusion-opacity': 0.62,
+          'fill-extrusion-opacity': 0.88,
+          'fill-extrusion-vertical-gradient': true,
         },
       });
+
+      addLayerIfMissing('places-building-outline', {
+        id: 'places-building-outline',
+        type: 'line',
+        source: 'buildings-source',
+        layout: {
+          visibility: is3D ? 'visible' : 'none',
+        },
+        paint: {
+          'line-color': ['get', 'color'],
+          'line-width': 2,
+          'line-opacity': 0.95,
+        },
+      });
+      map.setLayoutProperty('places-buildings', 'visibility', is3D ? 'visible' : 'none');
+      map.setLayoutProperty('places-building-outline', 'visibility', is3D ? 'visible' : 'none');
 
       addLayerIfMissing('route-line', {
         id: 'route-line',
@@ -373,18 +438,26 @@ const QuillaMapWebRenderer = ({
         paint: {
           'circle-color': white,
           'circle-radius': 15,
-          'circle-stroke-color': ['case', ['==', ['get', 'source'], 'tourist_site'], culturalGold, primary],
+          'circle-stroke-color': placeMarkerColor,
           'circle-stroke-width': 2,
         },
       });
 
       addLayerIfMissing('places-static-dots', {
         id: 'places-static-dots',
-        type: 'circle',
+        type: 'symbol',
         source: 'places-source',
+        layout: {
+          'text-field': ['get', 'icon'],
+          'text-font': ['Open Sans Regular'],
+          'text-size': 18,
+          'text-allow-overlap': true,
+          'text-ignore-placement': true,
+        },
         paint: {
-          'circle-color': ['case', ['==', ['get', 'source'], 'tourist_site'], culturalGold, primary],
-          'circle-radius': 2.5,
+          'text-color': placeMarkerColor,
+          'text-halo-color': '#ffffff',
+          'text-halo-width': 1,
         },
       });
     };
@@ -400,6 +473,7 @@ const QuillaMapWebRenderer = ({
     };
   }, [
     buildingsFeatureCollection,
+    is3D,
     isPedestrian,
     mapRoute,
     mapShade,
@@ -461,14 +535,25 @@ const QuillaMapWebRenderer = ({
     zones,
   ]);
 
-  const zoomIn = () => setZoomLevel((currentZoom) => Math.min(currentZoom + 1, 19));
-  const zoomOut = () => setZoomLevel((currentZoom) => Math.max(currentZoom - 1, 11));
+  const applyZoom = (delta: number) => {
+    const map = mapRef.current;
+    const currentZoom = map?.getZoom() ?? zoomLevelRef.current;
+    const nextZoom = Math.max(11, Math.min(currentZoom + delta, 19));
+    zoomLevelRef.current = nextZoom;
+    map?.easeTo({
+      zoom: nextZoom,
+      duration: CAMERA_ANIMATION_DURATION_MS,
+      easing: (time) => 1 - Math.pow(1 - time, 3),
+    });
+  };
+  const zoomIn = () => applyZoom(1);
+  const zoomOut = () => applyZoom(-1);
 
   const fallbackFeatures = !hasDom() ? (
     <>
       {visiblePlaces.map((place) => {
         const isTouristSite = place.source === 'tourist_site';
-        const markerColor = isTouristSite ? culturalGold : primary;
+        const markerColor = isDark || isTouristSite ? culturalGold : primary;
 
         return (
           <Pressable
@@ -489,7 +574,7 @@ const QuillaMapWebRenderer = ({
             ]}
           >
             <MapIcon
-              name={isTouristSite ? 'business-outline' : 'location-outline'}
+              name={getFallbackIcon(place)}
               size={17}
               color={markerColor}
             />
@@ -515,14 +600,17 @@ const QuillaMapWebRenderer = ({
           style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }}
         />
       ) : null}
-      {buildingsFeatureCollection.features.map((feature) => (
+      {is3D ? buildingsFeatureCollection.features.map((feature) => (
         <View
           key={String(feature.id)}
           testID={`quillamap-web-building-extrusion-${feature.properties.id}`}
-          {...({ fill: feature.properties.color } as Record<string, unknown>)}
+          {...({
+            fill: feature.properties.color,
+            extrusionHeight: feature.properties.height,
+          } as Record<string, unknown>)}
           style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }}
         />
-      ))}
+      )) : null}
     </>
   ) : null;
 
@@ -580,11 +668,15 @@ const QuillaMapWebRenderer = ({
           showZoom={isPedestrian}
           showLocate
           perspectiveToggleTestID="quillamap-web-perspective-toggle"
+          compassTestID="quillamap-web-compass-toggle"
+          compassBearing={compassBearing}
           zoomInTestID="quillamap-web-zoom-in"
           zoomOutTestID="quillamap-web-zoom-out"
           onZoomIn={zoomIn}
           onZoomOut={zoomOut}
           onTogglePerspective={togglePerspective}
+          onToggleCompass={toggleCompass}
+          onControlsInteraction={closeSelectedPlace}
           profileTools={profileTools}
         />
 
@@ -593,6 +685,7 @@ const QuillaMapWebRenderer = ({
         {selectedPlace && canOpenPlaces ? (
           <PlaceInfoBottomSheet
             place={selectedPlace}
+            themeMode={themeMode}
             onClose={() => setSelectedPlace(null)}
           />
         ) : null}

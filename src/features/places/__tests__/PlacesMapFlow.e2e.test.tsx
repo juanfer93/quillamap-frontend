@@ -116,4 +116,42 @@ describe('PlacesMapFlow e2e', () => {
     expect(onPlacePress).not.toHaveBeenCalled();
     expect(queryByTestId('place-bottom-sheet')).toBeNull();
   });
+
+  it('Usuario en Modo Peaton toca marcador -> ve tarjeta informativa', () => {
+    const onPlacePress = jest.fn<void, [PlaceMapFeature]>();
+
+    const { getByTestId } = render(
+      <WebQuillaMap
+        mode="pedestrian"
+        center={ventanaAlMundo.coordinate}
+        places={[ventanaAlMundo]}
+        showDefaultShadeZones={false}
+        onPlacePress={onPlacePress}
+      />
+    );
+
+    fireEvent.press(getByTestId('quillamap-web-place-marker-tourist-ventana-al-mundo'));
+
+    expect(onPlacePress).toHaveBeenCalledWith(ventanaAlMundo);
+    expect(getByTestId('place-bottom-sheet')).toBeTruthy();
+  });
+
+  it('Usuario en Modo Carro toca marcador -> no ocurre accion', () => {
+    const onPlacePress = jest.fn<void, [PlaceMapFeature]>();
+
+    const { getByTestId, queryByTestId } = render(
+      <WebQuillaMap
+        mode="car"
+        center={ventanaAlMundo.coordinate}
+        places={[ventanaAlMundo]}
+        showDefaultShadeZones={false}
+        onPlacePress={onPlacePress}
+      />
+    );
+
+    fireEvent.press(getByTestId('quillamap-web-place-marker-tourist-ventana-al-mundo'));
+
+    expect(onPlacePress).not.toHaveBeenCalled();
+    expect(queryByTestId('place-bottom-sheet')).toBeNull();
+  });
 });

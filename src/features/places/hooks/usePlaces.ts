@@ -11,6 +11,13 @@ const normalizePlace = (place: PlaceMapFeature): PlaceMapFeature => ({
   },
 });
 
+const mergeRequiredDefaultPlaces = (places: PlaceMapFeature[]): PlaceMapFeature[] => {
+  const seenIds = new Set(places.map((place) => place.id));
+  const missingDefaults = DEFAULT_PLACES.filter((place) => !seenIds.has(place.id));
+
+  return [...places, ...missingDefaults];
+};
+
 export const usePlaces = (query: PlacesNearbyQuery) => {
   const [remotePlaces, setRemotePlaces] = useState<PlaceMapFeature[] | null>(null);
 
@@ -38,7 +45,7 @@ export const usePlaces = (query: PlacesNearbyQuery) => {
   }, [queryKey]);
 
   const places = useMemo(
-    () => (remotePlaces && remotePlaces.length > 0 ? remotePlaces : DEFAULT_PLACES),
+    () => (remotePlaces && remotePlaces.length > 0 ? mergeRequiredDefaultPlaces(remotePlaces) : DEFAULT_PLACES),
     [remotePlaces]
   );
 
