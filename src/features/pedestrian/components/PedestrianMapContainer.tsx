@@ -1,9 +1,9 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 import tw from '@/lib/tailwind';
-import QuillaMap from '@/components/maps/QuillaMap';
 import { QuillaMapShadeZone } from '@/components/maps/QuillaMap.types';
 import { PROXIMITY_RADAR_RADIUS_METERS, useProximityRadar } from '@/features/navigation/hooks/useProximityRadar';
+import NavigationMapController from '@/features/navigation/components/NavigationMapController';
 import {
   DEFAULT_PEDESTRIAN_CENTER,
   PedestrianCoordinates,
@@ -40,6 +40,7 @@ const PedestrianMapContainer = ({
   onMapPress,
   selectedShadowCoordinate,
   profileTools,
+  licensePlate,
 }: PedestrianMapContainerProps) => {
   const { currentLocation, isRequestingPermission, errorMessage } = useLocationPermissions();
   const center = getCenterCoordinate(currentLocation, initialCenter);
@@ -94,7 +95,7 @@ const PedestrianMapContainer = ({
           isDark ? tw`bg-charcoal` : tw`bg-surface-light`,
         ]}
       >
-        <QuillaMap
+        <NavigationMapController
           mode="pedestrian"
           themeMode={themeMode}
           center={center}
@@ -103,6 +104,7 @@ const PedestrianMapContainer = ({
           showDefaultShadeZones={false}
           selectedCoordinate={shouldShowShadowZones ? selectedShadowCoordinate : null}
           profileTools={profileTools}
+          licensePlate={licensePlate}
           onMapPress={shouldShowShadowZones ? onMapPress : undefined}
           onShadeZonePress={(zone) => {
             if (!shouldShowShadowZones) {

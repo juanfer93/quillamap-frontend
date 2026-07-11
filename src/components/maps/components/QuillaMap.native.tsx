@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 import {
   Camera,
@@ -32,12 +32,20 @@ import {
   MAP_3D_PITCH,
   getBuildingsFeatureCollection,
   getCoordinateFeatureCollection,
+  getDestinationFeatureCollection,
   getMapLibreStyle,
   getPlacesFeatureCollection,
-  getRouteFeature,
+  getRouteFeatureCollection,
   getShadeZoneAreasFeatureCollection,
   getShadeZonesFeatureCollection,
   SHADE_MARKER_EMOJI,
+  DESTINATION_MARKER_EMOJI,
+  NAVIGATION_DESTINATION_LAYER_ID,
+  NAVIGATION_DESTINATION_SOURCE_ID,
+  NAVIGATION_ROUTE_HALO_LAYER_ID,
+  NAVIGATION_ROUTE_LAYER_ID,
+  NAVIGATION_ROUTE_LINE_STYLE,
+  NAVIGATION_ROUTE_SOURCE_ID,
 } from '../styles/QuillaMap.maplibre';
 
 const INITIAL_PEDESTRIAN_ZOOM = 16;
@@ -72,6 +80,8 @@ const QuillaMap = ({
   onPlacePress,
   onMapPress,
   selectedCoordinate,
+  destinationCoordinate,
+  navigationControl,
   style,
 }: QuillaMapProps) => {
   const route = getRouteCoordinates(routePoints, center);
@@ -82,7 +92,7 @@ const QuillaMap = ({
   const mapRef = useRef<MapViewRef | null>(null);
   const cameraRef = useRef<CameraRef | null>(null);
   const layerColor = tw.color('map-shade') ?? '#5DA271';
-  const routeColor = tw.color('map-route') ?? '#2F8AC4';
+  const routeColor = NAVIGATION_ROUTE_LINE_STYLE.lineColor;
   const darkGray = tw.color('dark-gray') ?? '#333333';
   const primary = tw.color(PLACES_VISUAL_IDENTITY.sharkBlue.token) ?? PLACES_VISUAL_IDENTITY.sharkBlue.hex;
   const culturalGold = tw.color(PLACES_VISUAL_IDENTITY.sandGold.token) ?? PLACES_VISUAL_IDENTITY.sandGold.hex;
@@ -104,7 +114,8 @@ const QuillaMap = ({
   const lightPlaceMarkerColor = ['case', ['==', ['get', 'source'], 'tourist_site'], culturalGold, primary] as const;
   const placeMarkerColor = isDark ? culturalGold : lightPlaceMarkerColor;
   const zoomLevelRef = useRef(isPedestrian ? INITIAL_PEDESTRIAN_ZOOM : INITIAL_DEFAULT_ZOOM);
-  const routeFeature = getRouteFeature(route);
+  const routeFeature = getRouteFeatureCollection(route);
+  const destinationFeatureCollection = getDestinationFeatureCollection(destinationCoordinate);
   const shadeFeatureCollection = getShadeZonesFeatureCollection(zones);
   const shadeAreaFeatureCollection = getShadeZoneAreasFeatureCollection(zones);
   const draftFeatureCollection = getCoordinateFeatureCollection(
@@ -164,6 +175,19 @@ const QuillaMap = ({
     }
   };
 
+  useEffect(() => {
+    if (route.length < 2) {
+      return;
+    }
+
+    const longitudes = route.map((point) => point.longitude);
+    const latitudes = route.map((point) => point.latitude);
+    const northEast: [number, number] = [Math.max(...longitudes), Math.max(...latitudes)];
+    const southWest: [number, number] = [Math.min(...longitudes), Math.min(...latitudes)];
+
+    cameraRef.current?.fitBounds?.(northEast, southWest, [150, 64, 120, 64], CAMERA_ANIMATION_DURATION_MS);
+  }, [route]);
+
   return (
     <View testID="quillamap-container" style={[tw`flex-1`, style]}>
       <View
@@ -209,15 +233,50 @@ const QuillaMap = ({
           />
           {showUserLocation ? <UserLocation /> : null}
 
-          <ShapeSource id="route-source" shape={routeFeature}>
+          <ShapeSource id={NAVIGATION_ROUTE_SOURCE_ID} shape={routeFeature}>
             <LineLayer
-              id="route-line"
+              id={NAVIGATION_ROUTE_HALO_LAYER_ID}
+              testID="quillamap-native-route-halo"
+              style={{
+                lineColor: NAVIGATION_ROUTE_LINE_STYLE.haloColor,
+                lineWidth: NAVIGATION_ROUTE_LINE_STYLE.haloWidth,
+                lineOpacity: NAVIGATION_ROUTE_LINE_STYLE.haloOpacity,
+                lineCap: NAVIGATION_ROUTE_LINE_STYLE.lineCap,
+                lineJoin: NAVIGATION_ROUTE_LINE_STYLE.lineJoin,
+              }}
+            />
+            <LineLayer
+              id={NAVIGATION_ROUTE_LAYER_ID}
               testID="quillamap-native-route"
               style={{
                 lineColor: routeColor,
-                lineWidth: isPedestrian ? 6 : 4,
-                lineCap: 'round',
-                lineJoin: 'round',
+                lineWidth: NAVIGATION_ROUTE_LINE_STYLE.lineWidth,
+                lineCap: NAVIGATION_ROUTE_LINE_STYLE.lineCap,
+                lineJoin: NAVIGATION_ROUTE_LINE_STYLE.lineJoin,
+              }}
+            />
+          </ShapeSource>
+
+          <ShapeSource id={NAVIGATION_DESTINATION_SOURCE_ID} shape={destinationFeatureCollection}>
+            <CircleLayer
+              id={`${NAVIGATION_DESTINATION_LAYER_ID}-halo`}
+              style={{
+                circleColor: white,
+                circleRadius: 18,
+                circleStrokeColor: primary,
+                circleStrokeWidth: 3,
+              }}
+            />
+            <SymbolLayer
+              id={NAVIGATION_DESTINATION_LAYER_ID}
+              testID="quillamap-native-destination-marker"
+              style={{
+                textField: DESTINATION_MARKER_EMOJI,
+                textFont: ['sans-serif'],
+                textSize: 20,
+                textColor: primary,
+                textAllowOverlap: true,
+                textIgnorePlacement: true,
               }}
             />
           </ShapeSource>
@@ -434,6 +493,7 @@ const QuillaMap = ({
           onToggleCompass={toggleCompass}
           onControlsInteraction={closeSelectedPlace}
           profileTools={profileTools}
+          navigationControl={navigationControl}
         />
         {selectedPlace && canOpenPlaces ? (
           <PlaceInfoBottomSheet

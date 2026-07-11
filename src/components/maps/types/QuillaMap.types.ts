@@ -37,4 +37,9 @@ export interface QuillaMapProps {
   onPlacePress?: (place: PlaceMapFeature) => void;
   onMapPress?: (coordinate: QuillaMapCoordinate) => void;
   selectedCoordinate?: QuillaMapCoordinate | null;
+  destinationCoordinate?: QuillaMapCoordinate | null;
+  navigationControl?: {
+    isActive: boolean;
+    onPress: () => void;
+  };
 }

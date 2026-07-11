@@ -19,6 +19,7 @@ interface ShadowReportMapFlowProps {
   initialShadowZones?: ShadowZone[];
   themeMode?: 'light' | 'dark';
   canReportShadow?: boolean;
+  licensePlate?: string | null;
   onLogout: () => void;
 }
 
@@ -48,6 +49,7 @@ const ShadowReportMapFlow = ({
   initialShadowZones = [],
   themeMode = 'light',
   canReportShadow = false,
+  licensePlate,
   onLogout,
 }: ShadowReportMapFlowProps) => {
   const [selectedCoordinate, setSelectedCoordinate] = useState<PedestrianCoordinates | null>(null);
@@ -177,6 +179,7 @@ const ShadowReportMapFlow = ({
         places={places}
         showHeader={false}
         selectedShadowCoordinate={selectedCoordinate}
+        licensePlate={licensePlate}
         profileTools={(
           <UserToolsMenu
             canReportShadow={isShadowReportingAvailable}

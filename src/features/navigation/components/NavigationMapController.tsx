@@ -1,0 +1,120 @@
+import React, { useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
+import QuillaMap from '@/components/maps/QuillaMap';
+import type {
+  QuillaMapCoordinate,
+  QuillaMapProps,
+  QuillaMapRoutePoint,
+} from '@/components/maps/QuillaMap.types';
+import type { PlaceMapFeature } from '@/types/contracts/places.contract';
+import type { RouteWaypoint } from '@/types/contracts/navigation.contract';
+import { useNavigationStore } from '../store/useNavigationStore';
+import { useRouteNavigation } from '../hooks/useRouteNavigation';
+import { useVelocityGuard } from '../hooks/useVelocityGuard';
+import { getDestinationSuggestions, resolveDestination } from '../utils/destinationSearch';
+import { isNavigationUiLocked } from '../utils/drivingLock';
+import NavigationSearchOverlay from './NavigationSearchOverlay';
+
+interface NavigationMapControllerProps extends Omit<QuillaMapProps, 'routePoints' | 'children'> {
+  children?: ReactNode;
+  licensePlate?: string | null;
+  sensorSpeedKmh?: number;
+}
+
+const toRoutePoints = (geometry: QuillaMapCoordinate[]): QuillaMapRoutePoint[] =>
+  geometry.map((point, index) => ({ ...point, id: `navigation-route-${index}` }));
+
+const toWaypoint = (place: PlaceMapFeature): RouteWaypoint => ({
+  ...place.coordinate,
+  label: place.name.es,
+});
+
+const getQueryLabel = (destination: RouteWaypoint): string =>
+  destination.label ?? `${destination.latitude},${destination.longitude}`;
+
+const NavigationMapController = ({
+  center,
+  mode,
+  places = [],
+  licensePlate,
+  sensorSpeedKmh,
+  children,
+  ...mapProps
+}: NavigationMapControllerProps) => {
+  const { requestRoute } = useRouteNavigation();
+  const { speedKmh } = useVelocityGuard();
+  const activeRoute = useNavigationStore((state) => state.activeRoute);
+  const destination = useNavigationStore((state) => state.destination);
+  const errorMessage = useNavigationStore((state) => state.errorMessage);
+  const isRouting = useNavigationStore((state) => state.isRouting);
+  const remainingDistanceMeters = useNavigationStore((state) => state.remainingDistanceMeters);
+  const failRouting = useNavigationStore((state) => state.failRouting);
+  const [query, setQuery] = useState('');
+  const [isCopilot, setIsCopilot] = useState(false);
+  const [isNavigationPanelOpen, setIsNavigationPanelOpen] = useState(false);
+  const effectiveSpeedKmh = sensorSpeedKmh ?? speedKmh;
+  const hasActiveRoute = Boolean(activeRoute);
+  const isLocked = isNavigationUiLocked(effectiveSpeedKmh, isCopilot, hasActiveRoute);
+  const routePoints = activeRoute ? toRoutePoints(activeRoute.geometry) : undefined;
+  const suggestions = useMemo(
+    () => getDestinationSuggestions(query, places),
+    [places, query]
+  );
+
+  const requestDestinationRoute = async (target: RouteWaypoint) => {
+    setQuery(getQueryLabel(target));
+    await requestRoute({
+      origin: center,
+      destination: target,
+      mode,
+      licensePlate,
+    }).catch(() => undefined);
+  };
+
+  const submitQuery = () => {
+    const target = resolveDestination(query, places);
+    if (!target) {
+      failRouting('Selecciona un destino valido o usa coordenadas lat,lng');
+      return;
+    }
+
+    void requestDestinationRoute(target);
+  };
+
+  return (
+    <QuillaMap
+      {...mapProps}
+      center={center}
+      mode={mode}
+      places={places}
+      routePoints={routePoints}
+      destinationCoordinate={destination}
+      navigationControl={{
+        isActive: isNavigationPanelOpen,
+        onPress: () => setIsNavigationPanelOpen((value) => !value),
+      }}
+    >
+      {children}
+      <NavigationSearchOverlay
+        activeRoute={activeRoute}
+        errorMessage={errorMessage}
+        isOpen={isNavigationPanelOpen}
+        isCopilot={isCopilot}
+        isLocked={isLocked}
+        isRouting={isRouting}
+        query={query}
+        remainingDistanceMeters={remainingDistanceMeters}
+        suggestions={suggestions}
+        onClose={() => setIsNavigationPanelOpen(false)}
+        onCopilotToggle={() => setIsCopilot((value) => !value)}
+        onQueryChange={setQuery}
+        onSelectSuggestion={(place) => {
+          void requestDestinationRoute(toWaypoint(place));
+        }}
+        onSubmit={submitQuery}
+      />
+    </QuillaMap>
+  );
+};
+
+export default NavigationMapController;

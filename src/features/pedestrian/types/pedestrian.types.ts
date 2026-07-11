@@ -12,4 +12,5 @@ export interface PedestrianMapContainerProps {
   onMapPress?: (coordinate: PedestrianCoordinates) => void;
   selectedShadowCoordinate?: PedestrianCoordinates | null;
   profileTools?: ReactNode;
+  licensePlate?: string | null;
 }

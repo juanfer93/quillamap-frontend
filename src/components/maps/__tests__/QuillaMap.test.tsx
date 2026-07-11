@@ -9,6 +9,7 @@ import {
   PLACES_VISUAL_IDENTITY,
   type PlaceMapFeature,
 } from '@/types/contracts/places.contract';
+import { NAVIGATION_VISUAL_IDENTITY } from '@/types/contracts/navigation.contract';
 
 jest.mock('maplibre-gl', () => {
   const mapInstance = {
@@ -356,6 +357,27 @@ describe('QuillaMap', () => {
 
     expect(getByTestId('quillamap-native-zoom-in')).toBeTruthy();
     expect(getByTestId('quillamap-native-zoom-out')).toBeTruthy();
+  });
+
+  it('pinta la ruta activa en rojo y marca el destino en nativo', () => {
+    const destination = { latitude: 11.01902, longitude: -74.82134 };
+    const { getByTestId } = render(
+      <NativeQuillaMap
+        mode="car"
+        center={{ latitude: 10.9878, longitude: -74.7889 }}
+        routePoints={[
+          { id: 'a', latitude: 10.9878, longitude: -74.7889 },
+          { id: 'b', ...destination },
+        ]}
+        destinationCoordinate={destination}
+        showDefaultShadeZones={false}
+      />
+    );
+
+    expect(getByTestId('quillamap-native-route').props.style.lineColor).toBe(
+      NAVIGATION_VISUAL_IDENTITY.activeRoute
+    );
+    expect(getByTestId('quillamap-native-destination-marker')).toBeTruthy();
   });
 
   it('convierte el click web en coordenadas exactas del mapa', () => {

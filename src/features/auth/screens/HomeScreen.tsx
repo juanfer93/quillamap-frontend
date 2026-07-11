@@ -40,6 +40,7 @@ const HomeScreen = () => {
         <ShadowReportMapFlow
           themeMode={mode}
           canReportShadow={canReportShadow}
+          licensePlate={user?.license_plate}
           onLogout={() => {
             void handleLogout();
           }}
@@ -53,6 +54,7 @@ const HomeScreen = () => {
       <PlacesMapContainer
         mode={mapMode}
         themeMode={mode}
+        licensePlate={user?.license_plate}
         onLogout={() => {
           void handleLogout();
         }}

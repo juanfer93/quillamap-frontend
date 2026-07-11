@@ -16,8 +16,8 @@ export const getRouteCoordinates = (
   routePoints: QuillaMapRoutePoint[] | undefined,
   center: QuillaMapCoordinate
 ): QuillaMapCoordinate[] => {
-  const points = routePoints && routePoints.length > 1 ? routePoints : defaultPedestrianRoute;
-  return points.length > 1 ? points : [center];
+  const points = routePoints && routePoints.length > 1 ? routePoints : [];
+  return points.length > 1 ? points : [];
 };
 
 export const getVisibleShadeZones = (

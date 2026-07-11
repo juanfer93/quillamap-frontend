@@ -37,6 +37,10 @@ interface QuillaMapControlsProps {
   onToggleCompass: () => void;
   onControlsInteraction?: () => void;
   profileTools?: ReactNode;
+  navigationControl?: {
+    isActive: boolean;
+    onPress: () => void;
+  };
 }
 
 const MapIcon = Ionicons as React.ComponentType<MapIconProps>;
@@ -66,6 +70,7 @@ const QuillaMapControls = ({
   onToggleCompass,
   onControlsInteraction,
   profileTools,
+  navigationControl,
 }: QuillaMapControlsProps) => {
   const isPedestrian = mode === 'pedestrian';
   const searchSurfaceStyle = {
@@ -229,7 +234,22 @@ const QuillaMapControls = ({
       >
         {isPedestrian ? <View style={[tw`absolute top-xs w-10 h-1 rounded-xl`, { backgroundColor: controlBorder }]} /> : null}
         <MapIcon name="walk" size={isPedestrian ? 21 : 20} color={isDark ? controlText : mapRoute} />
-        <MapIcon name={isPedestrian ? 'footsteps-outline' : 'location-outline'} size={isPedestrian ? 21 : 20} color={controlText} />
+        <Pressable
+          testID="quillamap-navigation-tab"
+          accessibilityRole="button"
+          accessibilityLabel="Abrir navegacion"
+          onPress={() => runControlAction(navigationControl?.onPress)}
+          style={[
+            tw`w-10 h-10 rounded-xl items-center justify-center`,
+            navigationControl?.isActive ? { backgroundColor: `${primary}18` } : null,
+          ]}
+        >
+          <MapIcon
+            name={isPedestrian ? 'footsteps-outline' : 'location-outline'}
+            size={isPedestrian ? 21 : 20}
+            color={navigationControl?.isActive ? primary : controlText}
+          />
+        </Pressable>
         <MapIcon name={isPedestrian ? 'bookmark' : 'bookmark-outline'} size={20} color={controlText} />
         <View
           testID="quillamap-profile-tools-slot"

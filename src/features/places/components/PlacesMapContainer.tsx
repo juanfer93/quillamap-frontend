@@ -1,8 +1,8 @@
 import React from 'react';
 import { View } from 'react-native';
 import tw from '@/lib/tailwind';
-import QuillaMap from '@/components/maps/QuillaMap';
 import UserToolsMenu from '@/features/navigation/components/UserToolsMenu';
+import NavigationMapController from '@/features/navigation/components/NavigationMapController';
 import { useLocationPermissions } from '@/features/navigation/hooks/useLocationPermissions';
 import { DEFAULT_PEDESTRIAN_CENTER } from '@/features/pedestrian/schemas/pedestrian.schema';
 import { usePlaces } from '../hooks/usePlaces';
@@ -10,10 +10,11 @@ import { usePlaces } from '../hooks/usePlaces';
 interface PlacesMapContainerProps {
   mode: 'tourist' | 'car' | 'motorcycle';
   themeMode?: 'light' | 'dark';
+  licensePlate?: string | null;
   onLogout: () => void;
 }
 
-const PlacesMapContainer = ({ mode, themeMode = 'light', onLogout }: PlacesMapContainerProps) => {
+const PlacesMapContainer = ({ mode, themeMode = 'light', licensePlate, onLogout }: PlacesMapContainerProps) => {
   const { currentLocation } = useLocationPermissions();
   const center = currentLocation ?? DEFAULT_PEDESTRIAN_CENTER;
   const { places } = usePlaces({
@@ -25,12 +26,13 @@ const PlacesMapContainer = ({ mode, themeMode = 'light', onLogout }: PlacesMapCo
 
   return (
     <View testID="places-map-container" style={tw`flex-1 bg-surface-light dark:bg-charcoal`}>
-      <QuillaMap
+      <NavigationMapController
         mode={mode}
         themeMode={themeMode}
         center={center}
         showDefaultShadeZones={false}
         places={places}
+        licensePlate={licensePlate}
         profileTools={(
           <UserToolsMenu
             canReportShadow={false}

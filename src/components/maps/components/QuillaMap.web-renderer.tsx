@@ -26,12 +26,20 @@ import {
   DARK_MAP_THEME,
   MAP_3D_PITCH,
   getBuildingsFeatureCollection,
+  getDestinationFeatureCollection,
   getMapLibreStyle,
   getPlacesFeatureCollection,
-  getRouteFeature,
+  getRouteFeatureCollection,
   getShadeZoneAreasFeatureCollection,
   getShadeZonesFeatureCollection,
   SHADE_MARKER_EMOJI,
+  DESTINATION_MARKER_EMOJI,
+  NAVIGATION_DESTINATION_LAYER_ID,
+  NAVIGATION_DESTINATION_SOURCE_ID,
+  NAVIGATION_ROUTE_HALO_LAYER_ID,
+  NAVIGATION_ROUTE_LAYER_ID,
+  NAVIGATION_ROUTE_LINE_STYLE,
+  NAVIGATION_ROUTE_SOURCE_ID,
 } from '../styles/QuillaMap.maplibre';
 
 const MapIcon = Ionicons as React.ComponentType<MapIconProps>;
@@ -123,6 +131,8 @@ const QuillaMapWebRenderer = ({
   onPlacePress,
   onMapPress,
   selectedCoordinate,
+  destinationCoordinate,
+  navigationControl,
   style,
 }: QuillaMapProps) => {
   const mapHostRef = useRef<View | null>(null);
@@ -147,7 +157,7 @@ const QuillaMapWebRenderer = ({
   const [cameraBearing, setCameraBearing] = useState<number>(0);
   const [selectedPlace, setSelectedPlace] = useState<PlaceMapFeature | null>(null);
   const mapShade = tokenColor('map-shade', '#5DA271');
-  const mapRoute = tokenColor('map-route', '#2F8AC4');
+  const mapRoute = NAVIGATION_ROUTE_LINE_STYLE.lineColor;
   const primary = tokenColor(PLACES_VISUAL_IDENTITY.sharkBlue.token, PLACES_VISUAL_IDENTITY.sharkBlue.hex);
   const darkGray = tokenColor('dark-gray', '#333333');
   const culturalGold = tokenColor(PLACES_VISUAL_IDENTITY.sandGold.token, PLACES_VISUAL_IDENTITY.sandGold.hex);
@@ -159,7 +169,11 @@ const QuillaMapWebRenderer = ({
   const controlBackground = isDark ? DARK_MAP_THEME.controlBackground : white;
   const controlText = isDark ? DARK_MAP_THEME.controlText : darkGray;
   const controlBorder = isDark ? DARK_MAP_THEME.controlBorder : tokenColor('medium-gray', '#E0E0E0');
-  const routeFeature = useMemo(() => getRouteFeature(route), [route]);
+  const routeFeature = useMemo(() => getRouteFeatureCollection(route), [route]);
+  const destinationFeatureCollection = useMemo(
+    () => getDestinationFeatureCollection(destinationCoordinate),
+    [destinationCoordinate]
+  );
   const shadeFeatureCollection = useMemo(() => getShadeZonesFeatureCollection(zones), [zones]);
   const shadeAreaFeatureCollection = useMemo(() => getShadeZoneAreasFeatureCollection(zones), [zones]);
   const placesFeatureCollection = useMemo(() => getPlacesFeatureCollection(visiblePlaces), [visiblePlaces]);
@@ -329,7 +343,8 @@ const QuillaMapWebRenderer = ({
     };
 
     const applyLayers = () => {
-      upsertGeoJsonSource(map, 'route-source', routeFeature);
+      upsertGeoJsonSource(map, NAVIGATION_ROUTE_SOURCE_ID, routeFeature);
+      upsertGeoJsonSource(map, NAVIGATION_DESTINATION_SOURCE_ID, destinationFeatureCollection);
       upsertGeoJsonSource(map, 'buildings-source', buildingsFeatureCollection);
       upsertGeoJsonSource(map, 'places-source', placesFeatureCollection);
       upsertGeoJsonSource(map, 'shade-zones-source', shadeFeatureCollection);
@@ -367,21 +382,68 @@ const QuillaMapWebRenderer = ({
       map.setLayoutProperty('places-buildings', 'visibility', is3D ? 'visible' : 'none');
       map.setLayoutProperty('places-building-outline', 'visibility', is3D ? 'visible' : 'none');
 
-      addLayerIfMissing('route-line', {
-        id: 'route-line',
+      addLayerIfMissing(NAVIGATION_ROUTE_HALO_LAYER_ID, {
+        id: NAVIGATION_ROUTE_HALO_LAYER_ID,
         type: 'line',
-        source: 'route-source',
+        source: NAVIGATION_ROUTE_SOURCE_ID,
         paint: {
-          'line-color': mapRoute,
-          'line-width': isPedestrian ? 6 : 4,
+          'line-color': NAVIGATION_ROUTE_LINE_STYLE.haloColor,
+          'line-width': NAVIGATION_ROUTE_LINE_STYLE.haloWidth,
+          'line-opacity': NAVIGATION_ROUTE_LINE_STYLE.haloOpacity,
         },
         layout: {
-          'line-cap': 'round',
-          'line-join': 'round',
+          'line-cap': NAVIGATION_ROUTE_LINE_STYLE.lineCap,
+          'line-join': NAVIGATION_ROUTE_LINE_STYLE.lineJoin,
         },
       });
-      map.setPaintProperty('route-line', 'line-color', mapRoute);
-      map.setPaintProperty('route-line', 'line-width', isPedestrian ? 6 : 4);
+      map.setPaintProperty(NAVIGATION_ROUTE_HALO_LAYER_ID, 'line-color', NAVIGATION_ROUTE_LINE_STYLE.haloColor);
+      map.setPaintProperty(NAVIGATION_ROUTE_HALO_LAYER_ID, 'line-width', NAVIGATION_ROUTE_LINE_STYLE.haloWidth);
+      map.setPaintProperty(NAVIGATION_ROUTE_HALO_LAYER_ID, 'line-opacity', NAVIGATION_ROUTE_LINE_STYLE.haloOpacity);
+
+      addLayerIfMissing(NAVIGATION_ROUTE_LAYER_ID, {
+        id: NAVIGATION_ROUTE_LAYER_ID,
+        type: 'line',
+        source: NAVIGATION_ROUTE_SOURCE_ID,
+        paint: {
+          'line-color': mapRoute,
+          'line-width': NAVIGATION_ROUTE_LINE_STYLE.lineWidth,
+        },
+        layout: {
+          'line-cap': NAVIGATION_ROUTE_LINE_STYLE.lineCap,
+          'line-join': NAVIGATION_ROUTE_LINE_STYLE.lineJoin,
+        },
+      });
+      map.setPaintProperty(NAVIGATION_ROUTE_LAYER_ID, 'line-color', mapRoute);
+      map.setPaintProperty(NAVIGATION_ROUTE_LAYER_ID, 'line-width', NAVIGATION_ROUTE_LINE_STYLE.lineWidth);
+
+      addLayerIfMissing(`${NAVIGATION_DESTINATION_LAYER_ID}-halo`, {
+        id: `${NAVIGATION_DESTINATION_LAYER_ID}-halo`,
+        type: 'circle',
+        source: NAVIGATION_DESTINATION_SOURCE_ID,
+        paint: {
+          'circle-color': white,
+          'circle-radius': 18,
+          'circle-stroke-color': primary,
+          'circle-stroke-width': 3,
+        },
+      });
+      addLayerIfMissing(NAVIGATION_DESTINATION_LAYER_ID, {
+        id: NAVIGATION_DESTINATION_LAYER_ID,
+        type: 'symbol',
+        source: NAVIGATION_DESTINATION_SOURCE_ID,
+        layout: {
+          'text-field': DESTINATION_MARKER_EMOJI,
+          'text-font': ['Open Sans Regular'],
+          'text-size': 20,
+          'text-allow-overlap': true,
+          'text-ignore-placement': true,
+        },
+        paint: {
+          'text-color': primary,
+          'text-halo-color': white,
+          'text-halo-width': 1,
+        },
+      });
 
       addLayerIfMissing('shade-zone-areas', {
         id: 'shade-zone-areas',
@@ -473,8 +535,8 @@ const QuillaMapWebRenderer = ({
     };
   }, [
     buildingsFeatureCollection,
+    destinationFeatureCollection,
     is3D,
-    isPedestrian,
     mapRoute,
     mapShade,
     mapStyle,
@@ -484,6 +546,23 @@ const QuillaMapWebRenderer = ({
     shadeFeatureCollection,
     shadeMarkerColor,
   ]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || route.length < 2) {
+      return;
+    }
+
+    const longitudes = route.map((point) => point.longitude);
+    const latitudes = route.map((point) => point.latitude);
+    const southWest: [number, number] = [Math.min(...longitudes), Math.min(...latitudes)];
+    const northEast: [number, number] = [Math.max(...longitudes), Math.max(...latitudes)];
+
+    map.fitBounds([southWest, northEast], {
+      padding: { top: 150, bottom: 120, left: 64, right: 64 },
+      duration: CAMERA_ANIMATION_DURATION_MS,
+    });
+  }, [route]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -600,6 +679,12 @@ const QuillaMapWebRenderer = ({
           style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }}
         />
       ) : null}
+      {destinationCoordinate ? (
+        <View
+          testID="quillamap-web-destination-marker"
+          style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }}
+        />
+      ) : null}
       {is3D ? buildingsFeatureCollection.features.map((feature) => (
         <View
           key={String(feature.id)}
@@ -678,6 +763,7 @@ const QuillaMapWebRenderer = ({
           onToggleCompass={toggleCompass}
           onControlsInteraction={closeSelectedPlace}
           profileTools={profileTools}
+          navigationControl={navigationControl}
         />
 
         {children}
