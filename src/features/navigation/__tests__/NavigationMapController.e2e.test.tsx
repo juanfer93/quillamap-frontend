@@ -31,7 +31,12 @@ jest.mock('@/components/maps/QuillaMap', () => {
   }: {
     children?: React.ReactNode;
     destinationCoordinate?: unknown;
-    navigationControl?: { isActive: boolean; onPress: () => void };
+    navigationControl?: {
+      hasActiveRoute?: boolean;
+      isActive: boolean;
+      onCancel?: () => void;
+      onPress: () => void;
+    };
     routePoints?: unknown[];
   }) => ReactMock.createElement(
     MockView,
@@ -46,6 +51,15 @@ jest.mock('@/components/maps/QuillaMap', () => {
         testID: 'quillamap-navigation-tab',
         isActive: navigationControl?.isActive,
         onPress: navigationControl?.onPress,
+      },
+      null
+    ),
+    ReactMock.createElement(
+      MockPressable,
+      {
+        testID: 'quillamap-navigation-cancel',
+        hasActiveRoute: navigationControl?.hasActiveRoute,
+        onPress: navigationControl?.onCancel,
       },
       null
     ),
@@ -134,5 +148,32 @@ describe('NavigationMapController', () => {
     expect(getByTestId('navigation-route-error').props.children).toBe(
       'Selecciona un destino valido o usa coordenadas lat,lng'
     );
+  });
+
+  it('cancela el GPS activo y devuelve el mapa a su estado normal', async () => {
+    const { getByTestId, queryByTestId } = render(
+      <NavigationMapController
+        mode="pedestrian"
+        center={center}
+        places={places}
+      />
+    );
+
+    fireEvent.press(getByTestId('quillamap-navigation-tab'));
+    fireEvent.changeText(getByTestId('navigation-destination-input'), '11.019,-74.8213');
+    fireEvent.press(getByTestId('navigation-route-submit'));
+
+    await waitFor(() => {
+      expect(getByTestId('mock-quillamap').props.routePoints).toHaveLength(2);
+      expect(getByTestId('quillamap-navigation-cancel').props.hasActiveRoute).toBe(true);
+    });
+
+    fireEvent.press(getByTestId('quillamap-navigation-cancel'));
+
+    await waitFor(() => {
+      expect(getByTestId('mock-quillamap').props.routePoints).toBeUndefined();
+      expect(getByTestId('mock-quillamap').props.destinationCoordinate).toBeNull();
+      expect(queryByTestId('navigation-search-panel')).toBeNull();
+    });
   });
 });

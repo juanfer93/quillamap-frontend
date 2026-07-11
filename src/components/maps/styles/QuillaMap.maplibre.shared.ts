@@ -84,6 +84,8 @@ export const NAVIGATION_ROUTE_HALO_LAYER_ID = 'route-line-halo';
 export const NAVIGATION_ROUTE_LAYER_ID = 'route-line';
 export const NAVIGATION_DESTINATION_SOURCE_ID = 'navigation-destination-source';
 export const NAVIGATION_DESTINATION_LAYER_ID = 'navigation-destination-marker';
+export const USER_LOCATION_SOURCE_ID = 'user-location-source';
+export const USER_LOCATION_LAYER_ID = 'user-location-dot';
 export const NAVIGATION_ROUTE_LINE_STYLE = {
   lineColor: NAVIGATION_VISUAL_IDENTITY.activeRoute,
   haloColor: '#FFFFFF',
@@ -234,6 +236,10 @@ export const getCoordinateFeatureCollection = (
 export const getDestinationFeatureCollection = (
   coordinate: QuillaMapCoordinate | null | undefined
 ) => getCoordinateFeatureCollection(coordinate, 'navigation-destination');
+
+export const getUserLocationFeatureCollection = (
+  coordinate: QuillaMapCoordinate | null | undefined
+) => getCoordinateFeatureCollection(coordinate, 'user-location');
 
 export const getPlacesFeatureCollection = (places: PlaceMapFeature[]) => ({
   type: 'FeatureCollection' as const,

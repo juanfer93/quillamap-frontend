@@ -38,7 +38,9 @@ interface QuillaMapControlsProps {
   onControlsInteraction?: () => void;
   profileTools?: ReactNode;
   navigationControl?: {
+    hasActiveRoute?: boolean;
     isActive: boolean;
+    onCancel?: () => void;
     onPress: () => void;
   };
 }
@@ -89,6 +91,7 @@ const QuillaMapControls = ({
     onControlsInteraction?.();
     action?.();
   };
+  const canCancelNavigation = Boolean(navigationControl?.hasActiveRoute && navigationControl.onCancel);
 
   return (
     <>
@@ -109,7 +112,19 @@ const QuillaMapControls = ({
             Buscar ruta fresca
           </Text>
         )}
-        <MapIcon name="close" size={18} color={controlText} />
+        <Pressable
+          testID="quillamap-navigation-cancel"
+          accessibilityRole="button"
+          accessibilityLabel="Cancelar navegacion GPS"
+          disabled={!canCancelNavigation}
+          onPress={() => runControlAction(navigationControl?.onCancel)}
+          style={[
+            tw`w-8 h-8 rounded-s items-center justify-center`,
+            canCancelNavigation ? { backgroundColor: `${mapRoute}14` } : null,
+          ]}
+        >
+          <MapIcon name="close" size={18} color={canCancelNavigation ? mapRoute : controlText} />
+        </Pressable>
       </View>
 
       <QuillaMapPerspectiveToggle

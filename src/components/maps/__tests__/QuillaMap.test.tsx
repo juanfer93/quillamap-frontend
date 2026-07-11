@@ -333,6 +333,31 @@ describe('QuillaMap', () => {
     expect(compassStyle.height).toBe(36);
   });
 
+  it('pinta el punto de ubicacion actual en web y nativo', () => {
+    const center = { latitude: 10.9878, longitude: -74.7889 };
+    const web = render(
+      <WebQuillaMap
+        mode="pedestrian"
+        center={center}
+        shadeZones={[]}
+      />
+    );
+    const native = render(
+      <NativeQuillaMap
+        mode="pedestrian"
+        center={center}
+        shadeZones={[]}
+      />
+    );
+
+    expect(web.getByTestId('quillamap-web-user-location-dot')).toBeTruthy();
+    expect(native.getByTestId('quillamap-native-user-location-source').props.shape.features[0].geometry.coordinates).toEqual([
+      center.longitude,
+      center.latitude,
+    ]);
+    expect(native.getByTestId('quillamap-native-user-location-dot').props.style.circleRadius).toBe(4);
+  });
+
   it('aplica estilo oscuro al mapa nativo cuando el tema es oscuro', () => {
     const sandGold = tw.color(PLACES_VISUAL_IDENTITY.sandGold.token) ?? PLACES_VISUAL_IDENTITY.sandGold.hex;
     const { getByTestId, getByText, queryByTestId } = render(

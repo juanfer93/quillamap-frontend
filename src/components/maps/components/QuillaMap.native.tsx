@@ -38,6 +38,7 @@ import {
   getRouteFeatureCollection,
   getShadeZoneAreasFeatureCollection,
   getShadeZonesFeatureCollection,
+  getUserLocationFeatureCollection,
   SHADE_MARKER_EMOJI,
   DESTINATION_MARKER_EMOJI,
   NAVIGATION_DESTINATION_LAYER_ID,
@@ -46,6 +47,8 @@ import {
   NAVIGATION_ROUTE_LAYER_ID,
   NAVIGATION_ROUTE_LINE_STYLE,
   NAVIGATION_ROUTE_SOURCE_ID,
+  USER_LOCATION_LAYER_ID,
+  USER_LOCATION_SOURCE_ID,
 } from '../styles/QuillaMap.maplibre';
 
 const INITIAL_PEDESTRIAN_ZOOM = 16;
@@ -115,6 +118,7 @@ const QuillaMap = ({
   const placeMarkerColor = isDark ? culturalGold : lightPlaceMarkerColor;
   const zoomLevelRef = useRef(isPedestrian ? INITIAL_PEDESTRIAN_ZOOM : INITIAL_DEFAULT_ZOOM);
   const routeFeature = getRouteFeatureCollection(route);
+  const userLocationFeatureCollection = getUserLocationFeatureCollection(showUserLocation ? center : null);
   const destinationFeatureCollection = getDestinationFeatureCollection(destinationCoordinate);
   const shadeFeatureCollection = getShadeZonesFeatureCollection(zones);
   const shadeAreaFeatureCollection = getShadeZoneAreasFeatureCollection(zones);
@@ -232,6 +236,33 @@ const QuillaMap = ({
             zoomLevel={zoomLevelRef.current}
           />
           {showUserLocation ? <UserLocation /> : null}
+
+          <ShapeSource
+            id={USER_LOCATION_SOURCE_ID}
+            testID="quillamap-native-user-location-source"
+            shape={userLocationFeatureCollection}
+          >
+            <CircleLayer
+              id={`${USER_LOCATION_LAYER_ID}-halo`}
+              testID="quillamap-native-user-location-halo"
+              style={{
+                circleColor: white,
+                circleRadius: 9,
+                circleOpacity: 0.95,
+                circleStrokeColor: primary,
+                circleStrokeWidth: 2,
+              }}
+            />
+            <CircleLayer
+              id={USER_LOCATION_LAYER_ID}
+              testID="quillamap-native-user-location-dot"
+              style={{
+                circleColor: primary,
+                circleRadius: 4,
+                circleOpacity: 1,
+              }}
+            />
+          </ShapeSource>
 
           <ShapeSource id={NAVIGATION_ROUTE_SOURCE_ID} shape={routeFeature}>
             <LineLayer

@@ -39,7 +39,9 @@ export interface QuillaMapProps {
   selectedCoordinate?: QuillaMapCoordinate | null;
   destinationCoordinate?: QuillaMapCoordinate | null;
   navigationControl?: {
+    hasActiveRoute?: boolean;
     isActive: boolean;
+    onCancel?: () => void;
     onPress: () => void;
   };
 }

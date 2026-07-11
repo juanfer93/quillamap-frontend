@@ -32,6 +32,7 @@ import {
   getRouteFeatureCollection,
   getShadeZoneAreasFeatureCollection,
   getShadeZonesFeatureCollection,
+  getUserLocationFeatureCollection,
   SHADE_MARKER_EMOJI,
   DESTINATION_MARKER_EMOJI,
   NAVIGATION_DESTINATION_LAYER_ID,
@@ -40,6 +41,8 @@ import {
   NAVIGATION_ROUTE_LAYER_ID,
   NAVIGATION_ROUTE_LINE_STYLE,
   NAVIGATION_ROUTE_SOURCE_ID,
+  USER_LOCATION_LAYER_ID,
+  USER_LOCATION_SOURCE_ID,
 } from '../styles/QuillaMap.maplibre';
 
 const MapIcon = Ionicons as React.ComponentType<MapIconProps>;
@@ -125,6 +128,7 @@ const QuillaMapWebRenderer = ({
   places,
   showDefaultShadeZones,
   routePoints,
+  showUserLocation = true,
   children,
   profileTools,
   onShadeZonePress,
@@ -170,6 +174,10 @@ const QuillaMapWebRenderer = ({
   const controlText = isDark ? DARK_MAP_THEME.controlText : darkGray;
   const controlBorder = isDark ? DARK_MAP_THEME.controlBorder : tokenColor('medium-gray', '#E0E0E0');
   const routeFeature = useMemo(() => getRouteFeatureCollection(route), [route]);
+  const userLocationFeatureCollection = useMemo(
+    () => getUserLocationFeatureCollection(showUserLocation ? center : null),
+    [center, showUserLocation]
+  );
   const destinationFeatureCollection = useMemo(
     () => getDestinationFeatureCollection(destinationCoordinate),
     [destinationCoordinate]
@@ -344,6 +352,7 @@ const QuillaMapWebRenderer = ({
 
     const applyLayers = () => {
       upsertGeoJsonSource(map, NAVIGATION_ROUTE_SOURCE_ID, routeFeature);
+      upsertGeoJsonSource(map, USER_LOCATION_SOURCE_ID, userLocationFeatureCollection);
       upsertGeoJsonSource(map, NAVIGATION_DESTINATION_SOURCE_ID, destinationFeatureCollection);
       upsertGeoJsonSource(map, 'buildings-source', buildingsFeatureCollection);
       upsertGeoJsonSource(map, 'places-source', placesFeatureCollection);
@@ -415,6 +424,29 @@ const QuillaMapWebRenderer = ({
       });
       map.setPaintProperty(NAVIGATION_ROUTE_LAYER_ID, 'line-color', mapRoute);
       map.setPaintProperty(NAVIGATION_ROUTE_LAYER_ID, 'line-width', NAVIGATION_ROUTE_LINE_STYLE.lineWidth);
+
+      addLayerIfMissing(`${USER_LOCATION_LAYER_ID}-halo`, {
+        id: `${USER_LOCATION_LAYER_ID}-halo`,
+        type: 'circle',
+        source: USER_LOCATION_SOURCE_ID,
+        paint: {
+          'circle-color': white,
+          'circle-radius': 9,
+          'circle-opacity': 0.95,
+          'circle-stroke-color': primary,
+          'circle-stroke-width': 2,
+        },
+      });
+      addLayerIfMissing(USER_LOCATION_LAYER_ID, {
+        id: USER_LOCATION_LAYER_ID,
+        type: 'circle',
+        source: USER_LOCATION_SOURCE_ID,
+        paint: {
+          'circle-color': primary,
+          'circle-radius': 4,
+          'circle-opacity': 1,
+        },
+      });
 
       addLayerIfMissing(`${NAVIGATION_DESTINATION_LAYER_ID}-halo`, {
         id: `${NAVIGATION_DESTINATION_LAYER_ID}-halo`,
@@ -545,6 +577,7 @@ const QuillaMapWebRenderer = ({
     shadeAreaFeatureCollection,
     shadeFeatureCollection,
     shadeMarkerColor,
+    userLocationFeatureCollection,
   ]);
 
   useEffect(() => {
@@ -682,6 +715,12 @@ const QuillaMapWebRenderer = ({
       {destinationCoordinate ? (
         <View
           testID="quillamap-web-destination-marker"
+          style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }}
+        />
+      ) : null}
+      {showUserLocation ? (
+        <View
+          testID="quillamap-web-user-location-dot"
           style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }}
         />
       ) : null}

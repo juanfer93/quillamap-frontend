@@ -48,6 +48,7 @@ const NavigationMapController = ({
   const errorMessage = useNavigationStore((state) => state.errorMessage);
   const isRouting = useNavigationStore((state) => state.isRouting);
   const remainingDistanceMeters = useNavigationStore((state) => state.remainingDistanceMeters);
+  const clearRoute = useNavigationStore((state) => state.clearRoute);
   const failRouting = useNavigationStore((state) => state.failRouting);
   const [query, setQuery] = useState('');
   const [isCopilot, setIsCopilot] = useState(false);
@@ -81,6 +82,12 @@ const NavigationMapController = ({
     void requestDestinationRoute(target);
   };
 
+  const cancelNavigation = () => {
+    clearRoute();
+    setQuery('');
+    setIsNavigationPanelOpen(false);
+  };
+
   return (
     <QuillaMap
       {...mapProps}
@@ -90,7 +97,9 @@ const NavigationMapController = ({
       routePoints={routePoints}
       destinationCoordinate={destination}
       navigationControl={{
+        hasActiveRoute,
         isActive: isNavigationPanelOpen,
+        onCancel: cancelNavigation,
         onPress: () => setIsNavigationPanelOpen((value) => !value),
       }}
     >
