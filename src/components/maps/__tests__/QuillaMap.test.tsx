@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import tw from '@/lib/tailwind';
 import WebQuillaMap from '../components/QuillaMap.web-renderer';
@@ -316,6 +316,21 @@ describe('QuillaMap', () => {
 
     expect(web.queryByTestId('place-bottom-sheet')).toBeNull();
     expect(native.queryByTestId('place-bottom-sheet')).toBeNull();
+  });
+
+  it('mantiene compacto el control de orientacion bajo el toggle 2D', () => {
+    const { getByTestId } = render(
+      <WebQuillaMap
+        mode="pedestrian"
+        center={{ latitude: 10.9878, longitude: -74.7889 }}
+        shadeZones={shadeZones}
+      />
+    );
+
+    const compassStyle = StyleSheet.flatten(getByTestId('quillamap-web-compass-toggle').props.style);
+
+    expect(compassStyle.width).toBe(36);
+    expect(compassStyle.height).toBe(36);
   });
 
   it('aplica estilo oscuro al mapa nativo cuando el tema es oscuro', () => {

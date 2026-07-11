@@ -147,25 +147,25 @@ const QuillaMapControls = ({
         accessibilityLabel="Cambiar orientacion cardinal del mapa"
         onPress={() => runControlAction(onToggleCompass)}
         style={[
-          tw`absolute right-m top-28 w-11 h-11 rounded-xl border items-center justify-center`,
+          tw`absolute right-m top-24 w-9 h-9 rounded-lg border items-center justify-center`,
           buttonSurfaceStyle,
         ]}
       >
         <View style={tw`absolute inset-0 items-center justify-center`}>
-          <Text style={{ position: 'absolute', top: 2, color: compassAccent, fontSize: 9, fontWeight: '900', lineHeight: 10 }}>
+          <Text style={{ position: 'absolute', top: 1, color: compassAccent, fontSize: 7, fontWeight: '900', lineHeight: 8 }}>
             N
           </Text>
-          <Text style={{ position: 'absolute', bottom: 2, color: controlText, fontSize: 8, fontWeight: '800', lineHeight: 9 }}>
+          <Text style={{ position: 'absolute', bottom: 1, color: controlText, fontSize: 7, fontWeight: '800', lineHeight: 8 }}>
             S
           </Text>
-          <Text style={{ position: 'absolute', right: 4, color: controlText, fontSize: 8, fontWeight: '800', lineHeight: 9 }}>
+          <Text style={{ position: 'absolute', right: 3, color: controlText, fontSize: 7, fontWeight: '800', lineHeight: 8 }}>
             E
           </Text>
-          <Text style={{ position: 'absolute', left: 4, color: controlText, fontSize: 8, fontWeight: '800', lineHeight: 9 }}>
+          <Text style={{ position: 'absolute', left: 3, color: controlText, fontSize: 7, fontWeight: '800', lineHeight: 8 }}>
             O
           </Text>
           <View style={{ transform: [{ rotate: `${compassBearing}deg` }] }}>
-            <MapIcon name="arrow-up" size={14} color={compassAccent} />
+            <MapIcon name="arrow-up" size={11} color={compassAccent} />
           </View>
         </View>
       </Pressable>
