@@ -30,7 +30,6 @@ services:
     command: sh -lc "if [ ! -d node_modules/.bin ]; then npm ci; fi; npx expo start --web --port 8082 --clear"
     environment:
       NODE_ENV: development
-      CI: "1"
       EXPO_PUBLIC_API_URL: http://192.168.1.26:3000/api
       CHOKIDAR_USEPOLLING: "true"
       WATCHPACK_POLLING: "true"
@@ -38,9 +37,6 @@ services:
       - "host.docker.internal:host-gateway"
     ports:
       - "8082:8082"
-      - "19000:19000"
-      - "19001:19001"
-      - "19002:19002"
     volumes:
       - .:/workspace/frontend
       - frontend_node_modules:/workspace/frontend/node_modules

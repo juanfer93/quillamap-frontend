@@ -15,13 +15,21 @@ This development compose file runs the local frontend and sibling backend in con
 - Existing OSRM driving container listening on host port `5000`.
 - Existing OSRM walking container listening on host port `5001`.
 - Backend env file at `C:\dev\quillamap-backend\.env`.
+- Local Compose env file at `C:\dev\quillamap-frontend\docker-compose.dev.env`.
 - Frontend env file may keep `EXPO_PUBLIC_API_URL=http://192.168.1.26:3000/api`.
 
 Do not put provider API keys in frontend env files. The backend reads its own `.env` through `env_file`.
+The frontend container runs the same web flow you normally use locally: `npx expo start --web --port 8082 --clear`. It exposes only the web port `8082`; Expo Go/mobile ports are intentionally not part of this Docker dev setup. Watch/reload mode stays enabled for normal frontend development.
 
 ## Commands
 
 From `C:\dev\quillamap-frontend`:
+
+Create the local Compose env file once if it does not exist:
+
+```powershell
+Copy-Item docker-compose.dev.env.example docker-compose.dev.env
+```
 
 ```powershell
 npm.cmd run docker:dev
@@ -61,3 +69,5 @@ docker compose --env-file docker-compose.dev.env -f docker-compose.dev.yml up
 ## Notes
 
 The compose file uses named Docker volumes for `node_modules`, so Linux container dependencies do not overwrite Windows host dependencies. The first run installs dependencies inside those volumes and can take a few minutes.
+
+Open the frontend in the browser at `http://192.168.1.26:8082`. This Docker flow is for Expo Web; use the native Expo/Android commands outside Docker only when you specifically want to test native behavior.
