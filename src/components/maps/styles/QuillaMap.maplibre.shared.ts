@@ -78,12 +78,15 @@ export const getMapLibreStyle = (themeMode: 'light' | 'dark' = 'light'): StyleSp
 
 export const SHADE_MARKER_EMOJI = '\u2602';
 export const DESTINATION_MARKER_EMOJI = '\u25CE';
+export const NAVIGATION_ARROW_MARKER = '\u25B2';
 export const MAP_3D_PITCH = 62;
 export const NAVIGATION_ROUTE_SOURCE_ID = 'route-source';
 export const NAVIGATION_ROUTE_HALO_LAYER_ID = 'route-line-halo';
 export const NAVIGATION_ROUTE_LAYER_ID = 'route-line';
 export const NAVIGATION_DESTINATION_SOURCE_ID = 'navigation-destination-source';
 export const NAVIGATION_DESTINATION_LAYER_ID = 'navigation-destination-marker';
+export const NAVIGATION_ARROW_SOURCE_ID = 'navigation-arrow-source';
+export const NAVIGATION_ARROW_LAYER_ID = 'navigation-arrow-marker';
 export const USER_LOCATION_SOURCE_ID = 'user-location-source';
 export const USER_LOCATION_LAYER_ID = 'user-location-dot';
 export const NAVIGATION_ROUTE_LINE_STYLE = {
@@ -110,6 +113,7 @@ const PLACE_FOOTPRINT_DELTA = {
 
 const toRadians = (value: number): number => (value * Math.PI) / 180;
 const toDegrees = (value: number): number => (value * 180) / Math.PI;
+const normalizeDegrees = (value: number): number => ((value % 360) + 360) % 360;
 
 const pointGeometry = (coordinate: QuillaMapCoordinate) => ({
   type: 'Point' as const,
@@ -240,6 +244,46 @@ export const getDestinationFeatureCollection = (
 export const getUserLocationFeatureCollection = (
   coordinate: QuillaMapCoordinate | null | undefined
 ) => getCoordinateFeatureCollection(coordinate, 'user-location');
+
+export const getNavigationBearingDegrees = (
+  route: QuillaMapRoutePoint[] | QuillaMapCoordinate[]
+): number => {
+  const [origin, destination] = route;
+
+  if (!origin || !destination) {
+    return 0;
+  }
+
+  const originLatitude = toRadians(origin.latitude);
+  const destinationLatitude = toRadians(destination.latitude);
+  const longitudeDelta = toRadians(destination.longitude - origin.longitude);
+  const y = Math.sin(longitudeDelta) * Math.cos(destinationLatitude);
+  const x =
+    Math.cos(originLatitude) * Math.sin(destinationLatitude) -
+    Math.sin(originLatitude) * Math.cos(destinationLatitude) * Math.cos(longitudeDelta);
+
+  return normalizeDegrees(toDegrees(Math.atan2(y, x)));
+};
+
+export const getNavigationArrowFeatureCollection = (
+  coordinate: QuillaMapCoordinate | null | undefined,
+  route: QuillaMapRoutePoint[] | QuillaMapCoordinate[]
+) => ({
+  type: 'FeatureCollection' as const,
+  features: coordinate && route.length > 1
+    ? [
+        {
+          type: 'Feature' as const,
+          id: 'navigation-arrow',
+          properties: {
+            id: 'navigation-arrow',
+            bearing: getNavigationBearingDegrees(route),
+          },
+          geometry: pointGeometry(coordinate),
+        },
+      ]
+    : [],
+});
 
 export const getPlacesFeatureCollection = (places: PlaceMapFeature[]) => ({
   type: 'FeatureCollection' as const,

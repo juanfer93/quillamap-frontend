@@ -1,10 +1,11 @@
 import React from 'react';
 import { Pressable, StyleSheet } from 'react-native';
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import tw from '@/lib/tailwind';
 import WebQuillaMap from '../components/QuillaMap.web-renderer';
 import NativeQuillaMap from '../components/QuillaMap.native';
 import { QuillaMapShadeZone } from '../types/QuillaMap.types';
+import { getNavigationBearingDegrees } from '../styles/QuillaMap.maplibre.shared';
 import {
   PLACES_VISUAL_IDENTITY,
   type PlaceMapFeature,
@@ -399,16 +400,17 @@ describe('QuillaMap', () => {
     expect(getByTestId('quillamap-native-zoom-out')).toBeTruthy();
   });
 
-  it('pinta la ruta activa en rojo y marca el destino en nativo', () => {
+  it('pinta la ruta activa en rojo, marca destino y muestra flecha GPS en nativo', async () => {
     const destination = { latitude: 11.01902, longitude: -74.82134 };
+    const routePoints = [
+      { id: 'a', latitude: 10.9878, longitude: -74.7889 },
+      { id: 'b', ...destination },
+    ];
     const { getByTestId } = render(
       <NativeQuillaMap
         mode="car"
         center={{ latitude: 10.9878, longitude: -74.7889 }}
-        routePoints={[
-          { id: 'a', latitude: 10.9878, longitude: -74.7889 },
-          { id: 'b', ...destination },
-        ]}
+        routePoints={routePoints}
         destinationCoordinate={destination}
         showDefaultShadeZones={false}
       />
@@ -418,6 +420,42 @@ describe('QuillaMap', () => {
       NAVIGATION_VISUAL_IDENTITY.activeRoute
     );
     expect(getByTestId('quillamap-native-destination-marker')).toBeTruthy();
+    expect(getByTestId('quillamap-native-navigation-arrow').props.style.textRotate).toEqual(['get', 'bearing']);
+    expect(getByTestId('quillamap-native-navigation-arrow-source').props.shape.features[0].properties.bearing).toBeCloseTo(
+      getNavigationBearingDegrees(routePoints),
+      4
+    );
+
+    await waitFor(() => {
+      expect(getByTestId('quillamap-native-perspective-toggle').props.accessibilityState.selected).toBe(true);
+    });
+  });
+
+  it('activa 3D y expone la flecha GPS tambien en web', async () => {
+    const destination = { latitude: 11.01902, longitude: -74.82134 };
+    const routePoints = [
+      { id: 'a', latitude: 10.9878, longitude: -74.7889 },
+      { id: 'b', ...destination },
+    ];
+    const { getByTestId } = render(
+      <WebQuillaMap
+        mode="pedestrian"
+        center={{ latitude: 10.9878, longitude: -74.7889 }}
+        routePoints={routePoints}
+        destinationCoordinate={destination}
+        showDefaultShadeZones={false}
+      />
+    );
+
+    expect(getByTestId('quillamap-web-navigation-arrow').props.bearing).toBeCloseTo(
+      getNavigationBearingDegrees(routePoints),
+      4
+    );
+
+    await waitFor(() => {
+      expect(getByTestId('quillamap-web-navigation-arrow').props.is3D).toBe(true);
+      expect(getByTestId('quillamap-web-perspective-toggle').props.accessibilityState.selected).toBe(true);
+    });
   });
 
   it('convierte el click web en coordenadas exactas del mapa', () => {

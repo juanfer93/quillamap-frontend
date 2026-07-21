@@ -34,11 +34,16 @@ import {
   getCoordinateFeatureCollection,
   getDestinationFeatureCollection,
   getMapLibreStyle,
+  getNavigationArrowFeatureCollection,
+  getNavigationBearingDegrees,
   getPlacesFeatureCollection,
   getRouteFeatureCollection,
   getShadeZoneAreasFeatureCollection,
   getShadeZonesFeatureCollection,
   getUserLocationFeatureCollection,
+  NAVIGATION_ARROW_LAYER_ID,
+  NAVIGATION_ARROW_MARKER,
+  NAVIGATION_ARROW_SOURCE_ID,
   SHADE_MARKER_EMOJI,
   DESTINATION_MARKER_EMOJI,
   NAVIGATION_DESTINATION_LAYER_ID,
@@ -118,6 +123,11 @@ const QuillaMap = ({
   const placeMarkerColor = isDark ? culturalGold : lightPlaceMarkerColor;
   const zoomLevelRef = useRef(isPedestrian ? INITIAL_PEDESTRIAN_ZOOM : INITIAL_DEFAULT_ZOOM);
   const routeFeature = getRouteFeatureCollection(route);
+  const routeBearing = getNavigationBearingDegrees(route);
+  const navigationArrowFeatureCollection = getNavigationArrowFeatureCollection(
+    showUserLocation ? center : null,
+    route
+  );
   const userLocationFeatureCollection = getUserLocationFeatureCollection(showUserLocation ? center : null);
   const destinationFeatureCollection = getDestinationFeatureCollection(destinationCoordinate);
   const shadeFeatureCollection = getShadeZonesFeatureCollection(zones);
@@ -191,6 +201,21 @@ const QuillaMap = ({
 
     cameraRef.current?.fitBounds?.(northEast, southWest, [150, 64, 120, 64], CAMERA_ANIMATION_DURATION_MS);
   }, [route]);
+
+  useEffect(() => {
+    if (route.length < 2) {
+      return;
+    }
+
+    setIs3D(true);
+    setCameraBearing(routeBearing);
+    cameraRef.current?.setCamera({
+      pitch: MAP_3D_PITCH,
+      heading: routeBearing,
+      animationDuration: CAMERA_ANIMATION_DURATION_MS,
+      animationMode: 'easeTo',
+    });
+  }, [route.length, routeBearing]);
 
   return (
     <View testID="quillamap-container" style={[tw`flex-1`, style]}>
@@ -284,6 +309,41 @@ const QuillaMap = ({
                 lineWidth: NAVIGATION_ROUTE_LINE_STYLE.lineWidth,
                 lineCap: NAVIGATION_ROUTE_LINE_STYLE.lineCap,
                 lineJoin: NAVIGATION_ROUTE_LINE_STYLE.lineJoin,
+              }}
+            />
+          </ShapeSource>
+
+          <ShapeSource
+            id={NAVIGATION_ARROW_SOURCE_ID}
+            testID="quillamap-native-navigation-arrow-source"
+            shape={navigationArrowFeatureCollection}
+          >
+            <CircleLayer
+              id={`${NAVIGATION_ARROW_LAYER_ID}-halo`}
+              testID="quillamap-native-navigation-arrow-halo"
+              style={{
+                circleColor: white,
+                circleRadius: 18,
+                circleOpacity: 0.96,
+                circleStrokeColor: routeColor,
+                circleStrokeWidth: 3,
+              }}
+            />
+            <SymbolLayer
+              id={NAVIGATION_ARROW_LAYER_ID}
+              testID="quillamap-native-navigation-arrow"
+              style={{
+                textField: NAVIGATION_ARROW_MARKER,
+                textFont: ['sans-serif'],
+                textSize: 25,
+                textColor: routeColor,
+                textHaloColor: white,
+                textHaloWidth: 1,
+                textAllowOverlap: true,
+                textIgnorePlacement: true,
+                textPitchAlignment: 'map',
+                textRotationAlignment: 'map',
+                textRotate: ['get', 'bearing'],
               }}
             />
           </ShapeSource>

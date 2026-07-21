@@ -28,11 +28,16 @@ import {
   getBuildingsFeatureCollection,
   getDestinationFeatureCollection,
   getMapLibreStyle,
+  getNavigationArrowFeatureCollection,
+  getNavigationBearingDegrees,
   getPlacesFeatureCollection,
   getRouteFeatureCollection,
   getShadeZoneAreasFeatureCollection,
   getShadeZonesFeatureCollection,
   getUserLocationFeatureCollection,
+  NAVIGATION_ARROW_LAYER_ID,
+  NAVIGATION_ARROW_MARKER,
+  NAVIGATION_ARROW_SOURCE_ID,
   SHADE_MARKER_EMOJI,
   DESTINATION_MARKER_EMOJI,
   NAVIGATION_DESTINATION_LAYER_ID,
@@ -174,6 +179,11 @@ const QuillaMapWebRenderer = ({
   const controlText = isDark ? DARK_MAP_THEME.controlText : darkGray;
   const controlBorder = isDark ? DARK_MAP_THEME.controlBorder : tokenColor('medium-gray', '#E0E0E0');
   const routeFeature = useMemo(() => getRouteFeatureCollection(route), [route]);
+  const routeBearing = useMemo(() => getNavigationBearingDegrees(route), [route]);
+  const navigationArrowFeatureCollection = useMemo(
+    () => getNavigationArrowFeatureCollection(showUserLocation ? center : null, route),
+    [center, route, showUserLocation]
+  );
   const userLocationFeatureCollection = useMemo(
     () => getUserLocationFeatureCollection(showUserLocation ? center : null),
     [center, showUserLocation]
@@ -352,6 +362,7 @@ const QuillaMapWebRenderer = ({
 
     const applyLayers = () => {
       upsertGeoJsonSource(map, NAVIGATION_ROUTE_SOURCE_ID, routeFeature);
+      upsertGeoJsonSource(map, NAVIGATION_ARROW_SOURCE_ID, navigationArrowFeatureCollection);
       upsertGeoJsonSource(map, USER_LOCATION_SOURCE_ID, userLocationFeatureCollection);
       upsertGeoJsonSource(map, NAVIGATION_DESTINATION_SOURCE_ID, destinationFeatureCollection);
       upsertGeoJsonSource(map, 'buildings-source', buildingsFeatureCollection);
@@ -445,6 +456,39 @@ const QuillaMapWebRenderer = ({
           'circle-color': primary,
           'circle-radius': 4,
           'circle-opacity': 1,
+        },
+      });
+
+      addLayerIfMissing(`${NAVIGATION_ARROW_LAYER_ID}-halo`, {
+        id: `${NAVIGATION_ARROW_LAYER_ID}-halo`,
+        type: 'circle',
+        source: NAVIGATION_ARROW_SOURCE_ID,
+        paint: {
+          'circle-color': white,
+          'circle-radius': 18,
+          'circle-opacity': 0.96,
+          'circle-stroke-color': mapRoute,
+          'circle-stroke-width': 3,
+        },
+      });
+      addLayerIfMissing(NAVIGATION_ARROW_LAYER_ID, {
+        id: NAVIGATION_ARROW_LAYER_ID,
+        type: 'symbol',
+        source: NAVIGATION_ARROW_SOURCE_ID,
+        layout: {
+          'text-field': NAVIGATION_ARROW_MARKER,
+          'text-font': ['Open Sans Regular'],
+          'text-size': 25,
+          'text-allow-overlap': true,
+          'text-ignore-placement': true,
+          'text-pitch-alignment': 'map',
+          'text-rotation-alignment': 'map',
+          'text-rotate': ['get', 'bearing'],
+        },
+        paint: {
+          'text-color': mapRoute,
+          'text-halo-color': white,
+          'text-halo-width': 1,
         },
       });
 
@@ -572,6 +616,7 @@ const QuillaMapWebRenderer = ({
     mapRoute,
     mapShade,
     mapStyle,
+    navigationArrowFeatureCollection,
     placesFeatureCollection,
     routeFeature,
     shadeAreaFeatureCollection,
@@ -596,6 +641,23 @@ const QuillaMapWebRenderer = ({
       duration: CAMERA_ANIMATION_DURATION_MS,
     });
   }, [route]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+
+    if (route.length < 2) {
+      return;
+    }
+
+    setIs3D(true);
+    setCameraBearing(routeBearing);
+    map?.easeTo({
+      pitch: MAP_3D_PITCH,
+      bearing: routeBearing,
+      duration: CAMERA_ANIMATION_DURATION_MS,
+      easing: (time) => 1 - Math.pow(1 - time, 3),
+    });
+  }, [route.length, routeBearing]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -774,6 +836,13 @@ const QuillaMapWebRenderer = ({
         <View testID="quillamap-web-route" style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }} />
         <View testID="quillamap-web-map-art" style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }} />
         <View testID="quillamap-web-map-tiles" style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }} />
+        {route.length > 1 && showUserLocation ? (
+          <View
+            testID="quillamap-web-navigation-arrow"
+            {...({ bearing: routeBearing, is3D } as Record<string, unknown>)}
+            style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }}
+          />
+        ) : null}
 
         {fallbackFeatures}
 

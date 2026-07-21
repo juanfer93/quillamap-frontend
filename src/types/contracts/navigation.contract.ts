@@ -1,6 +1,6 @@
 export type NavigationMode = 'peaton' | 'turista' | 'moto' | 'carro';
 
-export type RouteEngineProvider = 'osrm' | 'valhalla';
+export type RouteEngineProvider = 'osrm' | 'valhalla' | 'tomtom';
 
 export type RouteLegalStatus = 'allowed' | 'blocked' | 'rerouted';
 
@@ -54,6 +54,23 @@ export interface RouteAlert {
   penaltySeconds?: number;
 }
 
+export interface RouteInstruction {
+  index: number;
+  message: string;
+  street?: string;
+  distanceMeters?: number;
+  durationSeconds?: number;
+  coordinate?: RouteCoordinate;
+}
+
+export interface RouteAlternativeSummary {
+  index: number;
+  distanceMeters: number;
+  durationSeconds: number;
+  geometryPoints: number;
+  provider: RouteEngineProvider;
+}
+
 export interface RouteResponse {
   geometry: RouteCoordinate[];
   distanceMeters: number;
@@ -62,6 +79,10 @@ export interface RouteResponse {
   provider: RouteEngineProvider;
   legalStatus: RouteLegalStatus;
   etaIso?: string;
+  instructions?: RouteInstruction[];
+  alternatives?: RouteAlternativeSummary[];
+  selectedRouteIndex?: number;
+  trafficDelaySeconds?: number;
 }
 
 export interface RouteRiskMatch {
