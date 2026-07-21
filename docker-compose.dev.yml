@@ -1,0 +1,52 @@
+name: quillamap-dev
+
+services:
+  backend:
+    image: node:22-bookworm-slim
+    working_dir: /workspace/backend
+    command: sh -lc "if [ ! -d node_modules/.bin ]; then npm ci; fi; npm run start:dev"
+    env_file:
+      - ../quillamap-backend/.env
+    environment:
+      NODE_ENV: development
+      PORT: "3000"
+      API_HOST: "0.0.0.0"
+      API_EXTERNAL_URL: http://192.168.1.26:3000/api
+      OSRM_BASE_URL: http://host.docker.internal:5000
+      OSRM_DRIVING_BASE_URL: http://host.docker.internal:5000
+      OSRM_WALKING_BASE_URL: http://host.docker.internal:5001
+      CHOKIDAR_USEPOLLING: "true"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../quillamap-backend:/workspace/backend
+      - backend_node_modules:/workspace/backend/node_modules
+
+  frontend:
+    image: node:22-bookworm-slim
+    working_dir: /workspace/frontend
+    command: sh -lc "if [ ! -d node_modules/.bin ]; then npm ci; fi; npx expo start --web --port 8082 --clear"
+    environment:
+      NODE_ENV: development
+      CI: "1"
+      EXPO_PUBLIC_API_URL: http://192.168.1.26:3000/api
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8082:8082"
+      - "19000:19000"
+      - "19001:19001"
+      - "19002:19002"
+    volumes:
+      - .:/workspace/frontend
+      - frontend_node_modules:/workspace/frontend/node_modules
+    depends_on:
+      - backend
+
+volumes:
+  backend_node_modules:
+  frontend_node_modules:
