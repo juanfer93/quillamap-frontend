@@ -40,6 +40,7 @@ const PedestrianMapContainer = ({
   onMapPress,
   selectedShadowCoordinate,
   profileTools,
+  renderProfileTools,
   licensePlate,
 }: PedestrianMapContainerProps) => {
   const { currentLocation, isRequestingPermission, errorMessage } = useLocationPermissions();
@@ -104,6 +105,7 @@ const PedestrianMapContainer = ({
           showDefaultShadeZones={false}
           selectedCoordinate={shouldShowShadowZones ? selectedShadowCoordinate : null}
           profileTools={profileTools}
+          renderProfileTools={renderProfileTools}
           licensePlate={licensePlate}
           onMapPress={shouldShowShadowZones ? onMapPress : undefined}
           onShadeZonePress={(zone) => {

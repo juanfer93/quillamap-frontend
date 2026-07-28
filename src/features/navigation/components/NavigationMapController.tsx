@@ -1,36 +1,26 @@
 import React, { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import QuillaMap from '@/components/maps/QuillaMap';
-import type {
-  QuillaMapCoordinate,
-  QuillaMapProps,
-  QuillaMapRoutePoint,
-} from '@/components/maps/QuillaMap.types';
-import type { PlaceMapFeature } from '@/types/contracts/places.contract';
+import type { QuillaMapProps } from '@/components/maps/QuillaMap.types';
 import type { RouteWaypoint } from '@/types/contracts/navigation.contract';
 import { useNavigationStore } from '../store/useNavigationStore';
 import { useRouteNavigation } from '../hooks/useRouteNavigation';
 import { useVelocityGuard } from '../hooks/useVelocityGuard';
 import { getDestinationSuggestions, resolveDestination } from '../utils/destinationSearch';
 import { isNavigationUiLocked } from '../utils/drivingLock';
+import {
+  getQueryLabel,
+  toRoutePoints,
+  toWaypoint,
+} from '../utils/navigationMapController.utils';
 import NavigationSearchOverlay from './NavigationSearchOverlay';
 
 interface NavigationMapControllerProps extends Omit<QuillaMapProps, 'routePoints' | 'children'> {
   children?: ReactNode;
   licensePlate?: string | null;
   sensorSpeedKmh?: number;
+  renderProfileTools?: (transitRoutesSection: ReactNode | null) => ReactNode;
 }
-
-const toRoutePoints = (geometry: QuillaMapCoordinate[]): QuillaMapRoutePoint[] =>
-  geometry.map((point, index) => ({ ...point, id: `navigation-route-${index}` }));
-
-const toWaypoint = (place: PlaceMapFeature): RouteWaypoint => ({
-  ...place.coordinate,
-  label: place.name.es,
-});
-
-const getQueryLabel = (destination: RouteWaypoint): string =>
-  destination.label ?? `${destination.latitude},${destination.longitude}`;
 
 const NavigationMapController = ({
   center,
@@ -39,6 +29,8 @@ const NavigationMapController = ({
   licensePlate,
   sensorSpeedKmh,
   children,
+  profileTools,
+  renderProfileTools,
   ...mapProps
 }: NavigationMapControllerProps) => {
   const { requestRoute } = useRouteNavigation();
@@ -88,6 +80,10 @@ const NavigationMapController = ({
     setIsNavigationPanelOpen(false);
   };
 
+  const resolvedProfileTools = renderProfileTools
+    ? renderProfileTools(null)
+    : profileTools;
+
   return (
     <QuillaMap
       {...mapProps}
@@ -96,6 +92,7 @@ const NavigationMapController = ({
       places={places}
       routePoints={routePoints}
       destinationCoordinate={destination}
+      profileTools={resolvedProfileTools}
       navigationControl={{
         hasActiveRoute,
         isActive: isNavigationPanelOpen,

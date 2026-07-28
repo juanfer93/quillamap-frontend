@@ -5,9 +5,11 @@ import { useKarmaRewards } from '@/features/navigation/hooks/useKarmaRewards';
 import { useAuthStore, AuthUser } from '@/store/useAuthStore';
 
 const mockReset = jest.fn();
+const mockNavigate = jest.fn();
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
+    navigate: mockNavigate,
     reset: mockReset,
   }),
 }));
@@ -48,6 +50,35 @@ jest.mock('@/api/client', () => ({
     findNearby: jest.fn().mockResolvedValue([]),
   },
 }));
+
+jest.mock('@/components/maps/QuillaMap', () => {
+  const ReactMock = jest.requireActual<typeof React>('react');
+  const { Pressable, View } = jest.requireActual('react-native');
+
+  return ({
+    children,
+    navigationControl,
+    profileTools,
+  }: {
+    children?: React.ReactNode;
+    navigationControl?: {
+      hasActiveRoute?: boolean;
+      isActive: boolean;
+      onCancel?: () => void;
+      onPress: () => void;
+    };
+    profileTools?: React.ReactNode;
+  }) => ReactMock.createElement(
+    View,
+    { testID: 'mock-quillamap' },
+    ReactMock.createElement(Pressable, {
+      testID: 'quillamap-navigation-tab',
+      onPress: navigationControl?.onPress,
+    }),
+    profileTools,
+    children
+  );
+});
 
 const pedestrianUser: AuthUser = {
   id: 'user-peaton',
@@ -90,6 +121,7 @@ describe('HomeScreen', () => {
     });
     useKarmaRewards.getState().resetKarma();
     mockReset.mockClear();
+    mockNavigate.mockClear();
   });
 
   it('renderiza el Modo Peaton cuando inicia sesion un usuario peaton', () => {
@@ -160,6 +192,21 @@ describe('HomeScreen', () => {
     expect(queryByTestId('pedestrian-map-container')).toBeNull();
     expect(getByTestId('places-map-container')).toBeTruthy();
     expect(queryByText('Hola Carlos Carro, bienvenido a QuillaMap')).toBeNull();
+  });
+
+  it('abre la vista independiente de transporte publico desde el perfil', () => {
+    useAuthStore.setState({
+      user: pedestrianUser,
+      session: 'token-peaton',
+      isLoading: false,
+    });
+
+    const { getByTestId } = render(<HomeScreen />);
+
+    fireEvent.press(getByTestId('user-tools-profile-button'));
+    fireEvent.press(getByTestId('public-transport-toggle'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('PublicTransport');
   });
 
   it('mantiene el home general cuando el backend devuelve mobility_mode null', () => {

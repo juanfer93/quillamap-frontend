@@ -6,6 +6,11 @@ import {
 } from '@/types/contracts/places.contract';
 import { NAVIGATION_VISUAL_IDENTITY } from '@/types/contracts/navigation.contract';
 import type {
+  TransitMapResponse,
+  TransitMapRouteFeature,
+  TransitMapStopFeature,
+} from '@/types/contracts/transit.contract';
+import type {
   QuillaMapCoordinate,
   QuillaMapRoutePoint,
   QuillaMapShadeZone,
@@ -89,6 +94,11 @@ export const NAVIGATION_ARROW_SOURCE_ID = 'navigation-arrow-source';
 export const NAVIGATION_ARROW_LAYER_ID = 'navigation-arrow-marker';
 export const USER_LOCATION_SOURCE_ID = 'user-location-source';
 export const USER_LOCATION_LAYER_ID = 'user-location-dot';
+export const TRANSIT_ROUTE_SOURCE_ID = 'transit-route-source';
+export const TRANSIT_ROUTE_LAYER_ID = 'transit-route-line';
+export const TRANSIT_ROUTE_HALO_LAYER_ID = 'transit-route-line-halo';
+export const TRANSIT_STOP_SOURCE_ID = 'transit-stop-source';
+export const TRANSIT_STOP_LAYER_ID = 'transit-stop-dot';
 export const NAVIGATION_ROUTE_LINE_STYLE = {
   lineColor: NAVIGATION_VISUAL_IDENTITY.activeRoute,
   haloColor: '#FFFFFF',
@@ -98,9 +108,19 @@ export const NAVIGATION_ROUTE_LINE_STYLE = {
   lineCap: 'round' as const,
   lineJoin: 'round' as const,
 };
+export const TRANSIT_ROUTE_LINE_STYLE = {
+  haloColor: '#FFFFFF',
+  haloOpacity: 0.72,
+  haloWidth: 5,
+  lineOpacity: 0.84,
+  lineWidth: 3,
+  lineCap: 'round' as const,
+  lineJoin: 'round' as const,
+};
 
 const EARTH_RADIUS_METERS = 6_371_008.8;
 const DEFAULT_CIRCLE_STEPS = 48;
+const MIN_TRANSIT_ROUTE_COORDINATES = 3;
 const FALLBACK_TOURIST_EXTRUSION_HEIGHT_METERS = 24;
 const TOURIST_FOOTPRINT_DELTA = {
   longitude: 0.000055,
@@ -114,6 +134,23 @@ const PLACE_FOOTPRINT_DELTA = {
 const toRadians = (value: number): number => (value * Math.PI) / 180;
 const toDegrees = (value: number): number => (value * 180) / Math.PI;
 const normalizeDegrees = (value: number): number => ((value % 360) + 360) % 360;
+
+const isFiniteCoordinatePair = (coordinate: unknown): coordinate is [number, number] =>
+  Array.isArray(coordinate) &&
+  coordinate.length >= 2 &&
+  Number.isFinite(coordinate[0]) &&
+  Number.isFinite(coordinate[1]);
+
+const isValidTransitRouteFeature = (feature: TransitMapResponse['features'][number]): feature is TransitMapRouteFeature =>
+  feature.properties.kind === 'route' &&
+  feature.geometry.type === 'LineString' &&
+  feature.geometry.coordinates.length >= MIN_TRANSIT_ROUTE_COORDINATES &&
+  feature.geometry.coordinates.every(isFiniteCoordinatePair);
+
+const isValidTransitStopFeature = (feature: TransitMapResponse['features'][number]): feature is TransitMapStopFeature =>
+  feature.properties.kind === 'stop' &&
+  feature.geometry.type === 'Point' &&
+  isFiniteCoordinatePair(feature.geometry.coordinates);
 
 const pointGeometry = (coordinate: QuillaMapCoordinate) => ({
   type: 'Point' as const,
@@ -188,6 +225,52 @@ export const getRouteFeatureCollection = (route: QuillaMapRoutePoint[] | QuillaM
   type: 'FeatureCollection' as const,
   features: route.length > 1 ? [getRouteFeature(route)] : [],
 });
+
+export const getTransitRouteFeatureCollection = (
+  transitMap: TransitMapResponse | null | undefined
+) => ({
+  type: 'FeatureCollection' as const,
+  features: transitMap?.features.filter(isValidTransitRouteFeature) ?? [],
+});
+
+export const getTransitStopFeatureCollection = (
+  transitMap: TransitMapResponse | null | undefined
+) => ({
+  type: 'FeatureCollection' as const,
+  features: transitMap?.features.filter(isValidTransitStopFeature) ?? [],
+});
+
+export const getTransitMapBounds = (
+  transitMap: TransitMapResponse | null | undefined
+): { southWest: [number, number]; northEast: [number, number] } | null => {
+  const coordinates = transitMap?.features.flatMap((feature) => {
+    if (isValidTransitRouteFeature(feature)) {
+      return feature.geometry.coordinates;
+    }
+
+    if (!isValidTransitStopFeature(feature)) {
+      return [];
+    }
+
+    if (feature.geometry.type === 'Point') {
+      return [feature.geometry.coordinates];
+    }
+
+    return [];
+  }) ?? [];
+
+  if (coordinates.length === 0) {
+    return null;
+  }
+
+  const longitudes = coordinates.map((coordinate) => coordinate[0]);
+  const latitudes = coordinates.map((coordinate) => coordinate[1]);
+
+  return {
+    southWest: [Math.min(...longitudes), Math.min(...latitudes)],
+    northEast: [Math.max(...longitudes), Math.max(...latitudes)],
+  };
+};
 
 export const getShadeZonesFeatureCollection = (zones: QuillaMapShadeZone[]) => ({
   type: 'FeatureCollection' as const,

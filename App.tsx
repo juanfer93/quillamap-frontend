@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import LoginScreen from '@/features/auth/screens/LoginScreen';
 import RegisterScreen from '@/features/auth/screens/RegisterScreen';
 import  HomeScreen  from '@/features/auth/screens/HomeScreen'
+import PublicTransportScreen from '@/features/transit/screens/PublicTransportScreen';
 import { SafeAreaView, ActivityIndicator } from 'react-native';
 import { useThemeStore } from '@/store/useThemeStore';
 import tw from '@/lib/tailwind';
@@ -24,6 +25,7 @@ const AuthStack = () => (
 const MainStack = () => (
   <Main.Navigator screenOptions={{ headerShown: false }}>
     <Main.Screen name="Home" component={HomeScreen} />
+    <Main.Screen name="PublicTransport" component={PublicTransportScreen} />
   </Main.Navigator>
 );
 

@@ -5,12 +5,16 @@ import tw from '@/lib/tailwind';
 import WebQuillaMap from '../components/QuillaMap.web-renderer';
 import NativeQuillaMap from '../components/QuillaMap.native';
 import { QuillaMapShadeZone } from '../types/QuillaMap.types';
-import { getNavigationBearingDegrees } from '../styles/QuillaMap.maplibre.shared';
+import {
+  getNavigationBearingDegrees,
+  getTransitRouteFeatureCollection,
+} from '../styles/QuillaMap.maplibre.shared';
 import {
   PLACES_VISUAL_IDENTITY,
   type PlaceMapFeature,
 } from '@/types/contracts/places.contract';
 import { NAVIGATION_VISUAL_IDENTITY } from '@/types/contracts/navigation.contract';
+import type { TransitMapResponse } from '@/types/contracts/transit.contract';
 
 jest.mock('maplibre-gl', () => {
   const mapInstance = {
@@ -294,6 +298,34 @@ describe('QuillaMap', () => {
 
     expect(getByTestId('quillamap-web-zoom-in')).toBeTruthy();
     expect(getByTestId('quillamap-web-zoom-out')).toBeTruthy();
+  });
+
+  it('permite ocultar brujula y zoom en web y nativo', () => {
+    const web = render(
+      <WebQuillaMap
+        mode="pedestrian"
+        center={{ latitude: 10.9878, longitude: -74.7889 }}
+        shadeZones={shadeZones}
+        showCompassControl={false}
+        showZoomControl={false}
+      />
+    );
+    const native = render(
+      <NativeQuillaMap
+        mode="pedestrian"
+        center={{ latitude: 10.9878, longitude: -74.7889 }}
+        shadeZones={shadeZones}
+        showCompassControl={false}
+        showZoomControl={false}
+      />
+    );
+
+    expect(web.queryByTestId('quillamap-web-compass-toggle')).toBeNull();
+    expect(web.queryByTestId('quillamap-web-zoom-in')).toBeNull();
+    expect(web.queryByTestId('quillamap-web-zoom-out')).toBeNull();
+    expect(native.queryByTestId('quillamap-native-compass-toggle')).toBeNull();
+    expect(native.queryByTestId('quillamap-native-zoom-in')).toBeNull();
+    expect(native.queryByTestId('quillamap-native-zoom-out')).toBeNull();
   });
 
   it('cicla la orientacion cardinal con brujula en web y nativo sin abrir tarjetas', () => {
@@ -719,5 +751,53 @@ describe('QuillaMap', () => {
     expect(native.getByTestId('quillamap-native-building-extrusions').props.style.fillExtrusionColor).toEqual(['get', 'color']);
     expect(native.getByTestId('quillamap-native-building-extrusions').props.style.fillExtrusionOpacity).toBe(0.88);
     expect(native.getByTestId('quillamap-native-building-outline').props.style.lineColor).toEqual(['get', 'color']);
+  });
+
+  it('no convierte una ruta de transporte incompleta en linea diagonal', () => {
+    const transitMap: TransitMapResponse = {
+      type: 'FeatureCollection',
+      generatedAtIso: '2026-07-22T00:00:00.000Z',
+      features: [
+        {
+          type: 'Feature',
+          id: 'shape-d13b',
+          properties: {
+            id: 'shape-d13b',
+            kind: 'route',
+            routeId: 'route-d13b',
+            shortName: 'D13B',
+            agencyKind: 'colectivo',
+            operatorName: 'Transoledad',
+            color: '#0077A3',
+          },
+          geometry: {
+            type: 'LineString',
+            coordinates: [[-74.79, 10.99], [-74.8, 11]],
+          },
+        },
+        {
+          type: 'Feature',
+          id: 'shape-c1',
+          properties: {
+            id: 'shape-c1',
+            kind: 'route',
+            routeId: 'route-c1',
+            shortName: 'C1',
+            agencyKind: 'colectivo',
+            operatorName: 'Cooasoatlan',
+            color: '#0077A3',
+          },
+          geometry: {
+            type: 'LineString',
+            coordinates: [[-74.79, 10.99], [-74.795, 10.995], [-74.8, 11]],
+          },
+        },
+      ],
+    };
+
+    const featureCollection = getTransitRouteFeatureCollection(transitMap);
+
+    expect(featureCollection.features).toHaveLength(1);
+    expect(featureCollection.features[0].properties.routeId).toBe('route-c1');
   });
 });

@@ -34,6 +34,10 @@ const HomeScreen = () => {
     });
   };
 
+  const openPublicTransport = () => {
+    navigation.navigate('PublicTransport');
+  };
+
   if (isPedestrian) {
     return (
       <View style={tw`flex-1 bg-surface-light dark:bg-charcoal`}>
@@ -44,6 +48,7 @@ const HomeScreen = () => {
           onLogout={() => {
             void handleLogout();
           }}
+          onOpenPublicTransport={openPublicTransport}
         />
       </View>
     );
@@ -58,6 +63,7 @@ const HomeScreen = () => {
         onLogout={() => {
           void handleLogout();
         }}
+        onOpenPublicTransport={openPublicTransport}
       />
     );
   }
@@ -74,6 +80,7 @@ const HomeScreen = () => {
           onLogout={() => {
             void handleLogout();
           }}
+          onOpenPublicTransport={openPublicTransport}
         />
       </View>
     </View>

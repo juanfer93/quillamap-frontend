@@ -7,6 +7,7 @@ export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   Home: undefined;
+  PublicTransport: undefined;
 };
 
 export interface RegisterRequest {

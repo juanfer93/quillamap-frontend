@@ -5,9 +5,13 @@ import NavigationMapController from '../components/NavigationMapController';
 import { useNavigationStore } from '../store/useNavigationStore';
 import type { PlaceMapFeature } from '@/types/contracts/places.contract';
 import type { RouteRequest, RouteResponse } from '@/types/contracts/navigation.contract';
+import type { TransitRouteRequest, TransitRouteResponse } from '@/types/contracts/transit.contract';
+
+jest.setTimeout(15000);
 
 let mockSpeedKmh = 0;
 const mockCalculateRoute = jest.fn<Promise<RouteResponse>, [RouteRequest]>();
+const mockCalculateTransitItineraries = jest.fn<Promise<TransitRouteResponse>, [TransitRouteRequest]>();
 
 jest.mock('../hooks/useVelocityGuard', () => ({
   useVelocityGuard: () => ({ speedKmh: mockSpeedKmh }),
@@ -16,6 +20,9 @@ jest.mock('../hooks/useVelocityGuard', () => ({
 jest.mock('@/api/client', () => ({
   navigationApi: {
     calculateRoute: (request: RouteRequest) => mockCalculateRoute(request),
+  },
+  transitApi: {
+    calculateItineraries: (request: TransitRouteRequest) => mockCalculateTransitItineraries(request),
   },
 }));
 
@@ -27,6 +34,7 @@ jest.mock('@/components/maps/QuillaMap', () => {
     children,
     destinationCoordinate,
     navigationControl,
+    profileTools,
     routePoints,
   }: {
     children?: React.ReactNode;
@@ -37,6 +45,7 @@ jest.mock('@/components/maps/QuillaMap', () => {
       onCancel?: () => void;
       onPress: () => void;
     };
+    profileTools?: React.ReactNode;
     routePoints?: unknown[];
   }) => ReactMock.createElement(
     MockView,
@@ -63,6 +72,7 @@ jest.mock('@/components/maps/QuillaMap', () => {
       },
       null
     ),
+    profileTools,
     children
   );
 });
@@ -89,11 +99,54 @@ const routeResponse: RouteResponse = {
   legalStatus: 'allowed',
 };
 
+const transitRouteResponse: TransitRouteResponse = {
+  generatedAtIso: '2026-07-22T00:00:00.000Z',
+  sourceSnapshots: [],
+  itineraries: [
+    {
+      id: 'itinerary-1',
+      mode: 'peaton',
+      distanceMeters: 2800,
+      durationSeconds: 960,
+      transfers: 1,
+      riskStatus: 'clear',
+      sourceVersion: 'test-gtfs',
+      recalculatedForRisk: false,
+      alerts: [],
+      legs: [
+        {
+          id: 'walk-1',
+          type: 'walk',
+          geometry: [center, { latitude: 10.99, longitude: -74.79 }],
+          distanceMeters: 250,
+          durationSeconds: 240,
+          from: center,
+          to: { latitude: 10.99, longitude: -74.79, label: 'Paradero' },
+        },
+        {
+          id: 'bus-1',
+          type: 'bus',
+          geometry: [{ latitude: 10.99, longitude: -74.79 }, places[0].coordinate],
+          distanceMeters: 2550,
+          durationSeconds: 720,
+          from: { latitude: 10.99, longitude: -74.79, label: 'Paradero' },
+          to: places[0].coordinate,
+          routeId: 'route-coochofal-c2',
+          routeShortName: 'C2-4133',
+          agencyKind: 'colectivo',
+        },
+      ],
+    },
+  ],
+};
+
 describe('NavigationMapController', () => {
   beforeEach(() => {
     mockSpeedKmh = 0;
     mockCalculateRoute.mockReset();
+    mockCalculateTransitItineraries.mockReset();
     mockCalculateRoute.mockResolvedValue(routeResponse);
+    mockCalculateTransitItineraries.mockResolvedValue(transitRouteResponse);
     useNavigationStore.getState().clearRoute();
   });
 
@@ -150,7 +203,7 @@ describe('NavigationMapController', () => {
     );
   });
 
-  it('cancela el GPS activo y devuelve el mapa a su estado normal', async () => {
+  it('calcula ruta peatonal con transporte y muestra la pila de bus mas corta', async () => {
     const { getByTestId, queryByTestId } = render(
       <NavigationMapController
         mode="pedestrian"
@@ -164,8 +217,19 @@ describe('NavigationMapController', () => {
     fireEvent.press(getByTestId('navigation-route-submit'));
 
     await waitFor(() => {
-      expect(getByTestId('mock-quillamap').props.routePoints).toHaveLength(2);
+      expect(mockCalculateTransitItineraries).toHaveBeenCalledWith(expect.objectContaining({
+        mode: 'peaton',
+        preferences: expect.objectContaining({
+          prioritizeShade: true,
+        }),
+      }));
+    });
+
+    await waitFor(() => {
+      expect(getByTestId('mock-quillamap').props.routePoints).toHaveLength(3);
       expect(getByTestId('quillamap-navigation-cancel').props.hasActiveRoute).toBe(true);
+      expect(getByTestId('navigation-transit-best-route')).toBeTruthy();
+      expect(getByTestId('navigation-transit-leg-bus-1')).toBeTruthy();
     });
 
     fireEvent.press(getByTestId('quillamap-navigation-cancel'));

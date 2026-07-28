@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import type { PlaceMapFeature } from '@/types/contracts/places.contract';
+import type { TransitMapResponse } from '@/types/contracts/transit.contract';
 
 export type QuillaMapMode = 'pedestrian' | 'tourist' | 'car' | 'motorcycle';
 
@@ -28,8 +29,11 @@ export interface QuillaMapProps {
   shadeZones?: QuillaMapShadeZone[];
   showDefaultShadeZones?: boolean;
   routePoints?: QuillaMapRoutePoint[];
+  transitMap?: TransitMapResponse | null;
   places?: PlaceMapFeature[];
   showUserLocation?: boolean;
+  showCompassControl?: boolean;
+  showZoomControl?: boolean;
   style?: StyleProp<ViewStyle>;
   children?: ReactNode;
   profileTools?: ReactNode;

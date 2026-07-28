@@ -29,6 +29,18 @@ const formatDuration = (seconds: number): string => `${Math.max(1, Math.round(se
 
 const getPlaceName = (place: PlaceMapFeature): string => place.name.es;
 
+const getTransitLegLabel = (leg: NonNullable<RouteResponse['transit']>['legs'][number]): string => {
+  if (leg.type === 'walk') {
+    return 'Caminar';
+  }
+
+  if (leg.type === 'transfer') {
+    return 'Transbordo';
+  }
+
+  return leg.routeShortName ? `Bus ${leg.routeShortName}` : 'Bus';
+};
+
 const NavigationSearchOverlay = ({
   activeRoute,
   errorMessage,
@@ -135,6 +147,27 @@ const NavigationSearchOverlay = ({
               <Text testID="navigation-route-summary" style={tw`mt-s text-primary font-bold`}>
                 {distanceText} - ETA {formatDuration(activeRoute.durationSeconds)}
               </Text>
+              {activeRoute.transit ? (
+                <View testID="navigation-transit-stack" style={tw`mt-s`}>
+                  <Text testID="navigation-transit-best-route" style={tw`text-primary font-bold`}>
+                    Ruta mas corta - {activeRoute.transit.transfers} transbordo{activeRoute.transit.transfers === 1 ? '' : 's'}
+                  </Text>
+                  {activeRoute.transit.legs.map((leg) => (
+                    <View
+                      key={leg.id}
+                      testID={`navigation-transit-leg-${leg.id}`}
+                      style={tw`mt-xs flex-row items-center justify-between`}
+                    >
+                      <Text numberOfLines={1} style={tw`mr-s flex-1 text-dark-gray`}>
+                        {getTransitLegLabel(leg)}
+                      </Text>
+                      <Text style={tw`text-primary font-bold`}>
+                        {formatDuration(leg.durationSeconds)}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
               {activeRoute.alerts[0] ? (
                 <Text testID="navigation-route-alert" style={tw`mt-xs text-error font-bold`}>
                   {activeRoute.alerts[0].title}

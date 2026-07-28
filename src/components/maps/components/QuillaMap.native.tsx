@@ -40,6 +40,9 @@ import {
   getRouteFeatureCollection,
   getShadeZoneAreasFeatureCollection,
   getShadeZonesFeatureCollection,
+  getTransitMapBounds,
+  getTransitRouteFeatureCollection,
+  getTransitStopFeatureCollection,
   getUserLocationFeatureCollection,
   NAVIGATION_ARROW_LAYER_ID,
   NAVIGATION_ARROW_MARKER,
@@ -52,12 +55,19 @@ import {
   NAVIGATION_ROUTE_LAYER_ID,
   NAVIGATION_ROUTE_LINE_STYLE,
   NAVIGATION_ROUTE_SOURCE_ID,
+  TRANSIT_ROUTE_HALO_LAYER_ID,
+  TRANSIT_ROUTE_LAYER_ID,
+  TRANSIT_ROUTE_LINE_STYLE,
+  TRANSIT_ROUTE_SOURCE_ID,
+  TRANSIT_STOP_LAYER_ID,
+  TRANSIT_STOP_SOURCE_ID,
   USER_LOCATION_LAYER_ID,
   USER_LOCATION_SOURCE_ID,
 } from '../styles/QuillaMap.maplibre';
 
 const INITIAL_PEDESTRIAN_ZOOM = 16;
 const INITIAL_DEFAULT_ZOOM = 15;
+const PLACES_MIN_VISIBLE_ZOOM = 14.75;
 const CAMERA_ANIMATION_DURATION_MS = 520;
 const CARDINAL_BEARINGS = [0, 90, 180, 270] as const;
 type CardinalBearing = typeof CARDINAL_BEARINGS[number];
@@ -81,7 +91,10 @@ const QuillaMap = ({
   places,
   showDefaultShadeZones,
   routePoints,
+  transitMap,
   showUserLocation = true,
+  showCompassControl = true,
+  showZoomControl = true,
   children,
   profileTools,
   onShadeZonePress,
@@ -111,7 +124,9 @@ const QuillaMap = ({
   const mapStyle = getMapLibreStyle(themeMode);
   const shouldShowShadowZones = !(isPedestrian && isDark);
   const zones = shouldShowShadowZones ? getVisibleShadeZones(shadeZones, showDefaultShadeZones) : [];
-  const visiblePlaces = getVisiblePlaces(places);
+  const zoomLevelRef = useRef(isPedestrian ? INITIAL_PEDESTRIAN_ZOOM : INITIAL_DEFAULT_ZOOM);
+  const [mapZoom, setMapZoom] = useState(zoomLevelRef.current);
+  const visiblePlaces = mapZoom >= PLACES_MIN_VISIBLE_ZOOM ? getVisiblePlaces(places) : [];
   const canOpenPlaces = canInteractWithPlaces(mode);
   const [selectedPlace, setSelectedPlace] = useState<PlaceMapFeature | null>(null);
   const [is3D, setIs3D] = useState(false);
@@ -121,8 +136,16 @@ const QuillaMap = ({
   const controlBorder = isDark ? DARK_MAP_THEME.controlBorder : tw.color('medium-gray') ?? '#e0e0e0';
   const lightPlaceMarkerColor = ['case', ['==', ['get', 'source'], 'tourist_site'], culturalGold, primary] as const;
   const placeMarkerColor = isDark ? culturalGold : lightPlaceMarkerColor;
-  const zoomLevelRef = useRef(isPedestrian ? INITIAL_PEDESTRIAN_ZOOM : INITIAL_DEFAULT_ZOOM);
   const routeFeature = getRouteFeatureCollection(route);
+  const transitRouteFeatureCollection = useMemo(
+    () => getTransitRouteFeatureCollection(transitMap),
+    [transitMap]
+  );
+  const transitStopFeatureCollection = useMemo(
+    () => getTransitStopFeatureCollection(transitMap),
+    [transitMap]
+  );
+  const transitMapBounds = useMemo(() => getTransitMapBounds(transitMap), [transitMap]);
   const routeBearing = getNavigationBearingDegrees(route);
   const navigationArrowFeatureCollection = getNavigationArrowFeatureCollection(
     showUserLocation ? center : null,
@@ -157,6 +180,7 @@ const QuillaMap = ({
     const currentZoom = await mapRef.current?.getZoom().catch(() => zoomLevelRef.current) ?? zoomLevelRef.current;
     const nextZoom = Math.max(11, Math.min(currentZoom + delta, 19));
     zoomLevelRef.current = nextZoom;
+    setMapZoom(nextZoom);
     cameraRef.current?.zoomTo(nextZoom, CAMERA_ANIMATION_DURATION_MS);
   };
   const zoomIn = () => applyZoom(1);
@@ -181,13 +205,35 @@ const QuillaMap = ({
     });
   };
 
-  const handleRegionDidChange = (feature: GeoJSON.Feature<GeoJSON.Point, { heading?: number }>) => {
+  const handleRegionDidChange = (feature: GeoJSON.Feature<GeoJSON.Point, { heading?: number; zoomLevel?: number }>) => {
     const nextHeading = feature.properties?.heading;
+    const nextZoom = feature.properties?.zoomLevel;
 
     if (typeof nextHeading === 'number') {
       setCameraBearing(normalizeBearing(nextHeading));
     }
+
+    if (typeof nextZoom === 'number') {
+      zoomLevelRef.current = nextZoom;
+      setMapZoom(nextZoom);
+      return;
+    }
+
+    mapRef.current?.getZoom()
+      .then((zoom) => {
+        zoomLevelRef.current = zoom;
+        setMapZoom(zoom);
+      })
+      .catch(() => undefined);
   };
+
+  useEffect(() => {
+    if (mapZoom >= PLACES_MIN_VISIBLE_ZOOM) {
+      return;
+    }
+
+    setSelectedPlace(null);
+  }, [mapZoom]);
 
   useEffect(() => {
     if (route.length < 2) {
@@ -201,6 +247,19 @@ const QuillaMap = ({
 
     cameraRef.current?.fitBounds?.(northEast, southWest, [150, 64, 120, 64], CAMERA_ANIMATION_DURATION_MS);
   }, [route]);
+
+  useEffect(() => {
+    if (route.length > 1 || !transitMapBounds) {
+      return;
+    }
+
+    cameraRef.current?.fitBounds?.(
+      transitMapBounds.northEast,
+      transitMapBounds.southWest,
+      [96, 36, 96, 36],
+      CAMERA_ANIMATION_DURATION_MS
+    );
+  }, [route.length, transitMapBounds]);
 
   useEffect(() => {
     if (route.length < 2) {
@@ -261,6 +320,62 @@ const QuillaMap = ({
             zoomLevel={zoomLevelRef.current}
           />
           {showUserLocation ? <UserLocation /> : null}
+
+          <ShapeSource
+            id={TRANSIT_ROUTE_SOURCE_ID}
+            testID="quillamap-native-transit-routes-source"
+            shape={transitRouteFeatureCollection}
+          >
+            <LineLayer
+              id={TRANSIT_ROUTE_HALO_LAYER_ID}
+              testID="quillamap-native-transit-routes-halo"
+              style={{
+                lineColor: TRANSIT_ROUTE_LINE_STYLE.haloColor,
+                lineWidth: TRANSIT_ROUTE_LINE_STYLE.haloWidth,
+                lineOpacity: TRANSIT_ROUTE_LINE_STYLE.haloOpacity,
+                lineCap: TRANSIT_ROUTE_LINE_STYLE.lineCap,
+                lineJoin: TRANSIT_ROUTE_LINE_STYLE.lineJoin,
+              }}
+            />
+            <LineLayer
+              id={TRANSIT_ROUTE_LAYER_ID}
+              testID="quillamap-native-transit-routes"
+              style={{
+                lineColor: ['get', 'color'],
+                lineWidth: TRANSIT_ROUTE_LINE_STYLE.lineWidth,
+                lineOpacity: TRANSIT_ROUTE_LINE_STYLE.lineOpacity,
+                lineCap: TRANSIT_ROUTE_LINE_STYLE.lineCap,
+                lineJoin: TRANSIT_ROUTE_LINE_STYLE.lineJoin,
+              }}
+            />
+          </ShapeSource>
+
+          <ShapeSource
+            id={TRANSIT_STOP_SOURCE_ID}
+            testID="quillamap-native-transit-stops-source"
+            shape={transitStopFeatureCollection}
+          >
+            <CircleLayer
+              id={`${TRANSIT_STOP_LAYER_ID}-halo`}
+              testID="quillamap-native-transit-stops-halo"
+              style={{
+                circleColor: white,
+                circleRadius: 5,
+                circleOpacity: 0.76,
+              }}
+            />
+            <CircleLayer
+              id={TRANSIT_STOP_LAYER_ID}
+              testID="quillamap-native-transit-stops"
+              style={{
+                circleColor: ['get', 'color'],
+                circleRadius: ['case', ['==', ['get', 'agencyKind'], 'transmetro'], 4.5, 3.6],
+                circleOpacity: 0.95,
+                circleStrokeColor: white,
+                circleStrokeWidth: 1,
+              }}
+            />
+          </ShapeSource>
 
           <ShapeSource
             id={USER_LOCATION_SOURCE_ID}
@@ -572,7 +687,8 @@ const QuillaMap = ({
           mapShade={layerColor}
           primary={primary}
           zonesCount={zones.length}
-          showZoom={isPedestrian}
+          showCompass={showCompassControl}
+          showZoom={isPedestrian && showZoomControl}
           perspectiveToggleTestID="quillamap-native-perspective-toggle"
           compassTestID="quillamap-native-compass-toggle"
           compassBearing={compassBearing}

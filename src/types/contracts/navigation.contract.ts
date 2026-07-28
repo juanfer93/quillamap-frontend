@@ -1,6 +1,6 @@
 export type NavigationMode = 'peaton' | 'turista' | 'moto' | 'carro';
 
-export type RouteEngineProvider = 'osrm' | 'valhalla' | 'tomtom';
+export type RouteEngineProvider = 'osrm' | 'valhalla' | 'tomtom' | 'otp';
 
 export type RouteLegalStatus = 'allowed' | 'blocked' | 'rerouted';
 
@@ -71,6 +71,26 @@ export interface RouteAlternativeSummary {
   provider: RouteEngineProvider;
 }
 
+export interface RouteTransitLegSummary {
+  id: string;
+  type: 'walk' | 'bus' | 'transfer';
+  routeShortName?: string;
+  agencyKind?: 'transmetro' | 'colectivo';
+  fromLabel?: string;
+  toLabel?: string;
+  distanceMeters: number;
+  durationSeconds: number;
+}
+
+export interface RouteTransitSummary {
+  mode: 'peaton' | 'turista';
+  transfers: number;
+  riskStatus: 'clear' | 'warning' | 'rerouted' | 'blocked';
+  recalculatedForRisk: boolean;
+  sourceVersion: string;
+  legs: RouteTransitLegSummary[];
+}
+
 export interface RouteResponse {
   geometry: RouteCoordinate[];
   distanceMeters: number;
@@ -83,6 +103,7 @@ export interface RouteResponse {
   alternatives?: RouteAlternativeSummary[];
   selectedRouteIndex?: number;
   trafficDelaySeconds?: number;
+  transit?: RouteTransitSummary;
 }
 
 export interface RouteRiskMatch {

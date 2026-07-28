@@ -24,6 +24,7 @@ interface QuillaMapControlsProps {
   mapShade: string;
   primary: string;
   zonesCount: number;
+  showCompass?: boolean;
   showZoom?: boolean;
   showLocate?: boolean;
   zoomInTestID?: string;
@@ -59,6 +60,7 @@ const QuillaMapControls = ({
   mapShade,
   primary,
   zonesCount,
+  showCompass = true,
   showZoom = false,
   showLocate = false,
   zoomInTestID,
@@ -156,34 +158,36 @@ const QuillaMapControls = ({
         </View>
       ) : null}
 
-      <Pressable
-        testID={compassTestID}
-        accessibilityRole="button"
-        accessibilityLabel="Cambiar orientacion cardinal del mapa"
-        onPress={() => runControlAction(onToggleCompass)}
-        style={[
-          tw`absolute right-m top-24 w-9 h-9 rounded-lg border items-center justify-center`,
-          buttonSurfaceStyle,
-        ]}
-      >
-        <View style={tw`absolute inset-0 items-center justify-center`}>
-          <Text style={{ position: 'absolute', top: 1, color: compassAccent, fontSize: 7, fontWeight: '900', lineHeight: 8 }}>
-            N
-          </Text>
-          <Text style={{ position: 'absolute', bottom: 1, color: controlText, fontSize: 7, fontWeight: '800', lineHeight: 8 }}>
-            S
-          </Text>
-          <Text style={{ position: 'absolute', right: 3, color: controlText, fontSize: 7, fontWeight: '800', lineHeight: 8 }}>
-            E
-          </Text>
-          <Text style={{ position: 'absolute', left: 3, color: controlText, fontSize: 7, fontWeight: '800', lineHeight: 8 }}>
-            O
-          </Text>
-          <View style={{ transform: [{ rotate: `${compassBearing}deg` }] }}>
-            <MapIcon name="arrow-up" size={11} color={compassAccent} />
+      {showCompass ? (
+        <Pressable
+          testID={compassTestID}
+          accessibilityRole="button"
+          accessibilityLabel="Cambiar orientacion cardinal del mapa"
+          onPress={() => runControlAction(onToggleCompass)}
+          style={[
+            tw`absolute right-m top-28 w-9 h-9 rounded-lg border items-center justify-center`,
+            buttonSurfaceStyle,
+          ]}
+        >
+          <View style={tw`absolute inset-0 items-center justify-center`}>
+            <Text style={{ position: 'absolute', top: 1, color: compassAccent, fontSize: 7, fontWeight: '900', lineHeight: 8 }}>
+              N
+            </Text>
+            <Text style={{ position: 'absolute', bottom: 1, color: controlText, fontSize: 7, fontWeight: '800', lineHeight: 8 }}>
+              S
+            </Text>
+            <Text style={{ position: 'absolute', right: 3, color: controlText, fontSize: 7, fontWeight: '800', lineHeight: 8 }}>
+              E
+            </Text>
+            <Text style={{ position: 'absolute', left: 3, color: controlText, fontSize: 7, fontWeight: '800', lineHeight: 8 }}>
+              O
+            </Text>
+            <View style={{ transform: [{ rotate: `${compassBearing}deg` }] }}>
+              <MapIcon name="arrow-up" size={11} color={compassAccent} />
+            </View>
           </View>
-        </View>
-      </Pressable>
+        </Pressable>
+      ) : null}
 
       {isPedestrian && showZoom ? (
         <View

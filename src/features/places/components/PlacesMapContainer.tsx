@@ -11,10 +11,17 @@ interface PlacesMapContainerProps {
   mode: 'tourist' | 'car' | 'motorcycle';
   themeMode?: 'light' | 'dark';
   licensePlate?: string | null;
+  onOpenPublicTransport?: () => void;
   onLogout: () => void;
 }
 
-const PlacesMapContainer = ({ mode, themeMode = 'light', licensePlate, onLogout }: PlacesMapContainerProps) => {
+const PlacesMapContainer = ({
+  mode,
+  themeMode = 'light',
+  licensePlate,
+  onOpenPublicTransport,
+  onLogout,
+}: PlacesMapContainerProps) => {
   const { currentLocation } = useLocationPermissions();
   const center = currentLocation ?? DEFAULT_PEDESTRIAN_CENTER;
   const { places } = usePlaces({
@@ -33,9 +40,11 @@ const PlacesMapContainer = ({ mode, themeMode = 'light', licensePlate, onLogout 
         showDefaultShadeZones={false}
         places={places}
         licensePlate={licensePlate}
-        profileTools={(
+        renderProfileTools={(transitRoutesSection) => (
           <UserToolsMenu
             canReportShadow={false}
+            profileSections={transitRoutesSection}
+            onOpenPublicTransport={onOpenPublicTransport}
             onLogout={onLogout}
           />
         )}

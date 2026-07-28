@@ -13,6 +13,7 @@
     "docker:dev:logs": "docker compose --env-file docker-compose.dev.env -f docker-compose.dev.yml logs -f",
     "test": "jest",
     "test:navigation:live": "node scripts/navigation-live-qa.mjs",
+    "audit:transit-routes": "node scripts/transit-route-audit.mjs",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {

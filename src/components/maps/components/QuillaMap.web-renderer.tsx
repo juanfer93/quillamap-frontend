@@ -34,6 +34,9 @@ import {
   getRouteFeatureCollection,
   getShadeZoneAreasFeatureCollection,
   getShadeZonesFeatureCollection,
+  getTransitMapBounds,
+  getTransitRouteFeatureCollection,
+  getTransitStopFeatureCollection,
   getUserLocationFeatureCollection,
   NAVIGATION_ARROW_LAYER_ID,
   NAVIGATION_ARROW_MARKER,
@@ -46,6 +49,12 @@ import {
   NAVIGATION_ROUTE_LAYER_ID,
   NAVIGATION_ROUTE_LINE_STYLE,
   NAVIGATION_ROUTE_SOURCE_ID,
+  TRANSIT_ROUTE_HALO_LAYER_ID,
+  TRANSIT_ROUTE_LAYER_ID,
+  TRANSIT_ROUTE_LINE_STYLE,
+  TRANSIT_ROUTE_SOURCE_ID,
+  TRANSIT_STOP_LAYER_ID,
+  TRANSIT_STOP_SOURCE_ID,
   USER_LOCATION_LAYER_ID,
   USER_LOCATION_SOURCE_ID,
 } from '../styles/QuillaMap.maplibre';
@@ -54,6 +63,7 @@ const MapIcon = Ionicons as React.ComponentType<MapIconProps>;
 type AddLayerObject = Parameters<MapLibreMap['addLayer']>[0];
 const INITIAL_PEDESTRIAN_ZOOM = 16;
 const INITIAL_DEFAULT_ZOOM = 15;
+const PLACES_MIN_VISIBLE_ZOOM = 14.75;
 const CAMERA_ANIMATION_DURATION_MS = 520;
 const CARDINAL_BEARINGS = [0, 90, 180, 270] as const;
 type CardinalBearing = typeof CARDINAL_BEARINGS[number];
@@ -133,7 +143,10 @@ const QuillaMapWebRenderer = ({
   places,
   showDefaultShadeZones,
   routePoints,
+  transitMap,
   showUserLocation = true,
+  showCompassControl = true,
+  showZoomControl = true,
   children,
   profileTools,
   onShadeZonePress,
@@ -153,7 +166,9 @@ const QuillaMapWebRenderer = ({
   const mapStyle = getMapLibreStyle(themeMode);
   const shouldShowShadowZones = !(isPedestrian && isDark);
   const zones = shouldShowShadowZones ? getVisibleShadeZones(shadeZones, showDefaultShadeZones) : [];
-  const visiblePlaces = getVisiblePlaces(places);
+  const zoomLevelRef = useRef(isPedestrian ? INITIAL_PEDESTRIAN_ZOOM : INITIAL_DEFAULT_ZOOM);
+  const [mapZoom, setMapZoom] = useState(zoomLevelRef.current);
+  const visiblePlaces = mapZoom >= PLACES_MIN_VISIBLE_ZOOM ? getVisiblePlaces(places) : [];
   const canOpenPlaces = canInteractWithPlaces(mode);
   const placesRef = useRef(visiblePlaces);
   const zonesRef = useRef(zones);
@@ -161,7 +176,6 @@ const QuillaMapWebRenderer = ({
   const onPlacePressRef = useRef(onPlacePress);
   const onShadeZonePressRef = useRef(onShadeZonePress);
   const canOpenPlacesRef = useRef(canOpenPlaces);
-  const zoomLevelRef = useRef(isPedestrian ? INITIAL_PEDESTRIAN_ZOOM : INITIAL_DEFAULT_ZOOM);
   const [is3D, setIs3D] = useState(false);
   const [cameraBearing, setCameraBearing] = useState<number>(0);
   const [selectedPlace, setSelectedPlace] = useState<PlaceMapFeature | null>(null);
@@ -179,6 +193,15 @@ const QuillaMapWebRenderer = ({
   const controlText = isDark ? DARK_MAP_THEME.controlText : darkGray;
   const controlBorder = isDark ? DARK_MAP_THEME.controlBorder : tokenColor('medium-gray', '#E0E0E0');
   const routeFeature = useMemo(() => getRouteFeatureCollection(route), [route]);
+  const transitRouteFeatureCollection = useMemo(
+    () => getTransitRouteFeatureCollection(transitMap),
+    [transitMap]
+  );
+  const transitStopFeatureCollection = useMemo(
+    () => getTransitStopFeatureCollection(transitMap),
+    [transitMap]
+  );
+  const transitMapBounds = useMemo(() => getTransitMapBounds(transitMap), [transitMap]);
   const routeBearing = useMemo(() => getNavigationBearingDegrees(route), [route]);
   const navigationArrowFeatureCollection = useMemo(
     () => getNavigationArrowFeatureCollection(showUserLocation ? center : null, route),
@@ -257,6 +280,14 @@ const QuillaMapWebRenderer = ({
   }, [onShadeZonePress]);
 
   useEffect(() => {
+    if (mapZoom >= PLACES_MIN_VISIBLE_ZOOM) {
+      return;
+    }
+
+    setSelectedPlace(null);
+  }, [mapZoom]);
+
+  useEffect(() => {
     if (!hasDom() || mapRef.current || !mapHostRef.current) {
       return undefined;
     }
@@ -273,6 +304,9 @@ const QuillaMapWebRenderer = ({
     });
 
     const syncCompassBearing = () => {
+      const nextZoom = map.getZoom();
+      zoomLevelRef.current = nextZoom;
+      setMapZoom(nextZoom);
       setCameraBearing(normalizeBearing(map.getBearing()));
     };
 
@@ -362,6 +396,8 @@ const QuillaMapWebRenderer = ({
 
     const applyLayers = () => {
       upsertGeoJsonSource(map, NAVIGATION_ROUTE_SOURCE_ID, routeFeature);
+      upsertGeoJsonSource(map, TRANSIT_ROUTE_SOURCE_ID, transitRouteFeatureCollection);
+      upsertGeoJsonSource(map, TRANSIT_STOP_SOURCE_ID, transitStopFeatureCollection);
       upsertGeoJsonSource(map, NAVIGATION_ARROW_SOURCE_ID, navigationArrowFeatureCollection);
       upsertGeoJsonSource(map, USER_LOCATION_SOURCE_ID, userLocationFeatureCollection);
       upsertGeoJsonSource(map, NAVIGATION_DESTINATION_SOURCE_ID, destinationFeatureCollection);
@@ -401,6 +437,41 @@ const QuillaMapWebRenderer = ({
       });
       map.setLayoutProperty('places-buildings', 'visibility', is3D ? 'visible' : 'none');
       map.setLayoutProperty('places-building-outline', 'visibility', is3D ? 'visible' : 'none');
+
+      addLayerIfMissing(TRANSIT_ROUTE_HALO_LAYER_ID, {
+        id: TRANSIT_ROUTE_HALO_LAYER_ID,
+        type: 'line',
+        source: TRANSIT_ROUTE_SOURCE_ID,
+        paint: {
+          'line-color': TRANSIT_ROUTE_LINE_STYLE.haloColor,
+          'line-width': TRANSIT_ROUTE_LINE_STYLE.haloWidth,
+          'line-opacity': TRANSIT_ROUTE_LINE_STYLE.haloOpacity,
+        },
+        layout: {
+          'line-cap': TRANSIT_ROUTE_LINE_STYLE.lineCap,
+          'line-join': TRANSIT_ROUTE_LINE_STYLE.lineJoin,
+        },
+      });
+      map.setPaintProperty(TRANSIT_ROUTE_HALO_LAYER_ID, 'line-color', TRANSIT_ROUTE_LINE_STYLE.haloColor);
+      map.setPaintProperty(TRANSIT_ROUTE_HALO_LAYER_ID, 'line-width', TRANSIT_ROUTE_LINE_STYLE.haloWidth);
+      map.setPaintProperty(TRANSIT_ROUTE_HALO_LAYER_ID, 'line-opacity', TRANSIT_ROUTE_LINE_STYLE.haloOpacity);
+
+      addLayerIfMissing(TRANSIT_ROUTE_LAYER_ID, {
+        id: TRANSIT_ROUTE_LAYER_ID,
+        type: 'line',
+        source: TRANSIT_ROUTE_SOURCE_ID,
+        paint: {
+          'line-color': ['get', 'color'],
+          'line-width': TRANSIT_ROUTE_LINE_STYLE.lineWidth,
+          'line-opacity': TRANSIT_ROUTE_LINE_STYLE.lineOpacity,
+        },
+        layout: {
+          'line-cap': TRANSIT_ROUTE_LINE_STYLE.lineCap,
+          'line-join': TRANSIT_ROUTE_LINE_STYLE.lineJoin,
+        },
+      });
+      map.setPaintProperty(TRANSIT_ROUTE_LAYER_ID, 'line-width', TRANSIT_ROUTE_LINE_STYLE.lineWidth);
+      map.setPaintProperty(TRANSIT_ROUTE_LAYER_ID, 'line-opacity', TRANSIT_ROUTE_LINE_STYLE.lineOpacity);
 
       addLayerIfMissing(NAVIGATION_ROUTE_HALO_LAYER_ID, {
         id: NAVIGATION_ROUTE_HALO_LAYER_ID,
@@ -456,6 +527,29 @@ const QuillaMapWebRenderer = ({
           'circle-color': primary,
           'circle-radius': 4,
           'circle-opacity': 1,
+        },
+      });
+
+      addLayerIfMissing(`${TRANSIT_STOP_LAYER_ID}-halo`, {
+        id: `${TRANSIT_STOP_LAYER_ID}-halo`,
+        type: 'circle',
+        source: TRANSIT_STOP_SOURCE_ID,
+        paint: {
+          'circle-color': white,
+          'circle-radius': 5,
+          'circle-opacity': 0.76,
+        },
+      });
+      addLayerIfMissing(TRANSIT_STOP_LAYER_ID, {
+        id: TRANSIT_STOP_LAYER_ID,
+        type: 'circle',
+        source: TRANSIT_STOP_SOURCE_ID,
+        paint: {
+          'circle-color': ['get', 'color'],
+          'circle-radius': ['case', ['==', ['get', 'agencyKind'], 'transmetro'], 4.5, 3.6],
+          'circle-opacity': 0.95,
+          'circle-stroke-color': white,
+          'circle-stroke-width': 1,
         },
       });
 
@@ -622,6 +716,8 @@ const QuillaMapWebRenderer = ({
     shadeAreaFeatureCollection,
     shadeFeatureCollection,
     shadeMarkerColor,
+    transitRouteFeatureCollection,
+    transitStopFeatureCollection,
     userLocationFeatureCollection,
   ]);
 
@@ -641,6 +737,18 @@ const QuillaMapWebRenderer = ({
       duration: CAMERA_ANIMATION_DURATION_MS,
     });
   }, [route]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || route.length > 1 || !transitMapBounds) {
+      return;
+    }
+
+    map.fitBounds([transitMapBounds.southWest, transitMapBounds.northEast], {
+      padding: { top: 96, bottom: 96, left: 36, right: 36 },
+      duration: CAMERA_ANIMATION_DURATION_MS,
+    });
+  }, [route.length, transitMapBounds]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -714,6 +822,7 @@ const QuillaMapWebRenderer = ({
     const currentZoom = map?.getZoom() ?? zoomLevelRef.current;
     const nextZoom = Math.max(11, Math.min(currentZoom + delta, 19));
     zoomLevelRef.current = nextZoom;
+    setMapZoom(nextZoom);
     map?.easeTo({
       zoom: nextZoom,
       duration: CAMERA_ANIMATION_DURATION_MS,
@@ -834,6 +943,16 @@ const QuillaMapWebRenderer = ({
           />
         ) : null}
         <View testID="quillamap-web-route" style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }} />
+        <View
+          testID="quillamap-web-transit-routes"
+          {...({ featuresCount: transitRouteFeatureCollection.features.length } as Record<string, unknown>)}
+          style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }}
+        />
+        <View
+          testID="quillamap-web-transit-stops"
+          {...({ featuresCount: transitStopFeatureCollection.features.length } as Record<string, unknown>)}
+          style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }}
+        />
         <View testID="quillamap-web-map-art" style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }} />
         <View testID="quillamap-web-map-tiles" style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }} />
         {route.length > 1 && showUserLocation ? (
@@ -858,7 +977,8 @@ const QuillaMapWebRenderer = ({
           mapShade={mapShade}
           primary={primary}
           zonesCount={zones.length}
-          showZoom={isPedestrian}
+          showCompass={showCompassControl}
+          showZoom={isPedestrian && showZoomControl}
           showLocate
           perspectiveToggleTestID="quillamap-web-perspective-toggle"
           compassTestID="quillamap-web-compass-toggle"

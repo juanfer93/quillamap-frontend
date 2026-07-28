@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import type { ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import tw from '@/lib/tailwind';
@@ -17,6 +18,8 @@ interface UserToolsMenuProps {
   isReportShadowDisabled?: boolean;
   isReportingShadow?: boolean;
   reportShadowLabel?: string;
+  profileSections?: ReactNode;
+  onOpenPublicTransport?: () => void;
   onReportShadow?: () => Promise<void> | void;
   onLogout: () => void;
 }
@@ -28,6 +31,8 @@ const UserToolsMenu = ({
   isReportShadowDisabled = false,
   isReportingShadow = false,
   reportShadowLabel = 'Reportar sombra',
+  profileSections,
+  onOpenPublicTransport,
   onReportShadow,
   onLogout,
 }: UserToolsMenuProps) => {
@@ -57,12 +62,17 @@ const UserToolsMenu = ({
     onLogout();
   };
 
+  const handleOpenPublicTransport = () => {
+    setIsOpen(false);
+    onOpenPublicTransport?.();
+  };
+
   return (
     <View testID="user-tools-menu" style={tw`items-center justify-center`}>
       {isOpen ? (
         <View
           testID="user-tools-menu-panel"
-          style={tw`absolute right-0 bottom-12 w-56 rounded-m border border-medium-gray bg-white dark:bg-slate p-s`}
+          style={tw`absolute right-0 bottom-12 w-72 rounded-m border border-medium-gray bg-white dark:bg-slate p-s`}
         >
           <View
             testID="user-tools-karma"
@@ -76,6 +86,22 @@ const UserToolsMenu = ({
               {totalKarma}
             </Text>
           </View>
+
+          {profileSections}
+
+          {onOpenPublicTransport ? (
+            <Pressable
+              testID="public-transport-toggle"
+              accessibilityRole="button"
+              accessibilityLabel="Abrir transporte publico"
+              onPress={handleOpenPublicTransport}
+              style={tw`mb-s min-h-11 items-center justify-center rounded-s bg-primary px-s py-s`}
+            >
+              <Text numberOfLines={1} style={tw`font-bold text-white`}>
+                Transporte público
+              </Text>
+            </Pressable>
+          ) : null}
 
           {canReportShadow ? (
             <Pressable

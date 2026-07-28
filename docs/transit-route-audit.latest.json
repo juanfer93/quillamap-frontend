@@ -1,0 +1,1634 @@
+{
+  "generatedAtIso": "2026-07-23T22:39:24.852Z",
+  "sourceGeneratedAtIso": "2026-07-23T22:39:24.317Z",
+  "summary": {
+    "expectedRoutes": 131,
+    "existingExpectedRoutes": 66,
+    "validShapes": 66,
+    "incompleteShapes": 0,
+    "missingRoutes": 65,
+    "routeFeaturesReturned": 71,
+    "unmatchedExistingRoutes": 5,
+    "stopFeaturesReturned": 588
+  },
+  "routes": [
+    {
+      "agencyKind": "colectivo",
+      "operator": "Flota Angulo",
+      "route": "A7-4112",
+      "routeKey": "A74112",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Transmecar",
+      "route": "C17-4160",
+      "routeKey": "C174160",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Transmecar",
+      "route": "D10-4172",
+      "routeKey": "D104172",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Transmecar",
+      "route": "D11-4153",
+      "routeKey": "D114153",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Transmecar",
+      "route": "D9-4152",
+      "routeKey": "D94152",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Flota Roja",
+      "route": "A8-4113",
+      "routeKey": "A84113",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Transdiaz",
+      "route": "A10-4114 A",
+      "routeKey": "A104114A",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Transdiaz",
+      "route": "A10-4114 B",
+      "routeKey": "A104114B",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Transdiaz",
+      "route": "A11-4115",
+      "routeKey": "A114115",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Transdiaz",
+      "route": "B16-4130",
+      "routeKey": "B164130",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Cootrab",
+      "route": "C5-4135",
+      "routeKey": "C54135",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Cootrab",
+      "route": "C6-4137",
+      "routeKey": "C64137",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Embusa",
+      "route": "B9-4125",
+      "routeKey": "B94125",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Monterrey",
+      "route": "B11-4166",
+      "routeKey": "B114166",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Monterrey",
+      "route": "B12-4127",
+      "routeKey": "B124127",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Monterrey",
+      "route": "B8-4124",
+      "routeKey": "B84124",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Monterrey",
+      "route": "B11-B-4192",
+      "routeKey": "B11B4192",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "La Carolina",
+      "route": "A16-4161 A",
+      "routeKey": "A164161A",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "La Carolina",
+      "route": "A16-4161 B",
+      "routeKey": "A164161B",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "La Carolina",
+      "route": "D6-4150",
+      "routeKey": "D64150",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "La Carolina",
+      "route": "D7-4151",
+      "routeKey": "D74151",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Cootransporcar",
+      "route": "C8-4139",
+      "routeKey": "C84139",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Coochofal",
+      "route": "A15-4159",
+      "routeKey": "A154159",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Coochofal",
+      "route": "C2-4133",
+      "routeKey": "C24133",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Coochofal",
+      "route": "C2-B-4187",
+      "routeKey": "C2B4187",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Coochofal",
+      "route": "C3-4134",
+      "routeKey": "C34134",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Coochofal",
+      "route": "C4-4135",
+      "routeKey": "C44135",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Coochofal",
+      "route": "C9-4140",
+      "routeKey": "C94140",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Coochofal",
+      "route": "C18-4141",
+      "routeKey": "C184141",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Coochofal",
+      "route": "D20-4185",
+      "routeKey": "D204185",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Trasalfa",
+      "route": "D15-4157",
+      "routeKey": "D154157",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Trasalfa",
+      "route": "D14-4156",
+      "routeKey": "D144156",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Trasalfa",
+      "route": "B2-B-4118",
+      "routeKey": "B2B4118",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Coolitoral",
+      "route": "A1-4106 A",
+      "routeKey": "A14106A",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-coolitoral-a1-4106-a",
+          "label": "A1-4106 A",
+          "operatorName": "COOLITORAL",
+          "coordinateCount": 541,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Coolitoral",
+      "route": "A1-4106 B",
+      "routeKey": "A14106B",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-coolitoral-a1-4106-b",
+          "label": "A1-4106 B",
+          "operatorName": "COOLITORAL",
+          "coordinateCount": 436,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Coolitoral",
+      "route": "A2-4107",
+      "routeKey": "A24107",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-coolitoral-a2-4107",
+          "label": "A2-4107",
+          "operatorName": "COOLITORAL",
+          "coordinateCount": 601,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Coolitoral",
+      "route": "A3-4108",
+      "routeKey": "A34108",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-coolitoral-a3-4108",
+          "label": "A3-4108",
+          "operatorName": "COOLITORAL",
+          "coordinateCount": 365,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Coolitoral",
+      "route": "A4-4109",
+      "routeKey": "A44109",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-coolitoral-a4-4109",
+          "label": "A4-4109",
+          "operatorName": "COOLITORAL",
+          "coordinateCount": 288,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Coolitoral",
+      "route": "B1-4117",
+      "routeKey": "B14117",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-coolitoral-b1-4117",
+          "label": "B1-4117",
+          "operatorName": "COOLITORAL",
+          "coordinateCount": 242,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Coolitoral",
+      "route": "B2A-4177",
+      "routeKey": "B2A4177",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-coolitoral-b2a-4177",
+          "label": "B2A-4177",
+          "operatorName": "COOLITORAL",
+          "coordinateCount": 718,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Coolitoral",
+      "route": "B3-4119",
+      "routeKey": "B34119",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-coolitoral-b3-4119",
+          "label": "B3-4119",
+          "operatorName": "COOLITORAL",
+          "coordinateCount": 256,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Coolitoral",
+      "route": "B17-4163",
+      "routeKey": "B174163",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-coolitoral-b17-4163",
+          "label": "B17-4163",
+          "operatorName": "COOLITORAL",
+          "coordinateCount": 314,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Coolitoral",
+      "route": "C19-4178",
+      "routeKey": "C194178",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-coolitoral-c19-4178",
+          "label": "C19-4178",
+          "operatorName": "COOLITORAL",
+          "coordinateCount": 497,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Coolitoral",
+      "route": "PT1",
+      "routeKey": "PT1",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-coolitoral-pt1",
+          "label": "PT1",
+          "operatorName": "COOLITORAL",
+          "coordinateCount": 387,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Coolitoral",
+      "route": "PT2",
+      "routeKey": "PT2",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-coolitoral-pt2",
+          "label": "PT2",
+          "operatorName": "COOLITORAL",
+          "coordinateCount": 964,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Coolitoral",
+      "route": "PT3",
+      "routeKey": "PT3",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-coolitoral-pt3",
+          "label": "PT3",
+          "operatorName": "COOLITORAL",
+          "coordinateCount": 1007,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Coolitoral",
+      "route": "PT4",
+      "routeKey": "PT4",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-coolitoral-pt4",
+          "label": "PT4",
+          "operatorName": "COOLITORAL",
+          "coordinateCount": 467,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Coolitoral",
+      "route": "PT5",
+      "routeKey": "PT5",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-coolitoral-pt5",
+          "label": "PT5",
+          "operatorName": "COOLITORAL",
+          "coordinateCount": 467,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Cootrantico",
+      "route": "A18-4183",
+      "routeKey": "A184183",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-cootrantico-a18-4183",
+          "label": "A18-4183",
+          "operatorName": "COOTRANTICO",
+          "coordinateCount": 490,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Cootrantico",
+      "route": "B4-4120",
+      "routeKey": "B44120",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-cootrantico-b4-4120",
+          "label": "B4-4120",
+          "operatorName": "COOTRANTICO",
+          "coordinateCount": 300,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Cootrantico",
+      "route": "B5-4121",
+      "routeKey": "B54121",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-cootrantico-b5-4121",
+          "label": "B5-4121",
+          "operatorName": "COOTRANTICO",
+          "coordinateCount": 519,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Cootrantico",
+      "route": "B5-B-4190",
+      "routeKey": "B5B4190",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-cootrantico-b5-b-4190",
+          "label": "B5-B-4190",
+          "operatorName": "COOTRANTICO",
+          "coordinateCount": 645,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Cootrantico",
+      "route": "B6-4122",
+      "routeKey": "B64122",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-cootrantico-b6-4122",
+          "label": "B6-4122",
+          "operatorName": "COOTRANTICO",
+          "coordinateCount": 692,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Cootrantico",
+      "route": "B7-4123",
+      "routeKey": "B74123",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-cootrantico-b7-4123",
+          "label": "B7-4123",
+          "operatorName": "COOTRANTICO",
+          "coordinateCount": 634,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Cootrantico",
+      "route": "B20-4180",
+      "routeKey": "B204180",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-cootrantico-b20-4180",
+          "label": "B20-4180",
+          "operatorName": "COOTRANTICO",
+          "coordinateCount": 401,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Cootrantico",
+      "route": "B20-B-4191",
+      "routeKey": "B20B4191",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-cootrantico-b20-b-4191",
+          "label": "B20-B-4191",
+          "operatorName": "COOTRANTICO",
+          "coordinateCount": 505,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Lolaya",
+      "route": "B10-4126",
+      "routeKey": "B104126",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Lolaya",
+      "route": "B10-B-4193",
+      "routeKey": "B10B4193",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Lolaya",
+      "route": "D8-4165",
+      "routeKey": "D84165",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Cootransco",
+      "route": "C7-4138",
+      "routeKey": "C74138",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Cootrasol",
+      "route": "D3-4147",
+      "routeKey": "D34147",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Cootrasol",
+      "route": "D4-4148",
+      "routeKey": "D44148",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Cootrasol",
+      "route": "D5-4149",
+      "routeKey": "D54149",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Sobusa",
+      "route": "B18-4175 A",
+      "routeKey": "B184175A",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-sobusa-b18-4175-a",
+          "label": "B18-4175 A",
+          "operatorName": "SOBUSA",
+          "coordinateCount": 1265,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Sobusa",
+      "route": "B18-4175 B",
+      "routeKey": "B184175B",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-sobusa-b18-4175-b",
+          "label": "B18-4175 B",
+          "operatorName": "SOBUSA",
+          "coordinateCount": 1265,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Sobusa",
+      "route": "C11-4168",
+      "routeKey": "C114168",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-sobusa-c11-4168",
+          "label": "C11-4168",
+          "operatorName": "SOBUSA",
+          "coordinateCount": 1474,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Sobusa",
+      "route": "C12-4169 A",
+      "routeKey": "C124169A",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-sobusa-c12-4169-a",
+          "label": "C12-4169 A",
+          "operatorName": "SOBUSA",
+          "coordinateCount": 860,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Sobusa",
+      "route": "C12-4169 B",
+      "routeKey": "C124169B",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-sobusa-c12-4169-b",
+          "label": "C12-4169 B",
+          "operatorName": "SOBUSA",
+          "coordinateCount": 860,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Sobusa",
+      "route": "C13-4143",
+      "routeKey": "C134143",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-sobusa-c13-4143",
+          "label": "C13-4143",
+          "operatorName": "SOBUSA",
+          "coordinateCount": 875,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Sobusa",
+      "route": "C14-4170",
+      "routeKey": "C144170",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-sobusa-c14-4170",
+          "label": "C14-4170",
+          "operatorName": "SOBUSA",
+          "coordinateCount": 1290,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Sobusa",
+      "route": "C16-4167 A",
+      "routeKey": "C164167A",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-sobusa-c16-4167-a",
+          "label": "C16-4167 A",
+          "operatorName": "SOBUSA",
+          "coordinateCount": 1590,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Sobusa",
+      "route": "C16-4167 B",
+      "routeKey": "C164167B",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "amb-sobusa-c16-4167-b",
+          "label": "C16-4167 B",
+          "operatorName": "SOBUSA",
+          "coordinateCount": 1590,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Transoledad",
+      "route": "D13-4155",
+      "routeKey": "D134155",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Transurbar",
+      "route": "A14-4116",
+      "routeKey": "A144116",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Transurbar",
+      "route": "D19-4184",
+      "routeKey": "D194184",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Transurbar",
+      "route": "D16-4173",
+      "routeKey": "D164173",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Sodetrans",
+      "route": "B13-4128",
+      "routeKey": "B134128",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Sodetrans",
+      "route": "B13-B-4189",
+      "routeKey": "B13B4189",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Sodetrans",
+      "route": "B14-4174",
+      "routeKey": "B144174",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Sodetrans",
+      "route": "B15-4129 A",
+      "routeKey": "B154129A",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Sodetrans",
+      "route": "B15-4129 B",
+      "routeKey": "B154129B",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Sodetrans",
+      "route": "C21-4182 A",
+      "routeKey": "C214182A",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Sodetrans",
+      "route": "C21-4182 B",
+      "routeKey": "C214182B",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Cootransnorte",
+      "route": "A6-4111",
+      "routeKey": "A64111",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Cootransnorte",
+      "route": "A5-4110",
+      "routeKey": "A54110",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Trasalianco",
+      "route": "B19-4176",
+      "routeKey": "B194176",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Trasalianco",
+      "route": "D18-4179",
+      "routeKey": "D184179",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Trasalianco",
+      "route": "D12-4154",
+      "routeKey": "D124154",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Trasalianco",
+      "route": "D17-4158",
+      "routeKey": "D174158",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Cooasoatlan",
+      "route": "C1-4132",
+      "routeKey": "C14132",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Cooasoatlan",
+      "route": "C1-B-4186",
+      "routeKey": "C1B4186",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Cooasoatlan",
+      "route": "C20-4181",
+      "routeKey": "C204181",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "colectivo",
+      "operator": "Cooasoatlan",
+      "route": "C20-B-4187",
+      "routeKey": "C20B4187",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Troncales",
+      "route": "B1",
+      "routeKey": "B1",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-2382289",
+          "label": "B1",
+          "operatorName": "Transmetro S.A.S.",
+          "coordinateCount": 380,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Troncales",
+      "route": "B2",
+      "routeKey": "B2",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-2382294",
+          "label": "B2",
+          "operatorName": "Transmetro SAS",
+          "coordinateCount": 189,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Troncales",
+      "route": "R1",
+      "routeKey": "R1",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-2382291",
+          "label": "R1",
+          "operatorName": "Transmetro S.A.S.",
+          "coordinateCount": 386,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Troncales",
+      "route": "R2",
+      "routeKey": "R2",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-2382293",
+          "label": "R2",
+          "operatorName": "Trasmetro S.A.S.",
+          "coordinateCount": 225,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Troncales",
+      "route": "S1",
+      "routeKey": "S1",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-2382290",
+          "label": "S1",
+          "operatorName": "Transmetro S.A.S.",
+          "coordinateCount": 410,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Troncales",
+      "route": "S2",
+      "routeKey": "S2",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-2382288",
+          "label": "S2",
+          "operatorName": "Transmetro S.A.S.",
+          "coordinateCount": 413,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Expresos / variantes",
+      "route": "R10",
+      "routeKey": "R10",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-19072991",
+          "label": "R10",
+          "operatorName": "Transmetro",
+          "coordinateCount": 346,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Expresos / variantes",
+      "route": "S10",
+      "routeKey": "S10",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-19073002",
+          "label": "Bus S10: Estación retorno Joe Arroyo => Portal de Soledad",
+          "operatorName": "Transmetro",
+          "coordinateCount": 337,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Expresos / variantes",
+      "route": "S20",
+      "routeKey": "S20",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Alimentadoras",
+      "route": "A1-2",
+      "routeKey": "A12",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-6017021",
+          "label": "A1-2",
+          "operatorName": "Transmetro",
+          "coordinateCount": 189,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Alimentadoras",
+      "route": "A1-3",
+      "routeKey": "A13",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-12701794",
+          "label": "A1-3",
+          "operatorName": "Transmetro",
+          "coordinateCount": 180,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Alimentadoras",
+      "route": "A1-4",
+      "routeKey": "A14",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-12701793",
+          "label": "A1-4",
+          "operatorName": "Transmetro S.A.S",
+          "coordinateCount": 140,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Alimentadoras",
+      "route": "A2-1",
+      "routeKey": "A21",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-2849260",
+          "label": "A2-1",
+          "operatorName": "Transmetro S.A.S.",
+          "coordinateCount": 474,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Alimentadoras",
+      "route": "A3-1",
+      "routeKey": "A31",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-2965895",
+          "label": "A3-1",
+          "operatorName": "Transmetro S.A.S.",
+          "coordinateCount": 308,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Alimentadoras",
+      "route": "A3-2",
+      "routeKey": "A32",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-2849212",
+          "label": "A3-2",
+          "operatorName": "Transmetro S.A.S.",
+          "coordinateCount": 347,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Alimentadoras",
+      "route": "A3-3",
+      "routeKey": "A33",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-2852353",
+          "label": "A3-3",
+          "operatorName": "Transmetro S.A.S.",
+          "coordinateCount": 340,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Alimentadoras",
+      "route": "A3-4",
+      "routeKey": "A34",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-6029786",
+          "label": "A3-4",
+          "operatorName": "Transmetro S.A.S.",
+          "coordinateCount": 297,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Alimentadoras",
+      "route": "A3-41",
+      "routeKey": "A341",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-13286887",
+          "label": "A3-41",
+          "operatorName": "Transmetro",
+          "coordinateCount": 260,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Alimentadoras",
+      "route": "A5-1",
+      "routeKey": "A51",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-6029902",
+          "label": "A5-1",
+          "operatorName": "Transmetro",
+          "coordinateCount": 286,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Alimentadoras",
+      "route": "A5-2",
+      "routeKey": "A52",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-6030552",
+          "label": "A5-2",
+          "operatorName": "Transmetro S.A.",
+          "coordinateCount": 127,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Alimentadoras",
+      "route": "A5-3",
+      "routeKey": "A53",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-6030553",
+          "label": "A5-3",
+          "operatorName": "Transmetro S.A.S.",
+          "coordinateCount": 259,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Alimentadoras",
+      "route": "A5-4",
+      "routeKey": "A54",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-12704445",
+          "label": "A5-4",
+          "operatorName": "Transmetro S.A.S.",
+          "coordinateCount": 222,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Alimentadoras",
+      "route": "A5-5",
+      "routeKey": "A55",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-11671104",
+          "label": "A5-5",
+          "operatorName": "Transmetro S.A.S.",
+          "coordinateCount": 209,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Alimentadoras",
+      "route": "A6-5",
+      "routeKey": "A65",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-6030875",
+          "label": "A6-5",
+          "operatorName": "Transmetro S.A.S.",
+          "coordinateCount": 133,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Alimentadoras",
+      "route": "A6-6",
+      "routeKey": "A66",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-6030620",
+          "label": "A6-6",
+          "operatorName": "Transmetro",
+          "coordinateCount": 235,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Alimentadoras",
+      "route": "A7-1",
+      "routeKey": "A71",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-6031119",
+          "label": "A7-1",
+          "operatorName": "Transmetro S.A.S",
+          "coordinateCount": 310,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Alimentadoras",
+      "route": "A7-3",
+      "routeKey": "A73",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-6031120",
+          "label": "A7-3",
+          "operatorName": "Transmetro S.A.S.",
+          "coordinateCount": 394,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Alimentadoras",
+      "route": "A7-4",
+      "routeKey": "A74",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-2382602",
+          "label": "A7-4",
+          "operatorName": "Transmetro S.A.S.",
+          "coordinateCount": 457,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Alimentadoras",
+      "route": "A8-1",
+      "routeKey": "A81",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-6036787",
+          "label": "A8-1",
+          "operatorName": "Transmetro S.A.S.",
+          "coordinateCount": 293,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Alimentadoras",
+      "route": "A8-2",
+      "routeKey": "A82",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-6036788",
+          "label": "A8-2",
+          "operatorName": "Transmetro S.A.S.",
+          "coordinateCount": 223,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Alimentadoras",
+      "route": "A8-3",
+      "routeKey": "A83",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-12701792",
+          "label": "A8-3",
+          "operatorName": "Transmetro S.A.",
+          "coordinateCount": 385,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Alimentadoras",
+      "route": "A9-3",
+      "routeKey": "A93",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-6049076",
+          "label": "A9-3",
+          "operatorName": "Transmetro S.A.S.",
+          "coordinateCount": 261,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Alimentadoras",
+      "route": "A9-4",
+      "routeKey": "A94",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-6049077",
+          "label": "A9-4",
+          "operatorName": "Transmetro S.A.S.",
+          "coordinateCount": 173,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Alimentadoras",
+      "route": "U-30",
+      "routeKey": "U30",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-6049149",
+          "label": "U-30",
+          "operatorName": "Transmetro S.A.S.",
+          "coordinateCount": 435,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Alimentadoras",
+      "route": "A4-1 Malambo",
+      "routeKey": "A41MALAMBO",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Especiales",
+      "route": "Gran Malecon",
+      "routeKey": "GRANMALECON",
+      "status": "valid_shape",
+      "matches": [
+        {
+          "routeId": "osm-relation-17808836",
+          "label": "GM",
+          "operatorName": "Transmetro S.A.S.",
+          "coordinateCount": 335,
+          "validShape": true
+        }
+      ]
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Especiales",
+      "route": "Ruta Navidena",
+      "routeKey": "RUTANAVIDENA",
+      "status": "missing",
+      "matches": []
+    },
+    {
+      "agencyKind": "transmetro",
+      "operator": "Especiales",
+      "route": "Ruta Chevere",
+      "routeKey": "RUTACHEVERE",
+      "status": "missing",
+      "matches": []
+    }
+  ],
+  "unmatchedExistingRoutes": [
+    {
+      "agencyKind": "colectivo",
+      "operatorName": "Cooasoatlan",
+      "routeId": "osm-relation-6014571",
+      "label": "Cooasoatlan C1",
+      "coordinateCount": 7,
+      "validShape": true
+    },
+    {
+      "agencyKind": "transmetro",
+      "operatorName": "Transmetro S.A.S.",
+      "routeId": "osm-relation-17808807",
+      "label": "A0-2",
+      "coordinateCount": 97,
+      "validShape": true
+    },
+    {
+      "agencyKind": "transmetro",
+      "operatorName": "Transmetro S.A.S",
+      "routeId": "osm-relation-17805841",
+      "label": "A5-6",
+      "coordinateCount": 134,
+      "validShape": true
+    },
+    {
+      "agencyKind": "transmetro",
+      "operatorName": "Transmetro S.A.S.",
+      "routeId": "osm-relation-17808888",
+      "label": "M",
+      "coordinateCount": 394,
+      "validShape": true
+    },
+    {
+      "agencyKind": "transmetro",
+      "operatorName": "Transmetro S.A.S.",
+      "routeId": "osm-relation-17808915",
+      "label": "VM",
+      "coordinateCount": 330,
+      "validShape": true
+    }
+  ]
+}
