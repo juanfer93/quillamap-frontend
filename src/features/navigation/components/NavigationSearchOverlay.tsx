@@ -96,7 +96,7 @@ const NavigationSearchOverlay = ({
               accessibilityLabel="Buscar destino"
               value={query}
               onChangeText={onQueryChange}
-              placeholder="Buscar destino o lat,lng"
+              placeholder="Buscar lugar o destino"
               placeholderTextColor="#6B7280"
               style={[
                 tw`flex-1 rounded-s border border-medium-gray px-s py-s text-dark-gray`,

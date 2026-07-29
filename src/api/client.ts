@@ -3,6 +3,7 @@ import { RegisterRequest, RegisterResponse, AuthResponse } from '@/features/auth
 import type { CreateReportDto, Report } from '@/features/reports/types/report.types';
 import type { PlaceMapFeature, PlacesNearbyQuery } from '@/types/contracts/places.contract';
 import type { RouteRequest, RouteResponse } from '@/types/contracts/navigation.contract';
+import type { ThermalComfortGreenCoverage } from '@/features/thermal-comfort/types/thermalComfortRoute.types';
 import type {
   TransitCommunityValidationRequest,
   TransitCommunityValidationResponse,
@@ -80,6 +81,13 @@ export const placesApi = {
 export const navigationApi = {
   calculateRoute: async (routeRequest: RouteRequest): Promise<RouteResponse> => {
     const response = await client.post<RouteResponse>('/navigation/route', routeRequest);
+    return response.data;
+  },
+};
+
+export const thermalComfortApi = {
+  findGreenCoverage: async (params: { lat: number; lng: number; radius?: number }): Promise<ThermalComfortGreenCoverage[]> => {
+    const response = await client.get<ThermalComfortGreenCoverage[]>('/thermal-comfort/green-coverage', { params });
     return response.data;
   },
 };

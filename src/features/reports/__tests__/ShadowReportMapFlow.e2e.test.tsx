@@ -1,11 +1,13 @@
 import React from 'react';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
-import { reportsApi } from '@/api/client';
+import { navigationApi, reportsApi, thermalComfortApi } from '@/api/client';
 import { useKarmaRewards } from '@/features/navigation/hooks/useKarmaRewards';
 import { useAuthStore } from '@/store/useAuthStore';
 import ShadowReportMapFlow from '../components/ShadowReportMapFlow';
 import { SHADOW_REPORTS_MAP_LOOKUP_RADIUS_METERS } from '../constants/shadow-report.constants';
 import { ReportStatus, ReportType, type CreateReportDto, type Report } from '../types/report.types';
+
+let mockCurrentLocation: { latitude: number; longitude: number } | null = null;
 
 jest.mock('@expo/vector-icons', () => {
   const ReactMock = jest.requireActual<typeof React>('react');
@@ -19,7 +21,7 @@ jest.mock('@expo/vector-icons', () => {
 jest.mock('@/features/pedestrian/hooks/useLocationPermissions', () => ({
   useLocationPermissions: () => ({
     permissionStatus: 'granted',
-    currentLocation: null,
+    currentLocation: mockCurrentLocation,
     isRequestingPermission: false,
     errorMessage: null,
   }),
@@ -28,7 +30,7 @@ jest.mock('@/features/pedestrian/hooks/useLocationPermissions', () => ({
 jest.mock('@/features/navigation/hooks/useLocationPermissions', () => ({
   useLocationPermissions: () => ({
     permissionStatus: 'granted',
-    currentLocation: null,
+    currentLocation: mockCurrentLocation,
     isRequestingPermission: false,
     errorMessage: null,
   }),
@@ -95,6 +97,7 @@ jest.mock('@maplibre/maplibre-react-native', () => {
     Camera: ReactMock.forwardRef((props: Record<string, unknown>, ref: React.Ref<{ zoomTo: jest.Mock }>) => {
       ReactMock.useImperativeHandle(ref, () => ({
         zoomTo: jest.fn(),
+        setCamera: jest.fn(),
       }));
       return ReactMock.createElement(View, props);
     }),
@@ -125,6 +128,12 @@ jest.mock('@/api/client', () => ({
     create: jest.fn(),
     findNearby: jest.fn(),
   },
+  navigationApi: {
+    calculateRoute: jest.fn(),
+  },
+  thermalComfortApi: {
+    findGreenCoverage: jest.fn(),
+  },
   placesApi: {
     findNearby: jest.fn().mockResolvedValue([]),
   },
@@ -134,6 +143,7 @@ describe('ShadowReportMapFlow e2e', () => {
   beforeEach(() => {
     jest.useRealTimers();
     jest.clearAllMocks();
+    mockCurrentLocation = null;
     useAuthStore.setState({
       user: {
         id: 'profile-1',
@@ -147,6 +157,35 @@ describe('ShadowReportMapFlow e2e', () => {
     });
     useKarmaRewards.getState().resetKarma();
     jest.mocked(reportsApi.findNearby).mockResolvedValue([]);
+    jest.mocked(navigationApi.calculateRoute).mockResolvedValue({
+      geometry: [],
+      distanceMeters: 0,
+      durationSeconds: 0,
+      alerts: [],
+      provider: 'osrm',
+      legalStatus: 'allowed',
+      shadeSegments: [],
+    });
+    jest.mocked(thermalComfortApi.findGreenCoverage).mockResolvedValue([
+      {
+        id: 'green-coverage-1',
+        osmId: 'way/1',
+        type: 'park',
+        source: 'overpass',
+        name: 'Parque fresco',
+        tags: { leisure: 'park' },
+        geometry: {
+          type: 'Polygon',
+          coordinates: [[
+            [-74.82152, 11.01917],
+            [-74.82116, 11.01917],
+            [-74.82116, 11.01887],
+            [-74.82152, 11.01887],
+            [-74.82152, 11.01917],
+          ]],
+        },
+      },
+    ]);
   });
 
   it('abre mapa, marca sombra, guarda en DB y muestra el marcador persistido', async () => {
@@ -351,6 +390,82 @@ describe('ShadowReportMapFlow e2e', () => {
     await waitFor(() => expect(reportsApi.findNearby).toHaveBeenCalled());
 
     expect(queryByTestId('quillamap-native-shade-source')?.props.shape.features).toEqual([]);
+  });
+
+  it('abre una busqueda independiente de ruta fresca y muestra el preview sombreado', async () => {
+    const { getByTestId, getByText, queryByTestId } = render(
+      <ShadowReportMapFlow canReportShadow onLogout={jest.fn()} />
+    );
+
+    await waitFor(() => expect(reportsApi.findNearby).toHaveBeenCalled());
+
+    fireEvent.press(getByTestId('user-tools-profile-button'));
+    fireEvent.press(getByTestId('thermal-comfort-route-search-toggle'));
+
+    expect(getByTestId('thermal-comfort-route-search-panel')).toBeTruthy();
+
+    fireEvent.changeText(getByTestId('thermal-comfort-route-destination-input'), 'ventana mundo');
+    fireEvent.press(getByTestId('thermal-comfort-route-submit'));
+
+    await waitFor(() => {
+      expect(thermalComfortApi.findGreenCoverage).toHaveBeenCalledWith({
+        lat: 11.01902,
+        lng: -74.82134,
+        radius: 800,
+      });
+    });
+
+    expect(navigationApi.calculateRoute).not.toHaveBeenCalled();
+    expect(getByTestId('quillamap-native-user-location-source').props.shape.features).toHaveLength(0);
+    expect(getByTestId('quillamap-native-route-shade-source').props.shape.features).toHaveLength(0);
+    expect(getByTestId('quillamap-native-thermal-comfort-shade-source').props.shape.features).toHaveLength(1);
+    expect(getByTestId('quillamap-native-thermal-comfort-shade').props.style.lineColor).toBe('#2FBF71');
+    expect(getByTestId('thermal-comfort-route-result')).toBeTruthy();
+    expect(getByText('Zonas verdes')).toBeTruthy();
+    expect(getByText('Incluye arboles, parques y areas con pasto cerca de tu busqueda.')).toBeTruthy();
+    expect(getByText('1 zona verde cercana')).toBeTruthy();
+    expect(getByText('1 zona dibujada en el mapa')).toBeTruthy();
+
+    fireEvent.press(getByTestId('thermal-comfort-route-clear'));
+
+    await waitFor(() => {
+      expect(queryByTestId('thermal-comfort-route-result')).toBeNull();
+      expect(getByTestId('quillamap-native-thermal-comfort-shade-source').props.shape.features).toHaveLength(0);
+      expect(getByTestId('quillamap-native-user-location-source').props.shape.features).toHaveLength(1);
+    });
+  });
+
+  it('busca zonas frescas cerca de la ubicacion activa sin interrumpir el GPS', async () => {
+    mockCurrentLocation = {
+      latitude: 11.0081,
+      longitude: -74.8132,
+    };
+
+    const { getByTestId, getByText } = render(<ShadowReportMapFlow canReportShadow onLogout={jest.fn()} />);
+
+    await waitFor(() => expect(reportsApi.findNearby).toHaveBeenCalled());
+
+    fireEvent.press(getByTestId('user-tools-profile-button'));
+    fireEvent.press(getByTestId('thermal-comfort-route-search-toggle'));
+    fireEvent.press(getByTestId('thermal-comfort-route-current-location'));
+
+    await waitFor(() => {
+      expect(thermalComfortApi.findGreenCoverage).toHaveBeenCalledWith({
+        lat: 11.0081,
+        lng: -74.8132,
+        radius: 800,
+      });
+    });
+
+    expect(navigationApi.calculateRoute).not.toHaveBeenCalled();
+    expect(getByTestId('quillamap-native-user-location-source').props.shape.features).toHaveLength(1);
+    expect(getByTestId('quillamap-native-user-location-source').props.shape.features[0].geometry.coordinates).toEqual([
+      -74.8132,
+      11.0081,
+    ]);
+    expect(getByTestId('quillamap-native-thermal-comfort-shade-source').props.shape.features).toHaveLength(1);
+    expect(getByTestId('thermal-comfort-route-result')).toBeTruthy();
+    expect(getByText('1 zona verde cercana')).toBeTruthy();
   });
 
   it('no marca sombra al tocar el mapa antes de activar reportar sombra', async () => {

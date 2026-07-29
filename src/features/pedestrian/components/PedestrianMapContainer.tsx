@@ -42,12 +42,17 @@ const PedestrianMapContainer = ({
   profileTools,
   renderProfileTools,
   licensePlate,
+  thermalComfortRoute,
+  suppressMapDecorations = false,
 }: PedestrianMapContainerProps) => {
   const { currentLocation, isRequestingPermission, errorMessage } = useLocationPermissions();
-  const center = getCenterCoordinate(currentLocation, initialCenter);
+  const thermalComfortCenter = thermalComfortRoute?.destination ?? null;
+  const center = suppressMapDecorations && thermalComfortCenter
+    ? thermalComfortCenter
+    : getCenterCoordinate(currentLocation, initialCenter);
   const isDark = themeMode === 'dark';
   const shouldShowShadowZones = !isDark;
-  const mapShadeZones = shouldShowShadowZones ? shadowZones.map(toMapShadeZone) : [];
+  const mapShadeZones = shouldShowShadowZones && !suppressMapDecorations ? shadowZones.map(toMapShadeZone) : [];
   const proximityTargets = mapShadeZones.map((zone) => ({
     id: zone.id,
     coordinate: zone.coordinate,
@@ -101,12 +106,14 @@ const PedestrianMapContainer = ({
           themeMode={themeMode}
           center={center}
           shadeZones={mapShadeZones}
-          places={places}
+          places={suppressMapDecorations ? [] : places}
           showDefaultShadeZones={false}
           selectedCoordinate={shouldShowShadowZones ? selectedShadowCoordinate : null}
           profileTools={profileTools}
           renderProfileTools={renderProfileTools}
           licensePlate={licensePlate}
+          thermalComfortRoute={thermalComfortRoute}
+          showUserLocation={!suppressMapDecorations}
           onMapPress={shouldShowShadowZones ? onMapPress : undefined}
           onShadeZonePress={(zone) => {
             if (!shouldShowShadowZones) {

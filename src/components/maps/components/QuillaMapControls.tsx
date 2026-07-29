@@ -93,12 +93,22 @@ const QuillaMapControls = ({
     onControlsInteraction?.();
     action?.();
   };
+  const openNavigationSearch = () => {
+    if (navigationControl?.isActive) {
+      return;
+    }
+
+    runControlAction(navigationControl?.onPress);
+  };
   const canCancelNavigation = Boolean(navigationControl?.hasActiveRoute && navigationControl.onCancel);
 
   return (
     <>
-      <View
-        pointerEvents="box-none"
+      <Pressable
+        testID="quillamap-navigation-search-bar"
+        accessibilityRole="button"
+        accessibilityLabel="Buscar destino"
+        onPress={openNavigationSearch}
         style={[
           isPedestrian
             ? tw`absolute left-m right-m top-m h-10 border flex-row items-center px-s`
@@ -107,13 +117,9 @@ const QuillaMapControls = ({
         ]}
       >
         <MapIcon name="search" size={17} color={controlText} />
-        {isPedestrian ? (
-          <View style={tw`flex-1`} />
-        ) : (
-          <Text numberOfLines={1} style={[tw`ml-s flex-1 text-sm font-semibold`, { color: controlText }]}>
-            Buscar ruta fresca
-          </Text>
-        )}
+        <Text numberOfLines={1} style={[tw`ml-s flex-1 text-sm font-semibold`, { color: controlText }]}>
+          {isPedestrian ? 'Buscar destino' : 'Buscar ruta fresca'}
+        </Text>
         <Pressable
           testID="quillamap-navigation-cancel"
           accessibilityRole="button"
@@ -127,7 +133,7 @@ const QuillaMapControls = ({
         >
           <MapIcon name="close" size={18} color={canCancelNavigation ? mapRoute : controlText} />
         </Pressable>
-      </View>
+      </Pressable>
 
       <QuillaMapPerspectiveToggle
         is3D={is3D}

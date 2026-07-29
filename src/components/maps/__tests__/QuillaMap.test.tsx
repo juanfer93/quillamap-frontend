@@ -6,8 +6,12 @@ import WebQuillaMap from '../components/QuillaMap.web-renderer';
 import NativeQuillaMap from '../components/QuillaMap.native';
 import { QuillaMapShadeZone } from '../types/QuillaMap.types';
 import {
+  getShadeRouteSegmentsFeatureCollection,
+  getThermalComfortFocusCoordinates,
   getNavigationBearingDegrees,
   getTransitRouteFeatureCollection,
+  THERMAL_COMFORT_SHADE_LINE_STYLE,
+  NAVIGATION_SHADE_ROUTE_LINE_STYLE,
 } from '../styles/QuillaMap.maplibre.shared';
 import {
   PLACES_VISUAL_IDENTITY,
@@ -300,6 +304,27 @@ describe('QuillaMap', () => {
     expect(getByTestId('quillamap-web-zoom-out')).toBeTruthy();
   });
 
+  it('abre la busqueda de navegacion desde la barra superior peatonal', () => {
+    const onOpenNavigation = jest.fn();
+    const { getByTestId, getByText } = render(
+      <NativeQuillaMap
+        mode="pedestrian"
+        center={{ latitude: 10.9878, longitude: -74.7889 }}
+        shadeZones={shadeZones}
+        navigationControl={{
+          isActive: false,
+          onPress: onOpenNavigation,
+        }}
+      />
+    );
+
+    expect(getByText('Buscar destino')).toBeTruthy();
+
+    fireEvent.press(getByTestId('quillamap-navigation-search-bar'));
+
+    expect(onOpenNavigation).toHaveBeenCalledTimes(1);
+  });
+
   it('permite ocultar brujula y zoom en web y nativo', () => {
     const web = render(
       <WebQuillaMap
@@ -461,6 +486,114 @@ describe('QuillaMap', () => {
     await waitFor(() => {
       expect(getByTestId('quillamap-native-perspective-toggle').props.accessibilityState.selected).toBe(true);
     });
+  });
+
+  it('pinta el halo fresco sobre segmentos sombreados en web y nativo', () => {
+    const shadedSegments = [
+      {
+        id: 'shade-segment-1',
+        source: 'community_report' as const,
+        geometry: [
+          { latitude: 10.9878, longitude: -74.7889 },
+          { latitude: 11.01902, longitude: -74.82134 },
+        ],
+      },
+    ];
+    const routePoints = [
+      { id: 'a', latitude: 10.9878, longitude: -74.7889 },
+      { id: 'b', latitude: 11.01902, longitude: -74.82134 },
+    ];
+    const web = render(
+      <WebQuillaMap
+        mode="pedestrian"
+        center={{ latitude: 10.9878, longitude: -74.7889 }}
+        routePoints={routePoints}
+        shadeRouteSegments={shadedSegments}
+        showDefaultShadeZones={false}
+      />
+    );
+    const native = render(
+      <NativeQuillaMap
+        mode="pedestrian"
+        center={{ latitude: 10.9878, longitude: -74.7889 }}
+        routePoints={routePoints}
+        shadeRouteSegments={shadedSegments}
+        showDefaultShadeZones={false}
+      />
+    );
+
+    expect(web.getByTestId('quillamap-web-route-shade-halo').props.featuresCount).toBe(1);
+    expect(web.getByTestId('quillamap-web-route-shade-halo').props.lineColor).toBe(
+      NAVIGATION_SHADE_ROUTE_LINE_STYLE.lineColor
+    );
+    expect(native.getByTestId('quillamap-native-route-shade-source').props.shape.features).toHaveLength(1);
+    expect(native.getByTestId('quillamap-native-route-shade-halo').props.style.lineColor).toBe(
+      NAVIGATION_SHADE_ROUTE_LINE_STYLE.lineColor
+    );
+    expect(native.getByTestId('quillamap-native-route-shade-halo').props.style.lineWidth).toBeGreaterThan(
+      native.getByTestId('quillamap-native-route').props.style.lineWidth
+    );
+  });
+
+  it('pinta solo los tramos frescos termicos sin activar rutas GPS ni ruta azul', () => {
+    const destination = { latitude: 11.01902, longitude: -74.82134 };
+    const origin = { latitude: 10.9878, longitude: -74.7889 };
+    const thermalComfortRoute = {
+      geometry: [
+        origin,
+        destination,
+      ],
+      shadeSegments: [
+        {
+          id: 'thermal-shade-1',
+          source: 'green_coverage' as const,
+          geometry: [
+            { latitude: 10.9878, longitude: -74.7889 },
+            destination,
+          ],
+        },
+      ],
+      origin,
+      destination,
+    };
+    const web = render(
+      <WebQuillaMap
+        mode="pedestrian"
+        center={{ latitude: 10.9878, longitude: -74.7889 }}
+        thermalComfortRoute={thermalComfortRoute}
+        showDefaultShadeZones={false}
+      />
+    );
+    const native = render(
+      <NativeQuillaMap
+        mode="pedestrian"
+        center={{ latitude: 10.9878, longitude: -74.7889 }}
+        thermalComfortRoute={thermalComfortRoute}
+        showDefaultShadeZones={false}
+      />
+    );
+
+    expect(web.queryByTestId('quillamap-web-thermal-comfort-route')).toBeNull();
+    expect(web.getByTestId('quillamap-web-thermal-comfort-shade').props.featuresCount).toBe(1);
+    expect(web.getByTestId('quillamap-web-thermal-comfort-shade').props.lineColor).toBe(
+      THERMAL_COMFORT_SHADE_LINE_STYLE.lineColor
+    );
+    expect(web.queryByTestId('quillamap-web-navigation-arrow')).toBeNull();
+    expect(web.queryByTestId('quillamap-web-destination-marker')).toBeNull();
+    expect(web.queryByTestId('quillamap-web-thermal-comfort-origin-marker')).toBeNull();
+    expect(web.queryByTestId('quillamap-web-thermal-comfort-destination-marker')).toBeNull();
+    expect(native.getByTestId('quillamap-native-route-source').props.shape.features).toEqual([]);
+    expect(native.queryByTestId('quillamap-native-thermal-comfort-route-source')).toBeNull();
+    expect(native.queryByTestId('quillamap-native-thermal-comfort-route')).toBeNull();
+    expect(native.queryByTestId('quillamap-native-thermal-comfort-origin-source')).toBeNull();
+    expect(native.queryByTestId('quillamap-native-thermal-comfort-origin-marker')).toBeNull();
+    expect(native.getByTestId('quillamap-native-thermal-comfort-shade-source').props.shape.features).toHaveLength(1);
+    expect(native.getByTestId('quillamap-native-thermal-comfort-shade').props.style.lineColor).toBe(
+      THERMAL_COMFORT_SHADE_LINE_STYLE.lineColor
+    );
+    expect(native.queryByTestId('quillamap-native-thermal-comfort-destination-source')).toBeNull();
+    expect(native.queryByTestId('quillamap-native-thermal-comfort-destination-marker')).toBeNull();
+    expect(native.getByTestId('quillamap-native-navigation-arrow-source').props.shape.features).toEqual([]);
   });
 
   it('activa 3D y expone la flecha GPS tambien en web', async () => {
@@ -799,5 +932,62 @@ describe('QuillaMap', () => {
 
     expect(featureCollection.features).toHaveLength(1);
     expect(featureCollection.features[0].properties.routeId).toBe('route-c1');
+  });
+
+  it('serializa solo segmentos de sombra validos como LineString GeoJSON', () => {
+    const featureCollection = getShadeRouteSegmentsFeatureCollection([
+      {
+        id: 'valid-shade',
+        source: 'green_coverage',
+        geometry: [
+          { latitude: 10.9878, longitude: -74.7889 },
+          { latitude: 10.99, longitude: -74.79 },
+        ],
+      },
+      {
+        id: 'invalid-shade',
+        source: 'community_report',
+        geometry: [{ latitude: 10.9878, longitude: -74.7889 }],
+      },
+    ]);
+
+    expect(featureCollection.features).toHaveLength(1);
+    expect(featureCollection.features[0]).toMatchObject({
+      id: 'valid-shade',
+      properties: {
+        source: 'green_coverage',
+      },
+      geometry: {
+        type: 'LineString',
+        coordinates: [[-74.7889, 10.9878], [-74.79, 10.99]],
+      },
+    });
+  });
+
+  it('encuadra el feature termico sobre la geometria de foco del destino', () => {
+    const destination = { latitude: 11.0042, longitude: -74.8031 };
+    const focusGeometry = [
+      { latitude: 10.9997, longitude: -74.8076 },
+      { latitude: 11.0087, longitude: -74.7986 },
+    ];
+    const thermalComfortRoute = {
+      geometry: focusGeometry,
+      shadeSegments: [
+        {
+          id: 'shade-near-origin',
+          source: 'green_coverage' as const,
+          geometry: [
+            { latitude: 10.988, longitude: -74.789 },
+            { latitude: 10.989, longitude: -74.7892 },
+          ],
+        },
+      ],
+      origin: null,
+      destination,
+    };
+
+    expect(getThermalComfortFocusCoordinates(thermalComfortRoute)).toEqual(
+      focusGeometry
+    );
   });
 });

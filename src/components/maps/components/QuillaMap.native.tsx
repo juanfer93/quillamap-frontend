@@ -38,8 +38,11 @@ import {
   getNavigationBearingDegrees,
   getPlacesFeatureCollection,
   getRouteFeatureCollection,
+  getShadeRouteSegmentsFeatureCollection,
   getShadeZoneAreasFeatureCollection,
   getShadeZonesFeatureCollection,
+  getThermalComfortFocusCoordinates,
+  getThermalComfortShadeFeatureCollection,
   getTransitMapBounds,
   getTransitRouteFeatureCollection,
   getTransitStopFeatureCollection,
@@ -55,6 +58,13 @@ import {
   NAVIGATION_ROUTE_LAYER_ID,
   NAVIGATION_ROUTE_LINE_STYLE,
   NAVIGATION_ROUTE_SOURCE_ID,
+  NAVIGATION_SHADE_ROUTE_HALO_LAYER_ID,
+  NAVIGATION_SHADE_ROUTE_LINE_STYLE,
+  NAVIGATION_SHADE_ROUTE_SOURCE_ID,
+  THERMAL_COMFORT_SHADE_HALO_LAYER_ID,
+  THERMAL_COMFORT_SHADE_LAYER_ID,
+  THERMAL_COMFORT_SHADE_LINE_STYLE,
+  THERMAL_COMFORT_SHADE_SOURCE_ID,
   TRANSIT_ROUTE_HALO_LAYER_ID,
   TRANSIT_ROUTE_LAYER_ID,
   TRANSIT_ROUTE_LINE_STYLE,
@@ -91,6 +101,8 @@ const QuillaMap = ({
   places,
   showDefaultShadeZones,
   routePoints,
+  shadeRouteSegments,
+  thermalComfortRoute,
   transitMap,
   showUserLocation = true,
   showCompassControl = true,
@@ -137,6 +149,18 @@ const QuillaMap = ({
   const lightPlaceMarkerColor = ['case', ['==', ['get', 'source'], 'tourist_site'], culturalGold, primary] as const;
   const placeMarkerColor = isDark ? culturalGold : lightPlaceMarkerColor;
   const routeFeature = getRouteFeatureCollection(route);
+  const shadeRouteSegmentsFeatureCollection = useMemo(
+    () => getShadeRouteSegmentsFeatureCollection(shadeRouteSegments),
+    [shadeRouteSegments]
+  );
+  const thermalComfortShadeFeatureCollection = useMemo(
+    () => getThermalComfortShadeFeatureCollection(thermalComfortRoute),
+    [thermalComfortRoute]
+  );
+  const thermalComfortFocusCoordinates = useMemo(
+    () => getThermalComfortFocusCoordinates(thermalComfortRoute),
+    [thermalComfortRoute]
+  );
   const transitRouteFeatureCollection = useMemo(
     () => getTransitRouteFeatureCollection(transitMap),
     [transitMap]
@@ -249,7 +273,20 @@ const QuillaMap = ({
   }, [route]);
 
   useEffect(() => {
-    if (route.length > 1 || !transitMapBounds) {
+    if (thermalComfortFocusCoordinates.length < 2) {
+      return;
+    }
+
+    const longitudes = thermalComfortFocusCoordinates.map((point) => point.longitude);
+    const latitudes = thermalComfortFocusCoordinates.map((point) => point.latitude);
+    const northEast: [number, number] = [Math.max(...longitudes), Math.max(...latitudes)];
+    const southWest: [number, number] = [Math.min(...longitudes), Math.min(...latitudes)];
+
+    cameraRef.current?.fitBounds?.(northEast, southWest, [112, 42, 156, 42], CAMERA_ANIMATION_DURATION_MS);
+  }, [thermalComfortFocusCoordinates]);
+
+  useEffect(() => {
+    if (route.length > 1 || thermalComfortFocusCoordinates.length > 1 || !transitMapBounds) {
       return;
     }
 
@@ -259,7 +296,7 @@ const QuillaMap = ({
       [96, 36, 96, 36],
       CAMERA_ANIMATION_DURATION_MS
     );
-  }, [route.length, transitMapBounds]);
+  }, [route.length, thermalComfortFocusCoordinates.length, transitMapBounds]);
 
   useEffect(() => {
     if (route.length < 2) {
@@ -404,7 +441,11 @@ const QuillaMap = ({
             />
           </ShapeSource>
 
-          <ShapeSource id={NAVIGATION_ROUTE_SOURCE_ID} shape={routeFeature}>
+          <ShapeSource
+            id={NAVIGATION_ROUTE_SOURCE_ID}
+            testID="quillamap-native-route-source"
+            shape={routeFeature}
+          >
             <LineLayer
               id={NAVIGATION_ROUTE_HALO_LAYER_ID}
               testID="quillamap-native-route-halo"
@@ -424,6 +465,25 @@ const QuillaMap = ({
                 lineWidth: NAVIGATION_ROUTE_LINE_STYLE.lineWidth,
                 lineCap: NAVIGATION_ROUTE_LINE_STYLE.lineCap,
                 lineJoin: NAVIGATION_ROUTE_LINE_STYLE.lineJoin,
+              }}
+            />
+          </ShapeSource>
+
+          <ShapeSource
+            id={NAVIGATION_SHADE_ROUTE_SOURCE_ID}
+            testID="quillamap-native-route-shade-source"
+            shape={shadeRouteSegmentsFeatureCollection}
+          >
+            <LineLayer
+              id={NAVIGATION_SHADE_ROUTE_HALO_LAYER_ID}
+              testID="quillamap-native-route-shade-halo"
+              style={{
+                lineColor: NAVIGATION_SHADE_ROUTE_LINE_STYLE.lineColor,
+                lineWidth: NAVIGATION_SHADE_ROUTE_LINE_STYLE.lineWidth,
+                lineOpacity: NAVIGATION_SHADE_ROUTE_LINE_STYLE.lineOpacity,
+                lineBlur: NAVIGATION_SHADE_ROUTE_LINE_STYLE.lineBlur,
+                lineCap: NAVIGATION_SHADE_ROUTE_LINE_STYLE.lineCap,
+                lineJoin: NAVIGATION_SHADE_ROUTE_LINE_STYLE.lineJoin,
               }}
             />
           </ShapeSource>
@@ -673,6 +733,36 @@ const QuillaMap = ({
               />
             </ShapeSource>
           ) : null}
+
+          <ShapeSource
+            id={THERMAL_COMFORT_SHADE_SOURCE_ID}
+            testID="quillamap-native-thermal-comfort-shade-source"
+            shape={thermalComfortShadeFeatureCollection}
+          >
+            <LineLayer
+              id={THERMAL_COMFORT_SHADE_HALO_LAYER_ID}
+              testID="quillamap-native-thermal-comfort-shade-halo"
+              style={{
+                lineColor: THERMAL_COMFORT_SHADE_LINE_STYLE.haloColor,
+                lineWidth: THERMAL_COMFORT_SHADE_LINE_STYLE.haloWidth,
+                lineOpacity: THERMAL_COMFORT_SHADE_LINE_STYLE.haloOpacity,
+                lineCap: THERMAL_COMFORT_SHADE_LINE_STYLE.lineCap,
+                lineJoin: THERMAL_COMFORT_SHADE_LINE_STYLE.lineJoin,
+              }}
+            />
+            <LineLayer
+              id={THERMAL_COMFORT_SHADE_LAYER_ID}
+              testID="quillamap-native-thermal-comfort-shade"
+              style={{
+                lineColor: THERMAL_COMFORT_SHADE_LINE_STYLE.lineColor,
+                lineWidth: THERMAL_COMFORT_SHADE_LINE_STYLE.lineWidth,
+                lineOpacity: THERMAL_COMFORT_SHADE_LINE_STYLE.lineOpacity,
+                lineBlur: THERMAL_COMFORT_SHADE_LINE_STYLE.lineBlur,
+                lineCap: THERMAL_COMFORT_SHADE_LINE_STYLE.lineCap,
+                lineJoin: THERMAL_COMFORT_SHADE_LINE_STYLE.lineJoin,
+              }}
+            />
+          </ShapeSource>
         </MapView>
 
         <QuillaMapControls

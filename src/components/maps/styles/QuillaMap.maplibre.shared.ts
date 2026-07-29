@@ -13,7 +13,9 @@ import type {
 import type {
   QuillaMapCoordinate,
   QuillaMapRoutePoint,
+  QuillaMapShadeRouteSegment,
   QuillaMapShadeZone,
+  QuillaMapThermalComfortRoute,
 } from '../types/QuillaMap.types';
 
 export const DARK_MAP_THEME = {
@@ -88,10 +90,15 @@ export const MAP_3D_PITCH = 62;
 export const NAVIGATION_ROUTE_SOURCE_ID = 'route-source';
 export const NAVIGATION_ROUTE_HALO_LAYER_ID = 'route-line-halo';
 export const NAVIGATION_ROUTE_LAYER_ID = 'route-line';
+export const NAVIGATION_SHADE_ROUTE_SOURCE_ID = 'route-shade-source';
+export const NAVIGATION_SHADE_ROUTE_HALO_LAYER_ID = 'route-shade-halo';
 export const NAVIGATION_DESTINATION_SOURCE_ID = 'navigation-destination-source';
 export const NAVIGATION_DESTINATION_LAYER_ID = 'navigation-destination-marker';
 export const NAVIGATION_ARROW_SOURCE_ID = 'navigation-arrow-source';
 export const NAVIGATION_ARROW_LAYER_ID = 'navigation-arrow-marker';
+export const THERMAL_COMFORT_SHADE_SOURCE_ID = 'thermal-comfort-shade-source';
+export const THERMAL_COMFORT_SHADE_HALO_LAYER_ID = 'thermal-comfort-shade-halo';
+export const THERMAL_COMFORT_SHADE_LAYER_ID = 'thermal-comfort-shade-line';
 export const USER_LOCATION_SOURCE_ID = 'user-location-source';
 export const USER_LOCATION_LAYER_ID = 'user-location-dot';
 export const TRANSIT_ROUTE_SOURCE_ID = 'transit-route-source';
@@ -105,6 +112,25 @@ export const NAVIGATION_ROUTE_LINE_STYLE = {
   haloOpacity: 0.92,
   haloWidth: 12,
   lineWidth: 7,
+  lineCap: 'round' as const,
+  lineJoin: 'round' as const,
+};
+export const NAVIGATION_SHADE_ROUTE_LINE_STYLE = {
+  lineColor: '#8EDFA5',
+  lineOpacity: 0.62,
+  lineWidth: 17,
+  lineBlur: 1.4,
+  lineCap: 'round' as const,
+  lineJoin: 'round' as const,
+};
+export const THERMAL_COMFORT_SHADE_LINE_STYLE = {
+  haloColor: '#FFFFFF',
+  haloOpacity: 0.9,
+  haloWidth: 20,
+  lineColor: '#2FBF71',
+  lineOpacity: 0.96,
+  lineWidth: 12,
+  lineBlur: 0.4,
   lineCap: 'round' as const,
   lineJoin: 'round' as const,
 };
@@ -226,6 +252,32 @@ export const getRouteFeatureCollection = (route: QuillaMapRoutePoint[] | QuillaM
   features: route.length > 1 ? [getRouteFeature(route)] : [],
 });
 
+const isValidShadeSegment = (segment: QuillaMapShadeRouteSegment): boolean =>
+  segment.geometry.length > 1 &&
+  segment.geometry.every((point) => Number.isFinite(point.longitude) && Number.isFinite(point.latitude));
+
+export const getShadeRouteSegmentsFeatureCollection = (
+  segments: QuillaMapShadeRouteSegment[] | null | undefined
+) => ({
+  type: 'FeatureCollection' as const,
+  features: segments?.filter(isValidShadeSegment).map((segment) => ({
+    type: 'Feature' as const,
+    id: segment.id,
+    properties: {
+      id: segment.id,
+      source: segment.source,
+    },
+    geometry: {
+      type: 'LineString' as const,
+      coordinates: segment.geometry.map((point) => [point.longitude, point.latitude]),
+    },
+  })) ?? [],
+});
+
+export const getThermalComfortShadeFeatureCollection = (
+  route: QuillaMapThermalComfortRoute | null | undefined
+) => getShadeRouteSegmentsFeatureCollection(route?.shadeSegments);
+
 export const getTransitRouteFeatureCollection = (
   transitMap: TransitMapResponse | null | undefined
 ) => ({
@@ -323,6 +375,19 @@ export const getCoordinateFeatureCollection = (
 export const getDestinationFeatureCollection = (
   coordinate: QuillaMapCoordinate | null | undefined
 ) => getCoordinateFeatureCollection(coordinate, 'navigation-destination');
+
+export const getThermalComfortFocusCoordinates = (
+  route: QuillaMapThermalComfortRoute | null | undefined
+): QuillaMapCoordinate[] => {
+  const shadeCoordinates = route?.shadeSegments.flatMap((segment) => segment.geometry) ?? [];
+  const routeCoordinates = route?.geometry ?? [];
+
+  if (routeCoordinates.length > 1) {
+    return routeCoordinates;
+  }
+
+  return shadeCoordinates;
+};
 
 export const getUserLocationFeatureCollection = (
   coordinate: QuillaMapCoordinate | null | undefined

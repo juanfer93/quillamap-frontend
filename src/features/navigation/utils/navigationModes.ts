@@ -12,7 +12,7 @@ export const toRouteNavigationMode = (mode: QuillaMapMode): NavigationMode => {
 };
 
 export const getRoutePreferences = (mode: NavigationMode): RoutePreferences => ({
-  prioritizeShade: mode === 'peaton',
+  prioritizeShade: false,
   prioritizeCulturalLandmarks: mode === 'turista',
   avoidLegalRestrictions: mode === 'moto' || mode === 'carro',
   avoidActiveStreams: true,

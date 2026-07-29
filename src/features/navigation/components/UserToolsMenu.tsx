@@ -20,6 +20,7 @@ interface UserToolsMenuProps {
   reportShadowLabel?: string;
   profileSections?: ReactNode;
   onOpenPublicTransport?: () => void;
+  onOpenThermalComfortRouteSearch?: () => void;
   onReportShadow?: () => Promise<void> | void;
   onLogout: () => void;
 }
@@ -33,6 +34,7 @@ const UserToolsMenu = ({
   reportShadowLabel = 'Reportar sombra',
   profileSections,
   onOpenPublicTransport,
+  onOpenThermalComfortRouteSearch,
   onReportShadow,
   onLogout,
 }: UserToolsMenuProps) => {
@@ -67,6 +69,11 @@ const UserToolsMenu = ({
     onOpenPublicTransport?.();
   };
 
+  const handleOpenThermalComfortRouteSearch = () => {
+    setIsOpen(false);
+    onOpenThermalComfortRouteSearch?.();
+  };
+
   return (
     <View testID="user-tools-menu" style={tw`items-center justify-center`}>
       {isOpen ? (
@@ -99,6 +106,21 @@ const UserToolsMenu = ({
             >
               <Text numberOfLines={1} style={tw`font-bold text-white`}>
                 Transporte público
+              </Text>
+            </Pressable>
+          ) : null}
+
+          {onOpenThermalComfortRouteSearch ? (
+            <Pressable
+              testID="thermal-comfort-route-search-toggle"
+              accessibilityRole="button"
+              accessibilityLabel="Buscar ruta fresca"
+              onPress={handleOpenThermalComfortRouteSearch}
+              style={tw`mb-s min-h-11 flex-row items-center rounded-s bg-surface-light dark:bg-charcoal px-s py-s`}
+            >
+              <NavigationIcon name="leaf-outline" size={18} color={activeText} />
+              <Text numberOfLines={1} style={[tw`ml-s font-bold`, { color: activeText }]}>
+                Buscar ruta fresca
               </Text>
             </Pressable>
           ) : null}

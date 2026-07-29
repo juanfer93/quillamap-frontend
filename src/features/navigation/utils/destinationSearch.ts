@@ -3,10 +3,26 @@ import type { RouteWaypoint } from '@/types/contracts/navigation.contract';
 
 const COORDINATE_QUERY_PATTERN = /^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/;
 
-const normalizeText = (value: string): string => value.trim().toLowerCase();
+const normalizeText = (value: string): string =>
+  value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+
+const getSearchableText = (place: PlaceMapFeature): string => [
+  place.name.es,
+  place.name.en,
+  place.description?.es,
+  place.description?.en,
+  place.metadata?.address,
+].filter(Boolean).join(' ');
 
 const matchesPlace = (place: PlaceMapFeature, query: string): boolean =>
-  normalizeText(place.name.es).includes(normalizeText(query));
+  normalizeText(query)
+    .split(/\s+/)
+    .filter(Boolean)
+    .every((token) => normalizeText(getSearchableText(place)).includes(token));
 
 export const resolveDestination = (
   query: string,

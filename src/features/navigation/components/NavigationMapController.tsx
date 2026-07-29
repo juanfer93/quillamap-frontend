@@ -15,7 +15,13 @@ import {
 } from '../utils/navigationMapController.utils';
 import NavigationSearchOverlay from './NavigationSearchOverlay';
 
-interface NavigationMapControllerProps extends Omit<QuillaMapProps, 'routePoints' | 'children'> {
+interface NavigationMapControllerProps extends Omit<
+  QuillaMapProps,
+  | 'routePoints'
+  | 'shadeRouteSegments'
+  | 'destinationCoordinate'
+  | 'children'
+> {
   children?: ReactNode;
   licensePlate?: string | null;
   sensorSpeedKmh?: number;
@@ -67,7 +73,7 @@ const NavigationMapController = ({
   const submitQuery = () => {
     const target = resolveDestination(query, places);
     if (!target) {
-      failRouting('Selecciona un destino valido o usa coordenadas lat,lng');
+      failRouting('Busca y selecciona un destino disponible.');
       return;
     }
 
@@ -91,6 +97,7 @@ const NavigationMapController = ({
       mode={mode}
       places={places}
       routePoints={routePoints}
+      shadeRouteSegments={activeRoute?.shadeSegments}
       destinationCoordinate={destination}
       profileTools={resolvedProfileTools}
       navigationControl={{

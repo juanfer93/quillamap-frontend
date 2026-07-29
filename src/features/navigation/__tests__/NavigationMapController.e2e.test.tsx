@@ -36,6 +36,7 @@ jest.mock('@/components/maps/QuillaMap', () => {
     navigationControl,
     profileTools,
     routePoints,
+    shadeRouteSegments,
   }: {
     children?: React.ReactNode;
     destinationCoordinate?: unknown;
@@ -47,12 +48,14 @@ jest.mock('@/components/maps/QuillaMap', () => {
     };
     profileTools?: React.ReactNode;
     routePoints?: unknown[];
+    shadeRouteSegments?: unknown[];
   }) => ReactMock.createElement(
     MockView,
     {
       testID: 'mock-quillamap',
       destinationCoordinate,
       routePoints,
+      shadeRouteSegments,
     },
     ReactMock.createElement(
       MockPressable,
@@ -97,6 +100,13 @@ const routeResponse: RouteResponse = {
   alerts: [],
   provider: 'osrm',
   legalStatus: 'allowed',
+  shadeSegments: [
+    {
+      id: 'green-coverage-1',
+      source: 'green_coverage',
+      geometry: [center, places[0].coordinate],
+    },
+  ],
 };
 
 const transitRouteResponse: TransitRouteResponse = {
@@ -199,11 +209,11 @@ describe('NavigationMapController', () => {
     fireEvent.press(getByTestId('navigation-route-submit'));
 
     expect(getByTestId('navigation-route-error').props.children).toBe(
-      'Selecciona un destino valido o usa coordenadas lat,lng'
+      'Busca y selecciona un destino disponible.'
     );
   });
 
-  it('calcula ruta peatonal con transporte y muestra la pila de bus mas corta', async () => {
+  it('calcula ruta peatonal GPS por nombre sin mezclar la ruta fresca', async () => {
     const { getByTestId, queryByTestId } = render(
       <NavigationMapController
         mode="pedestrian"
@@ -213,23 +223,25 @@ describe('NavigationMapController', () => {
     );
 
     fireEvent.press(getByTestId('quillamap-navigation-tab'));
-    fireEvent.changeText(getByTestId('navigation-destination-input'), '11.019,-74.8213');
+    fireEvent.changeText(getByTestId('navigation-destination-input'), 'ventana mundo');
     fireEvent.press(getByTestId('navigation-route-submit'));
 
     await waitFor(() => {
-      expect(mockCalculateTransitItineraries).toHaveBeenCalledWith(expect.objectContaining({
+      expect(mockCalculateRoute).toHaveBeenCalledWith(expect.objectContaining({
         mode: 'peaton',
+        destination: expect.objectContaining({ label: 'Ventana al Mundo' }),
         preferences: expect.objectContaining({
-          prioritizeShade: true,
+          prioritizeShade: false,
         }),
       }));
     });
+    expect(mockCalculateTransitItineraries).not.toHaveBeenCalled();
 
     await waitFor(() => {
-      expect(getByTestId('mock-quillamap').props.routePoints).toHaveLength(3);
+      expect(getByTestId('mock-quillamap').props.routePoints).toHaveLength(2);
+      expect(getByTestId('mock-quillamap').props.shadeRouteSegments).toHaveLength(1);
       expect(getByTestId('quillamap-navigation-cancel').props.hasActiveRoute).toBe(true);
-      expect(getByTestId('navigation-transit-best-route')).toBeTruthy();
-      expect(getByTestId('navigation-transit-leg-bus-1')).toBeTruthy();
+      expect(queryByTestId('navigation-transit-best-route')).toBeNull();
     });
 
     fireEvent.press(getByTestId('quillamap-navigation-cancel'));

@@ -32,8 +32,11 @@ import {
   getNavigationBearingDegrees,
   getPlacesFeatureCollection,
   getRouteFeatureCollection,
+  getShadeRouteSegmentsFeatureCollection,
   getShadeZoneAreasFeatureCollection,
   getShadeZonesFeatureCollection,
+  getThermalComfortFocusCoordinates,
+  getThermalComfortShadeFeatureCollection,
   getTransitMapBounds,
   getTransitRouteFeatureCollection,
   getTransitStopFeatureCollection,
@@ -49,6 +52,13 @@ import {
   NAVIGATION_ROUTE_LAYER_ID,
   NAVIGATION_ROUTE_LINE_STYLE,
   NAVIGATION_ROUTE_SOURCE_ID,
+  NAVIGATION_SHADE_ROUTE_HALO_LAYER_ID,
+  NAVIGATION_SHADE_ROUTE_LINE_STYLE,
+  NAVIGATION_SHADE_ROUTE_SOURCE_ID,
+  THERMAL_COMFORT_SHADE_HALO_LAYER_ID,
+  THERMAL_COMFORT_SHADE_LAYER_ID,
+  THERMAL_COMFORT_SHADE_LINE_STYLE,
+  THERMAL_COMFORT_SHADE_SOURCE_ID,
   TRANSIT_ROUTE_HALO_LAYER_ID,
   TRANSIT_ROUTE_LAYER_ID,
   TRANSIT_ROUTE_LINE_STYLE,
@@ -143,6 +153,8 @@ const QuillaMapWebRenderer = ({
   places,
   showDefaultShadeZones,
   routePoints,
+  shadeRouteSegments,
+  thermalComfortRoute,
   transitMap,
   showUserLocation = true,
   showCompassControl = true,
@@ -193,6 +205,18 @@ const QuillaMapWebRenderer = ({
   const controlText = isDark ? DARK_MAP_THEME.controlText : darkGray;
   const controlBorder = isDark ? DARK_MAP_THEME.controlBorder : tokenColor('medium-gray', '#E0E0E0');
   const routeFeature = useMemo(() => getRouteFeatureCollection(route), [route]);
+  const shadeRouteSegmentsFeatureCollection = useMemo(
+    () => getShadeRouteSegmentsFeatureCollection(shadeRouteSegments),
+    [shadeRouteSegments]
+  );
+  const thermalComfortShadeFeatureCollection = useMemo(
+    () => getThermalComfortShadeFeatureCollection(thermalComfortRoute),
+    [thermalComfortRoute]
+  );
+  const thermalComfortFocusCoordinates = useMemo(
+    () => getThermalComfortFocusCoordinates(thermalComfortRoute),
+    [thermalComfortRoute]
+  );
   const transitRouteFeatureCollection = useMemo(
     () => getTransitRouteFeatureCollection(transitMap),
     [transitMap]
@@ -396,6 +420,8 @@ const QuillaMapWebRenderer = ({
 
     const applyLayers = () => {
       upsertGeoJsonSource(map, NAVIGATION_ROUTE_SOURCE_ID, routeFeature);
+      upsertGeoJsonSource(map, NAVIGATION_SHADE_ROUTE_SOURCE_ID, shadeRouteSegmentsFeatureCollection);
+      upsertGeoJsonSource(map, THERMAL_COMFORT_SHADE_SOURCE_ID, thermalComfortShadeFeatureCollection);
       upsertGeoJsonSource(map, TRANSIT_ROUTE_SOURCE_ID, transitRouteFeatureCollection);
       upsertGeoJsonSource(map, TRANSIT_STOP_SOURCE_ID, transitStopFeatureCollection);
       upsertGeoJsonSource(map, NAVIGATION_ARROW_SOURCE_ID, navigationArrowFeatureCollection);
@@ -506,6 +532,26 @@ const QuillaMapWebRenderer = ({
       });
       map.setPaintProperty(NAVIGATION_ROUTE_LAYER_ID, 'line-color', mapRoute);
       map.setPaintProperty(NAVIGATION_ROUTE_LAYER_ID, 'line-width', NAVIGATION_ROUTE_LINE_STYLE.lineWidth);
+
+      addLayerIfMissing(NAVIGATION_SHADE_ROUTE_HALO_LAYER_ID, {
+        id: NAVIGATION_SHADE_ROUTE_HALO_LAYER_ID,
+        type: 'line',
+        source: NAVIGATION_SHADE_ROUTE_SOURCE_ID,
+        paint: {
+          'line-color': NAVIGATION_SHADE_ROUTE_LINE_STYLE.lineColor,
+          'line-width': NAVIGATION_SHADE_ROUTE_LINE_STYLE.lineWidth,
+          'line-opacity': NAVIGATION_SHADE_ROUTE_LINE_STYLE.lineOpacity,
+          'line-blur': NAVIGATION_SHADE_ROUTE_LINE_STYLE.lineBlur,
+        },
+        layout: {
+          'line-cap': NAVIGATION_SHADE_ROUTE_LINE_STYLE.lineCap,
+          'line-join': NAVIGATION_SHADE_ROUTE_LINE_STYLE.lineJoin,
+        },
+      });
+      map.setPaintProperty(NAVIGATION_SHADE_ROUTE_HALO_LAYER_ID, 'line-color', NAVIGATION_SHADE_ROUTE_LINE_STYLE.lineColor);
+      map.setPaintProperty(NAVIGATION_SHADE_ROUTE_HALO_LAYER_ID, 'line-width', NAVIGATION_SHADE_ROUTE_LINE_STYLE.lineWidth);
+      map.setPaintProperty(NAVIGATION_SHADE_ROUTE_HALO_LAYER_ID, 'line-opacity', NAVIGATION_SHADE_ROUTE_LINE_STYLE.lineOpacity);
+      map.setPaintProperty(NAVIGATION_SHADE_ROUTE_HALO_LAYER_ID, 'line-blur', NAVIGATION_SHADE_ROUTE_LINE_STYLE.lineBlur);
 
       addLayerIfMissing(`${USER_LOCATION_LAYER_ID}-halo`, {
         id: `${USER_LOCATION_LAYER_ID}-halo`,
@@ -692,6 +738,44 @@ const QuillaMapWebRenderer = ({
           'text-halo-width': 1,
         },
       });
+
+      addLayerIfMissing(THERMAL_COMFORT_SHADE_HALO_LAYER_ID, {
+        id: THERMAL_COMFORT_SHADE_HALO_LAYER_ID,
+        type: 'line',
+        source: THERMAL_COMFORT_SHADE_SOURCE_ID,
+        paint: {
+          'line-color': THERMAL_COMFORT_SHADE_LINE_STYLE.haloColor,
+          'line-width': THERMAL_COMFORT_SHADE_LINE_STYLE.haloWidth,
+          'line-opacity': THERMAL_COMFORT_SHADE_LINE_STYLE.haloOpacity,
+        },
+        layout: {
+          'line-cap': THERMAL_COMFORT_SHADE_LINE_STYLE.lineCap,
+          'line-join': THERMAL_COMFORT_SHADE_LINE_STYLE.lineJoin,
+        },
+      });
+      map.setPaintProperty(THERMAL_COMFORT_SHADE_HALO_LAYER_ID, 'line-color', THERMAL_COMFORT_SHADE_LINE_STYLE.haloColor);
+      map.setPaintProperty(THERMAL_COMFORT_SHADE_HALO_LAYER_ID, 'line-width', THERMAL_COMFORT_SHADE_LINE_STYLE.haloWidth);
+      map.setPaintProperty(THERMAL_COMFORT_SHADE_HALO_LAYER_ID, 'line-opacity', THERMAL_COMFORT_SHADE_LINE_STYLE.haloOpacity);
+
+      addLayerIfMissing(THERMAL_COMFORT_SHADE_LAYER_ID, {
+        id: THERMAL_COMFORT_SHADE_LAYER_ID,
+        type: 'line',
+        source: THERMAL_COMFORT_SHADE_SOURCE_ID,
+        paint: {
+          'line-color': THERMAL_COMFORT_SHADE_LINE_STYLE.lineColor,
+          'line-width': THERMAL_COMFORT_SHADE_LINE_STYLE.lineWidth,
+          'line-opacity': THERMAL_COMFORT_SHADE_LINE_STYLE.lineOpacity,
+          'line-blur': THERMAL_COMFORT_SHADE_LINE_STYLE.lineBlur,
+        },
+        layout: {
+          'line-cap': THERMAL_COMFORT_SHADE_LINE_STYLE.lineCap,
+          'line-join': THERMAL_COMFORT_SHADE_LINE_STYLE.lineJoin,
+        },
+      });
+      map.setPaintProperty(THERMAL_COMFORT_SHADE_LAYER_ID, 'line-color', THERMAL_COMFORT_SHADE_LINE_STYLE.lineColor);
+      map.setPaintProperty(THERMAL_COMFORT_SHADE_LAYER_ID, 'line-width', THERMAL_COMFORT_SHADE_LINE_STYLE.lineWidth);
+      map.setPaintProperty(THERMAL_COMFORT_SHADE_LAYER_ID, 'line-opacity', THERMAL_COMFORT_SHADE_LINE_STYLE.lineOpacity);
+      map.setPaintProperty(THERMAL_COMFORT_SHADE_LAYER_ID, 'line-blur', THERMAL_COMFORT_SHADE_LINE_STYLE.lineBlur);
     };
 
     if (map.isStyleLoaded()) {
@@ -713,9 +797,11 @@ const QuillaMapWebRenderer = ({
     navigationArrowFeatureCollection,
     placesFeatureCollection,
     routeFeature,
+    shadeRouteSegmentsFeatureCollection,
     shadeAreaFeatureCollection,
     shadeFeatureCollection,
     shadeMarkerColor,
+    thermalComfortShadeFeatureCollection,
     transitRouteFeatureCollection,
     transitStopFeatureCollection,
     userLocationFeatureCollection,
@@ -740,7 +826,24 @@ const QuillaMapWebRenderer = ({
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || route.length > 1 || !transitMapBounds) {
+    if (!map || thermalComfortFocusCoordinates.length < 2) {
+      return;
+    }
+
+    const longitudes = thermalComfortFocusCoordinates.map((point) => point.longitude);
+    const latitudes = thermalComfortFocusCoordinates.map((point) => point.latitude);
+    const southWest: [number, number] = [Math.min(...longitudes), Math.min(...latitudes)];
+    const northEast: [number, number] = [Math.max(...longitudes), Math.max(...latitudes)];
+
+    map.fitBounds([southWest, northEast], {
+      padding: { top: 112, bottom: 156, left: 42, right: 42 },
+      duration: CAMERA_ANIMATION_DURATION_MS,
+    });
+  }, [thermalComfortFocusCoordinates]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || route.length > 1 || thermalComfortFocusCoordinates.length > 1 || !transitMapBounds) {
       return;
     }
 
@@ -748,7 +851,7 @@ const QuillaMapWebRenderer = ({
       padding: { top: 96, bottom: 96, left: 36, right: 36 },
       duration: CAMERA_ANIMATION_DURATION_MS,
     });
-  }, [route.length, transitMapBounds]);
+  }, [route.length, thermalComfortFocusCoordinates.length, transitMapBounds]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -943,6 +1046,22 @@ const QuillaMapWebRenderer = ({
           />
         ) : null}
         <View testID="quillamap-web-route" style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }} />
+        <View
+          testID="quillamap-web-route-shade-halo"
+          {...({
+            featuresCount: shadeRouteSegmentsFeatureCollection.features.length,
+            lineColor: NAVIGATION_SHADE_ROUTE_LINE_STYLE.lineColor,
+          } as Record<string, unknown>)}
+          style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }}
+        />
+        <View
+          testID="quillamap-web-thermal-comfort-shade"
+          {...({
+            featuresCount: thermalComfortShadeFeatureCollection.features.length,
+            lineColor: THERMAL_COMFORT_SHADE_LINE_STYLE.lineColor,
+          } as Record<string, unknown>)}
+          style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }}
+        />
         <View
           testID="quillamap-web-transit-routes"
           {...({ featuresCount: transitRouteFeatureCollection.features.length } as Record<string, unknown>)}

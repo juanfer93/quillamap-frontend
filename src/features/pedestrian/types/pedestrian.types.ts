@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { QuillaMapThermalComfortRoute } from '@/components/maps/QuillaMap.types';
 import type { PlaceMapFeature } from '@/types/contracts/places.contract';
 import type { PedestrianCoordinates, ShadowZone } from '../schemas/pedestrian.schema';
 
@@ -14,4 +15,6 @@ export interface PedestrianMapContainerProps {
   profileTools?: ReactNode;
   renderProfileTools?: (transitRoutesSection: ReactNode | null) => ReactNode;
   licensePlate?: string | null;
+  thermalComfortRoute?: QuillaMapThermalComfortRoute | null;
+  suppressMapDecorations?: boolean;
 }

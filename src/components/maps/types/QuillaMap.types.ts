@@ -22,6 +22,21 @@ export interface QuillaMapRoutePoint extends QuillaMapCoordinate {
   id: string;
 }
 
+export type QuillaMapShadeRouteSegmentSource = 'community_report' | 'green_coverage' | 'park';
+
+export interface QuillaMapShadeRouteSegment {
+  id: string;
+  source: QuillaMapShadeRouteSegmentSource;
+  geometry: QuillaMapCoordinate[];
+}
+
+export interface QuillaMapThermalComfortRoute {
+  geometry: QuillaMapCoordinate[];
+  shadeSegments: QuillaMapShadeRouteSegment[];
+  origin?: QuillaMapCoordinate | null;
+  destination?: QuillaMapCoordinate | null;
+}
+
 export interface QuillaMapProps {
   mode: QuillaMapMode;
   themeMode?: 'light' | 'dark';
@@ -29,6 +44,8 @@ export interface QuillaMapProps {
   shadeZones?: QuillaMapShadeZone[];
   showDefaultShadeZones?: boolean;
   routePoints?: QuillaMapRoutePoint[];
+  shadeRouteSegments?: QuillaMapShadeRouteSegment[];
+  thermalComfortRoute?: QuillaMapThermalComfortRoute | null;
   transitMap?: TransitMapResponse | null;
   places?: PlaceMapFeature[];
   showUserLocation?: boolean;

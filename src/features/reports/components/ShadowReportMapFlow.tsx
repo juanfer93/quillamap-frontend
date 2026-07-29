@@ -3,6 +3,9 @@ import { Text, View } from 'react-native';
 import tw from '@/lib/tailwind';
 import { reportsApi } from '@/api/client';
 import PedestrianMapContainer from '@/features/pedestrian/components/PedestrianMapContainer';
+import ThermalComfortRouteSearchPanel from '@/features/thermal-comfort/components/ThermalComfortRouteSearchPanel';
+import { toThermalComfortRouteOverlay } from '@/features/thermal-comfort/utils/thermalComfortRouteOverlay';
+import type { ThermalComfortRoutePreview } from '@/features/thermal-comfort/types/thermalComfortRoute.types';
 import UserToolsMenu from '@/features/navigation/components/UserToolsMenu';
 import { useLocationPermissions } from '@/features/navigation/hooks/useLocationPermissions';
 import { usePlaces } from '@/features/places/hooks/usePlaces';
@@ -57,6 +60,8 @@ const ShadowReportMapFlow = ({
   const [selectedCoordinate, setSelectedCoordinate] = useState<PedestrianCoordinates | null>(null);
   const [isSelectingShadowLocation, setIsSelectingShadowLocation] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isShadeRouteSearchOpen, setIsShadeRouteSearchOpen] = useState(false);
+  const [thermalComfortRoutePreview, setThermalComfortRoutePreview] = useState<ThermalComfortRoutePreview | null>(null);
   const [nearbyReports, setNearbyReports] = useState<Report[]>([]);
   const [createdReports, setCreatedReports] = useState<Report[]>([]);
   const { createReport, errorMessage, isCreating } = useCreateReport();
@@ -147,6 +152,15 @@ const ShadowReportMapFlow = ({
     setIsSelectingShadowLocation(true);
   };
 
+  const handleShadeRoutePreview = (preview: ThermalComfortRoutePreview) => {
+    setThermalComfortRoutePreview(preview);
+  };
+
+  const closeShadeRouteSearch = () => {
+    setIsShadeRouteSearchOpen(false);
+    setThermalComfortRoutePreview(null);
+  };
+
   const handleSelectShadowLocation = async (coordinate: PedestrianCoordinates) => {
     if (!canSelectShadowLocation || isCreating) {
       return;
@@ -171,6 +185,8 @@ const ShadowReportMapFlow = ({
   };
 
   const reportShadowLabel = isSelectingShadowLocation ? 'Seleccionando sombra' : 'Reportar sombra';
+  const thermalComfortRoute = toThermalComfortRouteOverlay(thermalComfortRoutePreview);
+  const shouldInterruptLocation = thermalComfortRoutePreview?.searchMode === 'place';
 
   return (
     <View testID="shadow-report-flow" style={tw`flex-1 bg-surface-light dark:bg-charcoal`}>
@@ -182,6 +198,8 @@ const ShadowReportMapFlow = ({
         showHeader={false}
         selectedShadowCoordinate={selectedCoordinate}
         licensePlate={licensePlate}
+        thermalComfortRoute={thermalComfortRoute}
+        suppressMapDecorations={shouldInterruptLocation}
         renderProfileTools={(transitRoutesSection) => (
           <UserToolsMenu
             canReportShadow={isShadowReportingAvailable}
@@ -190,12 +208,23 @@ const ShadowReportMapFlow = ({
             reportShadowLabel={reportShadowLabel}
             profileSections={transitRoutesSection}
             onOpenPublicTransport={onOpenPublicTransport}
+            onOpenThermalComfortRouteSearch={() => setIsShadeRouteSearchOpen(true)}
             onReportShadow={handleShadowToolPress}
             onLogout={onLogout}
           />
         )}
         onMapPress={canSelectShadowLocation ? handleSelectShadowLocation : undefined}
       />
+
+      {isShadeRouteSearchOpen ? (
+        <ThermalComfortRouteSearchPanel
+          currentLocation={currentLocation ? { ...currentLocation, label: 'Mi ubicacion' } : null}
+          places={places}
+          onClose={closeShadeRouteSearch}
+          onClearPreview={() => setThermalComfortRoutePreview(null)}
+          onRoutePreview={handleShadeRoutePreview}
+        />
+      ) : null}
 
       {canSelectShadowLocation ? (
         <View pointerEvents="none" style={tw`absolute left-m right-m bottom-24 items-center`}>

@@ -71,6 +71,14 @@ export interface RouteAlternativeSummary {
   provider: RouteEngineProvider;
 }
 
+export type RouteShadeSegmentSource = 'community_report' | 'green_coverage' | 'park';
+
+export interface RouteShadeSegment {
+  id: string;
+  source: RouteShadeSegmentSource;
+  geometry: RouteCoordinate[];
+}
+
 export interface RouteTransitLegSummary {
   id: string;
   type: 'walk' | 'bus' | 'transfer';
@@ -103,6 +111,7 @@ export interface RouteResponse {
   alternatives?: RouteAlternativeSummary[];
   selectedRouteIndex?: number;
   trafficDelaySeconds?: number;
+  shadeSegments?: RouteShadeSegment[];
   transit?: RouteTransitSummary;
 }
 

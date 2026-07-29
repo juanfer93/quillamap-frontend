@@ -61,8 +61,8 @@ const toRouteRequest = ({
   };
 };
 
-const isTransitQuillaMapMode = (mode: QuillaMapMode): mode is 'pedestrian' | 'tourist' =>
-  mode === 'pedestrian' || mode === 'tourist';
+const isTransitQuillaMapMode = (mode: QuillaMapMode): mode is 'tourist' =>
+  mode === 'tourist';
 
 const toTransitMode = (mode: 'pedestrian' | 'tourist'): TransitMode =>
   mode === 'tourist' ? 'turista' : 'peaton';
