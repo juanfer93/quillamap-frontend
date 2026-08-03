@@ -4,7 +4,7 @@ services:
   backend:
     image: node:22-bookworm-slim
     working_dir: /workspace/backend
-    command: sh -lc "if [ ! -d node_modules/.bin ]; then npm ci; fi; npm run start:dev"
+    command: sh -lc "npm install; npm run start:dev"
     env_file:
       - ../quillamap-backend/.env
     environment:
@@ -27,7 +27,7 @@ services:
   frontend:
     image: node:22-bookworm-slim
     working_dir: /workspace/frontend
-    command: sh -lc "if [ ! -d node_modules/.bin ]; then npm ci; fi; npx expo start --web --port 8082 --clear"
+    command: sh -lc "npm install; npx expo start --web --port 8082 --clear"
     environment:
       NODE_ENV: development
       EXPO_PUBLIC_API_URL: http://localhost:3000/api

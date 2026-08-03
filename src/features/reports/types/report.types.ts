@@ -17,10 +17,26 @@ export interface ReportPoint {
   coordinates: [number, number];
 }
 
+export interface ReportEvidenceImage {
+  uri: string;
+  fileName?: string | null;
+  mimeType?: string | null;
+}
+
+export interface ReportTypeOption {
+  type: ReportType;
+  label: string;
+  description: string;
+  defaultDescription: string;
+  evidencePrompt: string;
+  evidenceRequired?: boolean;
+}
+
 export interface CreateReportDto {
   type: ReportType;
   description: string;
   location: ReportPoint;
+  evidenceImage?: ReportEvidenceImage | null;
 }
 
 export interface Report {
@@ -31,4 +47,5 @@ export interface Report {
   status: ReportStatus;
   profileId: string;
   createdAt: string;
+  imageUrl?: string | null;
 }

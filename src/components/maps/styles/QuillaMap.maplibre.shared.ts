@@ -12,6 +12,7 @@ import type {
 } from '@/types/contracts/transit.contract';
 import type {
   QuillaMapCoordinate,
+  QuillaMapReportMarker,
   QuillaMapRoutePoint,
   QuillaMapShadeRouteSegment,
   QuillaMapShadeZone,
@@ -84,9 +85,13 @@ export const getMapLibreStyle = (themeMode: 'light' | 'dark' = 'light'): StyleSp
   themeMode === 'dark' ? DARK_MAPLIBRE_STYLE : MAPLIBRE_STYLE;
 
 export const SHADE_MARKER_EMOJI = '\u2602';
+export const REPORT_ARROYO_MARKER_EMOJI = '\u{1F30A}';
+export const REPORT_BACHE_MARKER_EMOJI = '\u{1F4A5}';
 export const DESTINATION_MARKER_EMOJI = '\u25CE';
 export const NAVIGATION_ARROW_MARKER = '\u25B2';
 export const MAP_3D_PITCH = 62;
+export const REPORT_MARKER_SOURCE_ID = 'report-marker-source';
+export const REPORT_MARKER_LAYER_ID = 'report-marker';
 export const NAVIGATION_ROUTE_SOURCE_ID = 'route-source';
 export const NAVIGATION_ROUTE_HALO_LAYER_ID = 'route-line-halo';
 export const NAVIGATION_ROUTE_LAYER_ID = 'route-line';
@@ -352,6 +357,24 @@ export const getShadeZoneAreasFeatureCollection = (zones: QuillaMapShadeZone[]) 
       type: 'Polygon' as const,
       coordinates: getRadiusPolygon(zone.coordinate, zone.radiusMeters),
     },
+  })),
+});
+
+const getReportMarkerEmoji = (type: QuillaMapReportMarker['type']): string =>
+  type === 'arroyo' ? REPORT_ARROYO_MARKER_EMOJI : REPORT_BACHE_MARKER_EMOJI;
+
+export const getReportMarkersFeatureCollection = (markers: QuillaMapReportMarker[]) => ({
+  type: 'FeatureCollection' as const,
+  features: markers.map((marker) => ({
+    type: 'Feature' as const,
+    id: marker.id,
+    properties: {
+      id: marker.id,
+      type: marker.type,
+      description: marker.description ?? null,
+      marker: getReportMarkerEmoji(marker.type),
+    },
+    geometry: pointGeometry(marker.coordinate),
   })),
 });
 

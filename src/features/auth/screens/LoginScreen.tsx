@@ -16,7 +16,7 @@ import tw from '@/lib/tailwind';
 import { RootStackParamList } from 'src/features/auth/types/auth.types';
 import { useAuthStore } from 'src/store/useAuthStore';
 import { useThemeStore } from 'src/store/useThemeStore';
-import { authService } from '@/api/client';
+import { authService } from '@/api';
 import HeaderSwitch from 'src/components/common/HeaderSwitch';
 import { loginSchema } from 'src/features/auth/schemas/auth.schema';
 import AnimatedInput from 'src/features/auth/components/animated/AnimatedInput';

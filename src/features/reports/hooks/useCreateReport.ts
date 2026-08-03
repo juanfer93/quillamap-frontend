@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import axios from 'axios';
-import { reportsApi } from '@/api/client';
+import { reportsApi } from '@/api';
 import { useKarmaRewards } from '@/features/navigation/hooks/useKarmaRewards';
 import { useAuthStore } from '@/store/useAuthStore';
 import type { CreateReportDto, Report } from '../types/report.types';

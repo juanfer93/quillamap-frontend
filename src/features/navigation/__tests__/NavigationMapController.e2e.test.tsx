@@ -17,7 +17,7 @@ jest.mock('../hooks/useVelocityGuard', () => ({
   useVelocityGuard: () => ({ speedKmh: mockSpeedKmh }),
 }));
 
-jest.mock('@/api/client', () => ({
+jest.mock('@/api', () => ({
   navigationApi: {
     calculateRoute: (request: RouteRequest) => mockCalculateRoute(request),
   },

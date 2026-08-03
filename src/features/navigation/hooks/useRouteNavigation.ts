@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { navigationApi, transitApi } from '@/api/client';
+import { navigationApi, transitApi } from '@/api';
 import type {
   RouteCoordinate,
   RouteResponse,

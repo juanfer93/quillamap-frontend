@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { transitApi } from '@/api/client';
+import { transitApi } from '@/api';
 import { resolveDestination } from '@/features/navigation/utils/destinationSearch';
 import {
   getTransitOperatorGroups,

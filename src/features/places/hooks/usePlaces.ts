@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { placesApi } from '@/api/client';
+import { placesApi } from '@/api';
 import type { PlaceMapFeature, PlacesNearbyQuery } from '@/types/contracts/places.contract';
 import { DEFAULT_PLACES } from '../data/defaultPlaces';
 

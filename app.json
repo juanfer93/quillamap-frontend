@@ -29,7 +29,14 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "@maplibre/maplibre-react-native"
+      "@maplibre/maplibre-react-native",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "QuillaMap usa la galeria para adjuntar evidencia a los reportes ciudadanos.",
+          "cameraPermission": "QuillaMap usa la camara para adjuntar evidencia a los reportes ciudadanos."
+        }
+      ]
     ],
     "experiments": {
       "tsconfigPaths": true

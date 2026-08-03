@@ -41,7 +41,7 @@ jest.mock('@/features/navigation/hooks/useLocationPermissions', () => ({
   }),
 }));
 
-jest.mock('@/api/client', () => ({
+jest.mock('@/api', () => ({
   reportsApi: {
     findNearby: jest.fn(() => new Promise(() => {})),
     create: jest.fn(),

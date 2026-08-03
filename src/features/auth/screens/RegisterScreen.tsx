@@ -13,7 +13,7 @@ import CarTypeStep from '@/features/auth/components/register/CarTypeStep';
 import LicensePlateStep from '@/features/auth/components/register/LicensePlateStep';
 import UserDetailsStep from '@/features/auth/components/register/UserDetailsStep';
 import ProgressBar from '@/features/auth/components/common/ProgressBar';
-import { authApi } from '@/api/client';
+import { authApi } from '@/api';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';

@@ -2,10 +2,10 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import RegisterScreen from '../screens/RegisterScreen';
-import { authApi } from '@/api/client';
+import { authApi } from '@/api';
 
 // Mock de API y Navegación
-jest.mock('@/api/client', () => ({
+jest.mock('@/api', () => ({
   authService: { login: jest.fn() },
   authApi: { register: jest.fn() },
 }));

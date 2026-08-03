@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import tw from '@/lib/tailwind';
-import { thermalComfortApi } from '@/api/client';
+import { thermalComfortApi } from '@/api';
 import type { PlaceMapFeature } from '@/types/contracts/places.contract';
 import type { RouteWaypoint } from '@/types/contracts/navigation.contract';
 import { getDestinationSuggestions, resolveDestination } from '@/features/navigation/utils/destinationSearch';

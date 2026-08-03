@@ -1,9 +1,9 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import LoginScreen from '../screens/LoginScreen';
-import { authService } from '@/api/client';
+import { authService } from '@/api';
 
-jest.mock('@/api/client', () => ({
+jest.mock('@/api', () => ({
   authService: { login: jest.fn() },
   authApi: { register: jest.fn() },
 }));

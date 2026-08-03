@@ -18,6 +18,13 @@ export interface QuillaMapShadeZone {
   radiusMeters: number;
 }
 
+export interface QuillaMapReportMarker {
+  id: string;
+  type: 'arroyo' | 'bache';
+  coordinate: QuillaMapCoordinate;
+  description?: string;
+}
+
 export interface QuillaMapRoutePoint extends QuillaMapCoordinate {
   id: string;
 }
@@ -42,6 +49,7 @@ export interface QuillaMapProps {
   themeMode?: 'light' | 'dark';
   center: QuillaMapCoordinate;
   shadeZones?: QuillaMapShadeZone[];
+  reportMarkers?: QuillaMapReportMarker[];
   showDefaultShadeZones?: boolean;
   routePoints?: QuillaMapRoutePoint[];
   shadeRouteSegments?: QuillaMapShadeRouteSegment[];

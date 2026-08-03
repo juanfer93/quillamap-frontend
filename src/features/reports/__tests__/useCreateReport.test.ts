@@ -1,11 +1,11 @@
 import { act, renderHook } from '@testing-library/react-native';
-import { reportsApi } from '@/api/client';
+import { reportsApi } from '@/api';
 import { TRUTHFUL_REPORT_KARMA_POINTS, useKarmaRewards } from '@/features/navigation/hooks/useKarmaRewards';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useCreateReport } from '../hooks/useCreateReport';
 import { ReportStatus, ReportType, type CreateReportDto, type Report } from '../types/report.types';
 
-jest.mock('@/api/client', () => ({
+jest.mock('@/api', () => ({
   reportsApi: {
     create: jest.fn(),
   },

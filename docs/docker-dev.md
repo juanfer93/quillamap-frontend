@@ -68,6 +68,6 @@ docker compose --env-file docker-compose.dev.env -f docker-compose.dev.yml up
 
 ## Notes
 
-The compose file uses named Docker volumes for `node_modules`, so Linux container dependencies do not overwrite Windows host dependencies. The first run installs dependencies inside those volumes and can take a few minutes.
+The compose file uses named Docker volumes for `node_modules`, so Linux container dependencies do not overwrite Windows host dependencies. The frontend and backend run `npm install` on startup so each container volume stays in sync when dependencies change; when dependencies are already current, this should finish quickly.
 
 Open the frontend in the browser at `http://192.168.1.26:8082`. This Docker flow is for Expo Web; use the native Expo/Android commands outside Docker only when you specifically want to test native behavior.

@@ -37,6 +37,7 @@ import {
   getNavigationArrowFeatureCollection,
   getNavigationBearingDegrees,
   getPlacesFeatureCollection,
+  getReportMarkersFeatureCollection,
   getRouteFeatureCollection,
   getShadeRouteSegmentsFeatureCollection,
   getShadeZoneAreasFeatureCollection,
@@ -50,6 +51,8 @@ import {
   NAVIGATION_ARROW_LAYER_ID,
   NAVIGATION_ARROW_MARKER,
   NAVIGATION_ARROW_SOURCE_ID,
+  REPORT_MARKER_LAYER_ID,
+  REPORT_MARKER_SOURCE_ID,
   SHADE_MARKER_EMOJI,
   DESTINATION_MARKER_EMOJI,
   NAVIGATION_DESTINATION_LAYER_ID,
@@ -98,6 +101,7 @@ const QuillaMap = ({
   themeMode = 'light',
   center,
   shadeZones,
+  reportMarkers,
   places,
   showDefaultShadeZones,
   routePoints,
@@ -179,6 +183,7 @@ const QuillaMap = ({
   const destinationFeatureCollection = getDestinationFeatureCollection(destinationCoordinate);
   const shadeFeatureCollection = getShadeZonesFeatureCollection(zones);
   const shadeAreaFeatureCollection = getShadeZoneAreasFeatureCollection(zones);
+  const reportMarkersFeatureCollection = getReportMarkersFeatureCollection(reportMarkers ?? []);
   const draftFeatureCollection = getCoordinateFeatureCollection(
     shouldShowShadowZones ? selectedCoordinate : null,
     'shadow-zone-draft'

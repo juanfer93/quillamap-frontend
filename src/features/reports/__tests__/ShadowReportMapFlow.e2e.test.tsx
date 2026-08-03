@@ -1,6 +1,7 @@
 import React from 'react';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
-import { navigationApi, reportsApi, thermalComfortApi } from '@/api/client';
+import * as ImagePicker from 'expo-image-picker';
+import { navigationApi, reportsApi, thermalComfortApi } from '@/api';
 import { useKarmaRewards } from '@/features/navigation/hooks/useKarmaRewards';
 import { useAuthStore } from '@/store/useAuthStore';
 import ShadowReportMapFlow from '../components/ShadowReportMapFlow';
@@ -17,6 +18,16 @@ jest.mock('@expo/vector-icons', () => {
     Ionicons: ({ name }: { name: string }) => ReactMock.createElement(Text, null, name),
   };
 });
+
+jest.mock('expo-image-picker', () => ({
+  MediaTypeOptions: {
+    Images: 'Images',
+  },
+  requestCameraPermissionsAsync: jest.fn(),
+  requestMediaLibraryPermissionsAsync: jest.fn(),
+  launchCameraAsync: jest.fn(),
+  launchImageLibraryAsync: jest.fn(),
+}));
 
 jest.mock('@/features/pedestrian/hooks/useLocationPermissions', () => ({
   useLocationPermissions: () => ({
@@ -123,7 +134,7 @@ jest.mock('@maplibre/maplibre-react-native', () => {
   };
 });
 
-jest.mock('@/api/client', () => ({
+jest.mock('@/api', () => ({
   reportsApi: {
     create: jest.fn(),
     findNearby: jest.fn(),
@@ -156,6 +167,10 @@ describe('ShadowReportMapFlow e2e', () => {
       isLoading: false,
     });
     useKarmaRewards.getState().resetKarma();
+    jest.mocked(ImagePicker.requestCameraPermissionsAsync).mockResolvedValue({ granted: true } as never);
+    jest.mocked(ImagePicker.requestMediaLibraryPermissionsAsync).mockResolvedValue({ granted: true } as never);
+    jest.mocked(ImagePicker.launchCameraAsync).mockResolvedValue({ canceled: true, assets: [] } as never);
+    jest.mocked(ImagePicker.launchImageLibraryAsync).mockResolvedValue({ canceled: true, assets: [] } as never);
     jest.mocked(reportsApi.findNearby).mockResolvedValue([]);
     jest.mocked(navigationApi.calculateRoute).mockResolvedValue({
       geometry: [],
@@ -223,6 +238,10 @@ describe('ShadowReportMapFlow e2e', () => {
         coordinate: tappedCoordinate,
       },
     });
+
+    await waitFor(() => expect(getByTestId('report-evidence-prompt')).toBeTruthy());
+    expect(reportsApi.create).not.toHaveBeenCalled();
+    fireEvent.press(getByTestId('report-evidence-skip'));
 
     await waitFor(() => expect(mockDbReports).toHaveLength(1));
 
@@ -298,6 +317,8 @@ describe('ShadowReportMapFlow e2e', () => {
         coordinate: tappedCoordinate,
       },
     });
+    await waitFor(() => expect(firstSession.getByTestId('report-evidence-prompt')).toBeTruthy());
+    fireEvent.press(firstSession.getByTestId('report-evidence-skip'));
 
     await waitFor(() => expect(mockDbReports).toHaveLength(1));
     firstSession.unmount();
@@ -320,6 +341,92 @@ describe('ShadowReportMapFlow e2e', () => {
       lat: 10.9878,
       lng: -74.7889,
       radius: SHADOW_REPORTS_MAP_LOOKUP_RADIUS_METERS,
+    });
+  });
+
+  it('permite adjuntar evidencia voluntaria desde galeria antes de guardar la sombra', async () => {
+    const tappedCoordinate = {
+      latitude: 10.994444,
+      longitude: -74.787777,
+    };
+
+    jest.mocked(ImagePicker.launchImageLibraryAsync).mockResolvedValue({
+      canceled: false,
+      assets: [
+        {
+          uri: 'file:///tmp/sombra.jpg',
+          fileName: 'sombra.jpg',
+          mimeType: 'image/jpeg',
+        },
+      ],
+    } as never);
+    jest.mocked(reportsApi.create).mockImplementation(async (dto: CreateReportDto) => ({
+      id: 'db-shadow-with-photo',
+      type: dto.type,
+      description: dto.description,
+      location: dto.location,
+      status: ReportStatus.ACTIVO,
+      profileId: 'profile-1',
+      createdAt: '2026-07-02T12:15:00.000Z',
+      imageUrl: 'https://xyz.supabase.co/storage/v1/object/public/evidence/db-shadow-with-photo/sombra.jpg',
+    }));
+
+    const { getByTestId } = render(<ShadowReportMapFlow canReportShadow onLogout={jest.fn()} />);
+
+    await waitFor(() => expect(reportsApi.findNearby).toHaveBeenCalled());
+
+    fireEvent.press(getByTestId('user-tools-profile-button'));
+    fireEvent.press(getByTestId('user-tools-report-shadow'));
+    fireEvent.press(getByTestId('quillamap-native-map'), {
+      nativeEvent: {
+        coordinate: tappedCoordinate,
+      },
+    });
+
+    await waitFor(() => expect(getByTestId('report-evidence-prompt')).toBeTruthy());
+    fireEvent.press(getByTestId('report-evidence-gallery'));
+
+    await waitFor(() => {
+      expect(reportsApi.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: ReportType.SOMBRA,
+          evidenceImage: expect.objectContaining({
+            uri: 'file:///tmp/sombra.jpg',
+            fileName: 'sombra.jpg',
+            mimeType: 'image/jpeg',
+          }),
+        }),
+        'jwt-token'
+      );
+    });
+  });
+
+  it('muestra la foto de evidencia al tocar una sombra persistida con imageUrl', async () => {
+    const persistedReport: Report = {
+      id: 'db-shadow-photo-existing',
+      type: ReportType.SOMBRA,
+      description: 'Sombra con foto guardada en Storage',
+      location: {
+        type: 'Point',
+        coordinates: [-74.7889, 10.9878],
+      },
+      status: ReportStatus.ACTIVO,
+      profileId: 'profile-1',
+      createdAt: '2026-07-02T12:00:00.000Z',
+      imageUrl: 'https://xyz.supabase.co/storage/v1/object/public/evidence/db-shadow-photo-existing/sombra.jpg',
+    };
+
+    jest.mocked(reportsApi.findNearby).mockResolvedValue([persistedReport]);
+
+    const { getByTestId } = render(<ShadowReportMapFlow canReportShadow onLogout={jest.fn()} />);
+
+    await waitFor(() => expect(getByTestId('quillamap-native-shade-source')).toBeTruthy());
+    fireEvent.press(getByTestId('quillamap-native-shade-source'));
+
+    await waitFor(() => {
+      expect(getByTestId('shadow-report-evidence-image').props.source).toEqual({
+        uri: persistedReport.imageUrl,
+      });
     });
   });
 

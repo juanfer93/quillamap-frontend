@@ -49,7 +49,7 @@ jest.mock('@/features/places/hooks/usePlaces', () => ({
   usePlaces: () => ({ places }),
 }));
 
-jest.mock('@/api/client', () => ({
+jest.mock('@/api', () => ({
   transitApi: {
     getRouteMap: () => mockGetRouteMap(),
     getBusSuggestions: (request: TransitRouteRequest) => mockGetBusSuggestions(request),
