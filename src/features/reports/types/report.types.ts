@@ -4,6 +4,7 @@ export enum ReportType {
   TRAFICO = 'trafico',
   ACCIDENTE = 'accidente',
   SOMBRA = 'sombra',
+  INSEGURIDAD = 'inseguridad',
   OTRO = 'otro',
 }
 
@@ -36,6 +37,7 @@ export interface CreateReportDto {
   type: ReportType;
   description: string;
   location: ReportPoint;
+  dangerLevel?: number;
   evidenceImage?: ReportEvidenceImage | null;
 }
 
@@ -48,4 +50,5 @@ export interface Report {
   profileId: string;
   createdAt: string;
   imageUrl?: string | null;
+  dangerLevel?: number | null;
 }

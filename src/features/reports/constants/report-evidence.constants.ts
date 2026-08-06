@@ -30,6 +30,14 @@ export const REPORT_TYPE_OPTIONS: ReportTypeOption[] = [
     evidencePrompt: 'Quieres adjuntar una evidencia del bache?',
     evidenceRequired: false,
   },
+  {
+    type: ReportType.INSEGURIDAD,
+    label: 'Zona peligrosa',
+    description: 'Lugar donde la comunidad reporta riesgo de seguridad',
+    defaultDescription: 'Zona peligrosa reportada por la comunidad',
+    evidencePrompt: 'Quieres adjuntar una evidencia de la zona peligrosa?',
+    evidenceRequired: false,
+  },
 ];
 
 export const getReportTypeOption = (type: ReportType): ReportTypeOption =>

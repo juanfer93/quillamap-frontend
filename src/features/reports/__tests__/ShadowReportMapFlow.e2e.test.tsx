@@ -3,12 +3,15 @@ import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { navigationApi, reportsApi, thermalComfortApi } from '@/api';
 import { useKarmaRewards } from '@/features/navigation/hooks/useKarmaRewards';
+import { useLayerStore } from '@/features/navigation/store/useLayerStore';
+import { useSecurityMapStore } from '@/features/security/store/useSecurityMapStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import ShadowReportMapFlow from '../components/ShadowReportMapFlow';
 import { SHADOW_REPORTS_MAP_LOOKUP_RADIUS_METERS } from '../constants/shadow-report.constants';
 import { ReportStatus, ReportType, type CreateReportDto, type Report } from '../types/report.types';
 
 let mockCurrentLocation: { latitude: number; longitude: number } | null = null;
+let mockSpeedKmh = 0;
 
 jest.mock('@expo/vector-icons', () => {
   const ReactMock = jest.requireActual<typeof React>('react');
@@ -45,6 +48,10 @@ jest.mock('@/features/navigation/hooks/useLocationPermissions', () => ({
     isRequestingPermission: false,
     errorMessage: null,
   }),
+}));
+
+jest.mock('@/features/navigation/hooks/useVelocityGuard', () => ({
+  useVelocityGuard: () => ({ speedKmh: mockSpeedKmh }),
 }));
 
 jest.mock('@maplibre/maplibre-react-native', () => {
@@ -118,6 +125,7 @@ jest.mock('@maplibre/maplibre-react-native', () => {
     CircleLayer: passthrough,
     FillLayer: passthrough,
     FillExtrusionLayer: passthrough,
+    HeatmapLayer: passthrough,
     SymbolLayer: passthrough,
     MarkerView: ({ coordinate, children, ...props }: { coordinate: [number, number]; children?: React.ReactNode }) =>
       ReactMock.createElement(
@@ -138,6 +146,7 @@ jest.mock('@/api', () => ({
   reportsApi: {
     create: jest.fn(),
     findNearby: jest.fn(),
+    findSecurityHeatmap: jest.fn(),
   },
   navigationApi: {
     calculateRoute: jest.fn(),
@@ -155,6 +164,16 @@ describe('ShadowReportMapFlow e2e', () => {
     jest.useRealTimers();
     jest.clearAllMocks();
     mockCurrentLocation = null;
+    mockSpeedKmh = 0;
+    useLayerStore.setState({
+      isSecurityMapEnabled: false,
+    });
+    useSecurityMapStore.setState({
+      heatmap: null,
+      isSecurityMapLoading: false,
+      securityMapError: null,
+      localSecurityPoints: [],
+    });
     useAuthStore.setState({
       user: {
         id: 'profile-1',
@@ -172,6 +191,17 @@ describe('ShadowReportMapFlow e2e', () => {
     jest.mocked(ImagePicker.launchCameraAsync).mockResolvedValue({ canceled: true, assets: [] } as never);
     jest.mocked(ImagePicker.launchImageLibraryAsync).mockResolvedValue({ canceled: true, assets: [] } as never);
     jest.mocked(reportsApi.findNearby).mockResolvedValue([]);
+    jest.mocked(reportsApi.findSecurityHeatmap).mockResolvedValue({
+      generatedAt: '2026-08-04T12:00:00.000Z',
+      windowMinutes: 60,
+      dbscanRadiusMeters: 804.672,
+      minReportsPerCluster: 3,
+      metadata: {
+        primaryColor: '#004574',
+        touristSafetyMilestoneColor: '#D4AF37',
+      } as const,
+      points: [],
+    });
     jest.mocked(navigationApi.calculateRoute).mockResolvedValue({
       geometry: [],
       distanceMeters: 0,
@@ -279,6 +309,80 @@ describe('ShadowReportMapFlow e2e', () => {
       ])
     );
   }, 10000);
+
+  it('permite reportar una zona peligrosa con nivel de riesgo para alimentar el mapa de seguridad', async () => {
+    const tappedCoordinate = {
+      latitude: 10.992222,
+      longitude: -74.784444,
+    };
+
+    jest.mocked(reportsApi.create).mockImplementation(async (dto: CreateReportDto) => ({
+      id: 'db-security-report-1',
+      type: dto.type,
+      description: dto.description,
+      location: dto.location,
+      status: ReportStatus.ACTIVO,
+      profileId: 'profile-1',
+      createdAt: '2026-08-04T18:20:00.000Z',
+      dangerLevel: dto.dangerLevel,
+      imageUrl: null,
+    }));
+
+    const { getByTestId, queryByTestId } = render(<ShadowReportMapFlow canReportShadow onLogout={jest.fn()} />);
+
+    await waitFor(() => expect(reportsApi.findNearby).toHaveBeenCalled());
+
+    fireEvent.press(getByTestId('user-tools-profile-button'));
+    fireEvent.press(getByTestId('user-tools-report-security'));
+    await waitFor(() => {
+      expect(getByTestId('shadow-placement-hint').props.children).toBe('Toca el mapa para ubicar la zona peligrosa');
+    });
+
+    fireEvent.press(getByTestId('quillamap-native-map'), {
+      nativeEvent: {
+        coordinate: tappedCoordinate,
+      },
+    });
+
+    await waitFor(() => expect(getByTestId('security-danger-level-picker')).toBeTruthy());
+    expect(getByTestId('quillamap-native-security-draft-marker').props.style.circleStrokeColor).toBe('#DC2626');
+    expect(queryByTestId('quillamap-native-shadow-draft-marker')).toBeNull();
+    fireEvent.press(getByTestId('security-danger-level-4'));
+    fireEvent.press(getByTestId('report-evidence-skip'));
+
+    await waitFor(() => {
+      expect(reportsApi.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: ReportType.INSEGURIDAD,
+          dangerLevel: 4,
+          location: {
+            type: 'Point',
+            coordinates: [tappedCoordinate.longitude, tappedCoordinate.latitude],
+          },
+        }),
+        'jwt-token'
+      );
+    });
+    await waitFor(() => {
+      expect(getByTestId('shadow-report-success').props.children).toBe('Zona peligrosa reportada');
+    });
+
+    await waitFor(() => {
+      const heatmapSource = getByTestId('quillamap-native-security-heatmap-source');
+      expect(heatmapSource.props.shape.features).toHaveLength(1);
+      expect(heatmapSource.props.shape.features[0]).toMatchObject({
+        properties: expect.objectContaining({
+          clusterId: 'db-security-report-1',
+          dangerLevel: 4,
+          riskLevel: 'high',
+        }),
+        geometry: expect.objectContaining({
+          coordinates: [tappedCoordinate.longitude, tappedCoordinate.latitude],
+        }),
+      });
+    });
+    expect(useLayerStore.getState().isSecurityMapEnabled).toBe(true);
+  });
 
   it('mantiene la sombra guardada al abrir otra sesion cargando desde backend', async () => {
     const mockDbReports: Report[] = [];
@@ -459,6 +563,71 @@ describe('ShadowReportMapFlow e2e', () => {
           }),
         ])
       );
+    });
+  });
+
+  it('activa el Mapa de Seguridad desde el menu y abre el dashboard anonimo del cluster', async () => {
+    mockSpeedKmh = 22;
+    const securityHeatmap = {
+      generatedAt: '2026-08-04T12:00:00.000Z',
+      windowMinutes: 60,
+      dbscanRadiusMeters: 804.672,
+      minReportsPerCluster: 3,
+      metadata: {
+        primaryColor: '#004574',
+        touristSafetyMilestoneColor: '#D4AF37',
+      } as const,
+      points: [
+        {
+          clusterId: 'security-critical-1',
+          latitude: 10.9878,
+          longitude: -74.7889,
+          intensity: 0.91,
+          dangerLevel: 5,
+          veracityScore: 0.88,
+          reportCount: 9,
+          radiusMeters: 420,
+          riskLevel: 'critical' as const,
+          hasVerifiedEvidence: true,
+          generatedFrom: '2026-08-04T11:00:00.000Z',
+          generatedTo: '2026-08-04T12:00:00.000Z',
+        },
+      ],
+    };
+    jest.mocked(reportsApi.findSecurityHeatmap).mockResolvedValue(securityHeatmap);
+
+    const { getByTestId, queryByTestId } = render(<ShadowReportMapFlow canReportShadow onLogout={jest.fn()} />);
+
+    await waitFor(() => expect(reportsApi.findNearby).toHaveBeenCalled());
+    expect(queryByTestId('quillamap-native-security-heatmap')).toBeNull();
+
+    fireEvent.press(getByTestId('user-tools-profile-button'));
+    fireEvent.press(getByTestId('security-map-toggle'));
+
+    await waitFor(() => {
+      expect(reportsApi.findSecurityHeatmap).toHaveBeenCalledWith({
+        lat: 10.9878,
+        lng: -74.7889,
+        radius: 5000,
+        criticalOnly: true,
+        proximityRadius: 500,
+      });
+    });
+
+    await waitFor(() => {
+      expect(getByTestId('quillamap-native-security-heatmap-source').props.shape.features).toHaveLength(1);
+    });
+
+    expect(queryByTestId('quillamap-native-security-heatmap')).toBeNull();
+    expect(getByTestId('quillamap-native-security-heatmap-source').props.shape.features[0].properties.user_id).toBeUndefined();
+
+    fireEvent.press(getByTestId('quillamap-native-security-heatmap-source'));
+
+    await waitFor(() => {
+      expect(getByTestId('security-risk-bottom-sheet')).toBeTruthy();
+      expect(getByTestId('security-risk-title').props.children).toBe('Nivel de Riesgo de la Zona');
+      expect(getByTestId('security-risk-level').props.children).toBe('Muy peligroso');
+      expect(getByTestId('security-risk-veracity').props.children).toBe('88%');
     });
   });
 
