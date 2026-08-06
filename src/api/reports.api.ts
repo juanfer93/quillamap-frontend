@@ -1,5 +1,32 @@
 import client from './client';
 import type { CreateReportDto, Report } from '@/features/reports/types/report.types';
+import type {
+  SecurityHeatmapRequestContract,
+  SecurityHeatmapResponseContract,
+} from '@/types/contracts/security.contract';
+
+export const SECURITY_HEATMAP_MAX_RADIUS_METERS = 5_000;
+export const SECURITY_HEATMAP_MIN_PROXIMITY_RADIUS_METERS = 300;
+export const SECURITY_HEATMAP_MAX_PROXIMITY_RADIUS_METERS = 500;
+
+const clampNumber = (value: number, min: number, max: number): number =>
+  Math.min(Math.max(value, min), max);
+
+const normalizeSecurityHeatmapParams = (
+  params: SecurityHeatmapRequestContract
+): SecurityHeatmapRequestContract => ({
+  ...params,
+  radius: typeof params.radius === 'number'
+    ? Math.min(params.radius, SECURITY_HEATMAP_MAX_RADIUS_METERS)
+    : params.radius,
+  proximityRadius: typeof params.proximityRadius === 'number'
+    ? clampNumber(
+      params.proximityRadius,
+      SECURITY_HEATMAP_MIN_PROXIMITY_RADIUS_METERS,
+      SECURITY_HEATMAP_MAX_PROXIMITY_RADIUS_METERS
+    )
+    : params.proximityRadius,
+});
 
 const getReportEvidenceFileName = (image: NonNullable<CreateReportDto['evidenceImage']>): string => {
   if (image.fileName) {
@@ -79,6 +106,15 @@ export const reportsApi = {
 
   findNearby: async (params: { lat: number; lng: number; radius?: number }): Promise<Report[]> => {
     const response = await client.get<Report[]>('/reports', { params });
+    return response.data;
+  },
+
+  findSecurityHeatmap: async (
+    params: SecurityHeatmapRequestContract
+  ): Promise<SecurityHeatmapResponseContract> => {
+    const response = await client.get<SecurityHeatmapResponseContract>('/reports/heatmap/security', {
+      params: normalizeSecurityHeatmapParams(params),
+    });
     return response.data;
   },
 };

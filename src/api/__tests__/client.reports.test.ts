@@ -111,6 +111,95 @@ describe('reportsApi evidence contract', () => {
     expect(mockPatch).not.toHaveBeenCalled();
   });
 
+  it('consume el contrato anonimo del mapa de calor de seguridad', async () => {
+    const securityHeatmap = {
+      generatedAt: '2026-08-04T12:00:00.000Z',
+      windowMinutes: 60,
+      dbscanRadiusMeters: 804.672,
+      minReportsPerCluster: 3,
+      metadata: {
+        primaryColor: '#004574',
+        touristSafetyMilestoneColor: '#D4AF37',
+      },
+      points: [
+        {
+          clusterId: 'security-cluster-1',
+          latitude: 10.9878,
+          longitude: -74.7889,
+          intensity: 0.92,
+          dangerLevel: 5,
+          veracityScore: 0.87,
+          reportCount: 8,
+          radiusMeters: 420,
+          riskLevel: 'critical',
+          hasVerifiedEvidence: true,
+          generatedFrom: '2026-08-04T11:00:00.000Z',
+          generatedTo: '2026-08-04T12:00:00.000Z',
+        },
+      ],
+    };
+    mockGet.mockResolvedValueOnce({ data: securityHeatmap });
+    const { reportsApi } = require('../reports.api') as typeof import('../reports.api');
+
+    const response = await reportsApi.findSecurityHeatmap({
+      lat: 10.9878,
+      lng: -74.7889,
+      radius: 2000,
+      criticalOnly: true,
+      proximityRadius: 500,
+    });
+
+    expect(mockGet).toHaveBeenCalledWith('/reports/heatmap/security', {
+      params: {
+        lat: 10.9878,
+        lng: -74.7889,
+        radius: 2000,
+        criticalOnly: true,
+        proximityRadius: 500,
+      },
+    });
+    expect(response.points[0]).not.toHaveProperty('user_id');
+    expect(response.points[0]).toMatchObject({
+      clusterId: 'security-cluster-1',
+      veracityScore: 0.87,
+    });
+  });
+
+  it('limita el radio del heatmap de seguridad a 5000m antes de llamar al backend', async () => {
+    mockGet.mockResolvedValueOnce({
+      data: {
+        generatedAt: '2026-08-04T12:00:00.000Z',
+        windowMinutes: 60,
+        dbscanRadiusMeters: 804.672,
+        minReportsPerCluster: 3,
+        metadata: {
+          primaryColor: '#004574',
+          touristSafetyMilestoneColor: '#D4AF37',
+        },
+        points: [],
+      },
+    });
+    const { reportsApi } = require('../reports.api') as typeof import('../reports.api');
+
+    await reportsApi.findSecurityHeatmap({
+      lat: 10.9878,
+      lng: -74.7889,
+      radius: 9000,
+      criticalOnly: true,
+      proximityRadius: 800,
+    });
+
+    expect(mockGet).toHaveBeenCalledWith('/reports/heatmap/security', {
+      params: {
+        lat: 10.9878,
+        lng: -74.7889,
+        radius: 5000,
+        criticalOnly: true,
+        proximityRadius: 500,
+      },
+    });
+  });
+
   it('configura axios una sola vez con el cliente base', async () => {
     require('../client');
     const axios = require('axios') as typeof import('axios');
