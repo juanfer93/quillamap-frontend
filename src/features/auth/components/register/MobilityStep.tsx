@@ -1,11 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
 import tw from '@/lib/tailwind';
 import { useThemeStore } from 'src/store/useThemeStore';
 import { MOBILITY_MODES, MobilityModeId } from 'src/features/auth/constants/mobilityModes';
-import { RootStackParamList } from '@/features/auth/types/auth.types';
 
 interface MobilityStepProps {
   selectedMode?: MobilityModeId;
@@ -14,7 +11,6 @@ interface MobilityStepProps {
 
 const MobilityStep: React.FC<MobilityStepProps> = ({ handleVehicleTypeSelect, selectedMode }) => {
   const { mode } = useThemeStore();
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const isDark = mode === 'dark';
 
   return (

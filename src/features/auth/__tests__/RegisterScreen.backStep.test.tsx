@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent, act, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, act } from '@testing-library/react-native';
 import RegisterScreen from '../screens/RegisterScreen';
 
 const mockedGoBack = jest.fn();
