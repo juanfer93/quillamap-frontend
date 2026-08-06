@@ -13,6 +13,7 @@ import {
   getPlaceCategoryVisual,
   type PlaceMapFeature,
 } from '@/types/contracts/places.contract';
+import type { SecurityHeatmapPointContract } from '@/types/contracts/security.contract';
 import type { MapIconProps } from '../types/QuillaMap.icon.types';
 import PlaceInfoBottomSheet from '@/features/places/components/PlaceInfoBottomSheet';
 import {
@@ -22,6 +23,12 @@ import {
   getVisibleShadeZones,
 } from '../styles/QuillaMap.shared';
 import QuillaMapControls from './QuillaMapControls';
+import {
+  createSecurityMarkerElement,
+  createShadowMarkerElement,
+  hasDom,
+} from './QuillaMap.web-dom';
+import { applyQuillaMapWebLayers } from './QuillaMap.web-layers';
 import {
   DARK_MAP_THEME,
   MAP_3D_PITCH,
@@ -35,48 +42,32 @@ import {
   getShadeRouteSegmentsFeatureCollection,
   getShadeZoneAreasFeatureCollection,
   getShadeZonesFeatureCollection,
+  getSecurityHeatmapFeatureCollection,
   getThermalComfortFocusCoordinates,
   getThermalComfortShadeFeatureCollection,
   getTransitMapBounds,
   getTransitRouteFeatureCollection,
   getTransitStopFeatureCollection,
   getUserLocationFeatureCollection,
-  NAVIGATION_ARROW_LAYER_ID,
-  NAVIGATION_ARROW_MARKER,
-  NAVIGATION_ARROW_SOURCE_ID,
-  SHADE_MARKER_EMOJI,
-  DESTINATION_MARKER_EMOJI,
-  NAVIGATION_DESTINATION_LAYER_ID,
-  NAVIGATION_DESTINATION_SOURCE_ID,
-  NAVIGATION_ROUTE_HALO_LAYER_ID,
-  NAVIGATION_ROUTE_LAYER_ID,
   NAVIGATION_ROUTE_LINE_STYLE,
-  NAVIGATION_ROUTE_SOURCE_ID,
-  NAVIGATION_SHADE_ROUTE_HALO_LAYER_ID,
   NAVIGATION_SHADE_ROUTE_LINE_STYLE,
-  NAVIGATION_SHADE_ROUTE_SOURCE_ID,
-  THERMAL_COMFORT_SHADE_HALO_LAYER_ID,
-  THERMAL_COMFORT_SHADE_LAYER_ID,
+  SECURITY_HEATMAP_ALERT_LAYER_ID,
+  SECURITY_HEATMAP_HITBOX_LAYER_ID,
+  SECURITY_HEATMAP_STYLE,
   THERMAL_COMFORT_SHADE_LINE_STYLE,
-  THERMAL_COMFORT_SHADE_SOURCE_ID,
-  TRANSIT_ROUTE_HALO_LAYER_ID,
-  TRANSIT_ROUTE_LAYER_ID,
-  TRANSIT_ROUTE_LINE_STYLE,
-  TRANSIT_ROUTE_SOURCE_ID,
-  TRANSIT_STOP_LAYER_ID,
-  TRANSIT_STOP_SOURCE_ID,
-  USER_LOCATION_LAYER_ID,
-  USER_LOCATION_SOURCE_ID,
 } from '../styles/QuillaMap.maplibre';
+import {
+  CAMERA_ANIMATION_DURATION_MS,
+  INITIAL_DEFAULT_ZOOM,
+  INITIAL_PEDESTRIAN_ZOOM,
+  PLACES_FULL_OPACITY_ZOOM,
+  PLACES_MIN_VISIBLE_ZOOM,
+  getCompassBearing,
+  getNextCardinalBearing,
+  normalizeBearing,
+} from '../utils/QuillaMap.camera';
 
 const MapIcon = Ionicons as React.ComponentType<MapIconProps>;
-type AddLayerObject = Parameters<MapLibreMap['addLayer']>[0];
-const INITIAL_PEDESTRIAN_ZOOM = 16;
-const INITIAL_DEFAULT_ZOOM = 15;
-const PLACES_MIN_VISIBLE_ZOOM = 14.75;
-const CAMERA_ANIMATION_DURATION_MS = 520;
-const CARDINAL_BEARINGS = [0, 90, 180, 270] as const;
-type CardinalBearing = typeof CARDINAL_BEARINGS[number];
 
 const tokenColor = (name: string, fallback = ''): string => {
   const value = tw.color(name);
@@ -85,65 +76,10 @@ const tokenColor = (name: string, fallback = ''): string => {
 
 const getPlaceTitle = (place: PlaceMapFeature): string => place.name.es;
 
-const normalizeBearing = (bearing: number): number => ((bearing % 360) + 360) % 360;
-
-const getCompassBearing = (cameraBearing: number): number => normalizeBearing(-cameraBearing);
-
-const getNextCardinalBearing = (cameraBearing: number): CardinalBearing => {
-  const normalizedBearing = normalizeBearing(cameraBearing);
-  const currentIndex = CARDINAL_BEARINGS.findIndex((bearing) => Math.abs(bearing - normalizedBearing) < 0.5);
-
-  return currentIndex >= 0 ? CARDINAL_BEARINGS[(currentIndex + 1) % CARDINAL_BEARINGS.length] : 0;
-};
-
 const getFallbackIcon = (place: PlaceMapFeature): string =>
   place.source === 'tourist_site'
     ? 'business-outline'
     : place.iconName ?? getPlaceCategoryVisual(place.category).iconName;
-
-const hasDom = () => typeof document !== 'undefined';
-
-const createShadowMarkerElement = (testID: string, color: string, label: string) => {
-  const element = document.createElement('button');
-  element.type = 'button';
-  element.dataset.testid = testID;
-  element.setAttribute('aria-label', label);
-  element.textContent = SHADE_MARKER_EMOJI;
-  element.style.width = '36px';
-  element.style.height = '36px';
-  element.style.padding = '0';
-  element.style.borderRadius = '50%';
-  element.style.background = tokenColor(PLACES_VISUAL_IDENTITY.white.token, PLACES_VISUAL_IDENTITY.white.hex);
-  element.style.border = `2px solid ${color}`;
-  element.style.boxShadow = '0 6px 14px rgba(0, 69, 116, 0.2)';
-  element.style.display = 'flex';
-  element.style.alignItems = 'center';
-  element.style.justifyContent = 'center';
-  element.style.cursor = 'pointer';
-  element.style.fontFamily = 'sans-serif';
-  element.style.fontSize = '21px';
-  element.style.lineHeight = '1';
-  element.style.color = color;
-  return element;
-};
-
-const upsertGeoJsonSource = (
-  map: MapLibreMap,
-  id: string,
-  data: GeoJSON.Feature | GeoJSON.FeatureCollection
-) => {
-  const source = map.getSource(id) as maplibregl.GeoJSONSource | undefined;
-
-  if (source) {
-    source.setData(data);
-    return;
-  }
-
-  map.addSource(id, {
-    type: 'geojson',
-    data,
-  });
-};
 
 const QuillaMapWebRenderer = ({
   mode,
@@ -156,6 +92,9 @@ const QuillaMapWebRenderer = ({
   shadeRouteSegments,
   thermalComfortRoute,
   transitMap,
+  securityHeatmap,
+  securityHeatmapMode = 'heatmap',
+  draftMarkerKind = 'shadow',
   showUserLocation = true,
   showCompassControl = true,
   showZoomControl = true,
@@ -163,6 +102,7 @@ const QuillaMapWebRenderer = ({
   profileTools,
   onShadeZonePress,
   onPlacePress,
+  onSecurityHeatmapPointPress,
   onMapPress,
   selectedCoordinate,
   destinationCoordinate,
@@ -177,16 +117,20 @@ const QuillaMapWebRenderer = ({
   const isPedestrian = mode === 'pedestrian';
   const mapStyle = getMapLibreStyle(themeMode);
   const shouldShowShadowZones = !(isPedestrian && isDark);
-  const zones = shouldShowShadowZones ? getVisibleShadeZones(shadeZones, showDefaultShadeZones) : [];
   const zoomLevelRef = useRef(isPedestrian ? INITIAL_PEDESTRIAN_ZOOM : INITIAL_DEFAULT_ZOOM);
   const [mapZoom, setMapZoom] = useState(zoomLevelRef.current);
+  const zones = shouldShowShadowZones && mapZoom >= PLACES_MIN_VISIBLE_ZOOM
+    ? getVisibleShadeZones(shadeZones, showDefaultShadeZones)
+    : [];
   const visiblePlaces = mapZoom >= PLACES_MIN_VISIBLE_ZOOM ? getVisiblePlaces(places) : [];
   const canOpenPlaces = canInteractWithPlaces(mode);
   const placesRef = useRef(visiblePlaces);
   const zonesRef = useRef(zones);
+  const securityHeatmapPointsRef = useRef(securityHeatmap?.points ?? []);
   const onMapPressRef = useRef(onMapPress);
   const onPlacePressRef = useRef(onPlacePress);
   const onShadeZonePressRef = useRef(onShadeZonePress);
+  const onSecurityHeatmapPointPressRef = useRef(onSecurityHeatmapPointPress);
   const canOpenPlacesRef = useRef(canOpenPlaces);
   const [is3D, setIs3D] = useState(false);
   const [cameraBearing, setCameraBearing] = useState<number>(0);
@@ -226,6 +170,10 @@ const QuillaMapWebRenderer = ({
     [transitMap]
   );
   const transitMapBounds = useMemo(() => getTransitMapBounds(transitMap), [transitMap]);
+  const securityHeatmapFeatureCollection = useMemo(
+    () => getSecurityHeatmapFeatureCollection(securityHeatmap, securityHeatmapMode),
+    [securityHeatmap, securityHeatmapMode]
+  );
   const routeBearing = useMemo(() => getNavigationBearingDegrees(route), [route]);
   const navigationArrowFeatureCollection = useMemo(
     () => getNavigationArrowFeatureCollection(showUserLocation ? center : null, route),
@@ -252,6 +200,11 @@ const QuillaMapWebRenderer = ({
 
     setSelectedPlace(place);
     onPlacePress?.(place);
+  };
+
+  const handleSecurityHeatmapPointPress = (point: SecurityHeatmapPointContract) => {
+    setSelectedPlace(null);
+    onSecurityHeatmapPointPress?.(point);
   };
 
   const closeSelectedPlace = () => {
@@ -288,6 +241,10 @@ const QuillaMapWebRenderer = ({
   }, [visiblePlaces]);
 
   useEffect(() => {
+    securityHeatmapPointsRef.current = securityHeatmap?.points ?? [];
+  }, [securityHeatmap]);
+
+  useEffect(() => {
     canOpenPlacesRef.current = canOpenPlaces;
   }, [canOpenPlaces]);
 
@@ -304,6 +261,10 @@ const QuillaMapWebRenderer = ({
   }, [onShadeZonePress]);
 
   useEffect(() => {
+    onSecurityHeatmapPointPressRef.current = onSecurityHeatmapPointPress;
+  }, [onSecurityHeatmapPointPress]);
+
+  useEffect(() => {
     if (mapZoom >= PLACES_MIN_VISIBLE_ZOOM) {
       return;
     }
@@ -311,11 +272,7 @@ const QuillaMapWebRenderer = ({
     setSelectedPlace(null);
   }, [mapZoom]);
 
-  useEffect(() => {
-    if (!hasDom() || mapRef.current || !mapHostRef.current) {
-      return undefined;
-    }
-
+useEffect(() => {
     const host = mapHostRef.current as unknown as HTMLElement;
     const map = new maplibregl.Map({
       container: host,
@@ -335,6 +292,29 @@ const QuillaMapWebRenderer = ({
     };
 
     const handleMapClick = (event: maplibregl.MapMouseEvent) => {
+      const securityLayers = [
+        SECURITY_HEATMAP_HITBOX_LAYER_ID,
+        SECURITY_HEATMAP_ALERT_LAYER_ID,
+      ].filter((layerId) => map.getLayer(layerId));
+      const securityFeature = securityLayers.length > 0
+        ? map.queryRenderedFeatures(event.point, { layers: securityLayers })[0]
+        : undefined;
+      const rawSecurityClusterId = securityFeature?.properties?.clusterId;
+      const securityClusterId = typeof rawSecurityClusterId === 'string'
+        ? rawSecurityClusterId
+        : typeof rawSecurityClusterId === 'number'
+          ? String(rawSecurityClusterId)
+          : null;
+      const securityPoint = securityClusterId
+        ? securityHeatmapPointsRef.current.find((candidate) => candidate.clusterId === securityClusterId)
+        : undefined;
+
+      if (securityPoint) {
+        setSelectedPlace(null);
+        onSecurityHeatmapPointPressRef.current?.(securityPoint);
+        return;
+      }
+
       const placeLayers = [
         'places-hitbox',
         'places-static-dots',
@@ -412,370 +392,32 @@ const QuillaMapWebRenderer = ({
       return undefined;
     }
 
-    const addLayerIfMissing = (id: string, layer: AddLayerObject) => {
-      if (!map.getLayer(id)) {
-        map.addLayer(layer);
-      }
-    };
-
     const applyLayers = () => {
-      upsertGeoJsonSource(map, NAVIGATION_ROUTE_SOURCE_ID, routeFeature);
-      upsertGeoJsonSource(map, NAVIGATION_SHADE_ROUTE_SOURCE_ID, shadeRouteSegmentsFeatureCollection);
-      upsertGeoJsonSource(map, THERMAL_COMFORT_SHADE_SOURCE_ID, thermalComfortShadeFeatureCollection);
-      upsertGeoJsonSource(map, TRANSIT_ROUTE_SOURCE_ID, transitRouteFeatureCollection);
-      upsertGeoJsonSource(map, TRANSIT_STOP_SOURCE_ID, transitStopFeatureCollection);
-      upsertGeoJsonSource(map, NAVIGATION_ARROW_SOURCE_ID, navigationArrowFeatureCollection);
-      upsertGeoJsonSource(map, USER_LOCATION_SOURCE_ID, userLocationFeatureCollection);
-      upsertGeoJsonSource(map, NAVIGATION_DESTINATION_SOURCE_ID, destinationFeatureCollection);
-      upsertGeoJsonSource(map, 'buildings-source', buildingsFeatureCollection);
-      upsertGeoJsonSource(map, 'places-source', placesFeatureCollection);
-      upsertGeoJsonSource(map, 'shade-zones-source', shadeFeatureCollection);
-      upsertGeoJsonSource(map, 'shade-area-source', shadeAreaFeatureCollection);
-
-      addLayerIfMissing('places-buildings', {
-        id: 'places-buildings',
-        type: 'fill-extrusion',
-        source: 'buildings-source',
-        layout: {
-          visibility: is3D ? 'visible' : 'none',
-        },
-        paint: {
-          'fill-extrusion-color': ['get', 'color'],
-          'fill-extrusion-height': ['get', 'height'],
-          'fill-extrusion-base': ['get', 'base'],
-          'fill-extrusion-opacity': 0.88,
-          'fill-extrusion-vertical-gradient': true,
-        },
+      applyQuillaMapWebLayers({
+        map,
+        routeFeature,
+        shadeRouteSegmentsFeatureCollection,
+        thermalComfortShadeFeatureCollection,
+        transitRouteFeatureCollection,
+        transitStopFeatureCollection,
+        securityHeatmapFeatureCollection,
+        navigationArrowFeatureCollection,
+        userLocationFeatureCollection,
+        destinationFeatureCollection,
+        buildingsFeatureCollection,
+        placesFeatureCollection,
+        shadeFeatureCollection,
+        shadeAreaFeatureCollection,
+        securityHeatmapMode,
+        is3D,
+        isPedestrian,
+        mapRoute,
+        mapShade,
+        placeMarkerColor,
+        primary,
+        shadeMarkerColor,
+        white,
       });
-
-      addLayerIfMissing('places-building-outline', {
-        id: 'places-building-outline',
-        type: 'line',
-        source: 'buildings-source',
-        layout: {
-          visibility: is3D ? 'visible' : 'none',
-        },
-        paint: {
-          'line-color': ['get', 'color'],
-          'line-width': 2,
-          'line-opacity': 0.95,
-        },
-      });
-      map.setLayoutProperty('places-buildings', 'visibility', is3D ? 'visible' : 'none');
-      map.setLayoutProperty('places-building-outline', 'visibility', is3D ? 'visible' : 'none');
-
-      addLayerIfMissing(TRANSIT_ROUTE_HALO_LAYER_ID, {
-        id: TRANSIT_ROUTE_HALO_LAYER_ID,
-        type: 'line',
-        source: TRANSIT_ROUTE_SOURCE_ID,
-        paint: {
-          'line-color': TRANSIT_ROUTE_LINE_STYLE.haloColor,
-          'line-width': TRANSIT_ROUTE_LINE_STYLE.haloWidth,
-          'line-opacity': TRANSIT_ROUTE_LINE_STYLE.haloOpacity,
-        },
-        layout: {
-          'line-cap': TRANSIT_ROUTE_LINE_STYLE.lineCap,
-          'line-join': TRANSIT_ROUTE_LINE_STYLE.lineJoin,
-        },
-      });
-      map.setPaintProperty(TRANSIT_ROUTE_HALO_LAYER_ID, 'line-color', TRANSIT_ROUTE_LINE_STYLE.haloColor);
-      map.setPaintProperty(TRANSIT_ROUTE_HALO_LAYER_ID, 'line-width', TRANSIT_ROUTE_LINE_STYLE.haloWidth);
-      map.setPaintProperty(TRANSIT_ROUTE_HALO_LAYER_ID, 'line-opacity', TRANSIT_ROUTE_LINE_STYLE.haloOpacity);
-
-      addLayerIfMissing(TRANSIT_ROUTE_LAYER_ID, {
-        id: TRANSIT_ROUTE_LAYER_ID,
-        type: 'line',
-        source: TRANSIT_ROUTE_SOURCE_ID,
-        paint: {
-          'line-color': ['get', 'color'],
-          'line-width': TRANSIT_ROUTE_LINE_STYLE.lineWidth,
-          'line-opacity': TRANSIT_ROUTE_LINE_STYLE.lineOpacity,
-        },
-        layout: {
-          'line-cap': TRANSIT_ROUTE_LINE_STYLE.lineCap,
-          'line-join': TRANSIT_ROUTE_LINE_STYLE.lineJoin,
-        },
-      });
-      map.setPaintProperty(TRANSIT_ROUTE_LAYER_ID, 'line-width', TRANSIT_ROUTE_LINE_STYLE.lineWidth);
-      map.setPaintProperty(TRANSIT_ROUTE_LAYER_ID, 'line-opacity', TRANSIT_ROUTE_LINE_STYLE.lineOpacity);
-
-      addLayerIfMissing(NAVIGATION_ROUTE_HALO_LAYER_ID, {
-        id: NAVIGATION_ROUTE_HALO_LAYER_ID,
-        type: 'line',
-        source: NAVIGATION_ROUTE_SOURCE_ID,
-        paint: {
-          'line-color': NAVIGATION_ROUTE_LINE_STYLE.haloColor,
-          'line-width': NAVIGATION_ROUTE_LINE_STYLE.haloWidth,
-          'line-opacity': NAVIGATION_ROUTE_LINE_STYLE.haloOpacity,
-        },
-        layout: {
-          'line-cap': NAVIGATION_ROUTE_LINE_STYLE.lineCap,
-          'line-join': NAVIGATION_ROUTE_LINE_STYLE.lineJoin,
-        },
-      });
-      map.setPaintProperty(NAVIGATION_ROUTE_HALO_LAYER_ID, 'line-color', NAVIGATION_ROUTE_LINE_STYLE.haloColor);
-      map.setPaintProperty(NAVIGATION_ROUTE_HALO_LAYER_ID, 'line-width', NAVIGATION_ROUTE_LINE_STYLE.haloWidth);
-      map.setPaintProperty(NAVIGATION_ROUTE_HALO_LAYER_ID, 'line-opacity', NAVIGATION_ROUTE_LINE_STYLE.haloOpacity);
-
-      addLayerIfMissing(NAVIGATION_ROUTE_LAYER_ID, {
-        id: NAVIGATION_ROUTE_LAYER_ID,
-        type: 'line',
-        source: NAVIGATION_ROUTE_SOURCE_ID,
-        paint: {
-          'line-color': mapRoute,
-          'line-width': NAVIGATION_ROUTE_LINE_STYLE.lineWidth,
-        },
-        layout: {
-          'line-cap': NAVIGATION_ROUTE_LINE_STYLE.lineCap,
-          'line-join': NAVIGATION_ROUTE_LINE_STYLE.lineJoin,
-        },
-      });
-      map.setPaintProperty(NAVIGATION_ROUTE_LAYER_ID, 'line-color', mapRoute);
-      map.setPaintProperty(NAVIGATION_ROUTE_LAYER_ID, 'line-width', NAVIGATION_ROUTE_LINE_STYLE.lineWidth);
-
-      addLayerIfMissing(NAVIGATION_SHADE_ROUTE_HALO_LAYER_ID, {
-        id: NAVIGATION_SHADE_ROUTE_HALO_LAYER_ID,
-        type: 'line',
-        source: NAVIGATION_SHADE_ROUTE_SOURCE_ID,
-        paint: {
-          'line-color': NAVIGATION_SHADE_ROUTE_LINE_STYLE.lineColor,
-          'line-width': NAVIGATION_SHADE_ROUTE_LINE_STYLE.lineWidth,
-          'line-opacity': NAVIGATION_SHADE_ROUTE_LINE_STYLE.lineOpacity,
-          'line-blur': NAVIGATION_SHADE_ROUTE_LINE_STYLE.lineBlur,
-        },
-        layout: {
-          'line-cap': NAVIGATION_SHADE_ROUTE_LINE_STYLE.lineCap,
-          'line-join': NAVIGATION_SHADE_ROUTE_LINE_STYLE.lineJoin,
-        },
-      });
-      map.setPaintProperty(NAVIGATION_SHADE_ROUTE_HALO_LAYER_ID, 'line-color', NAVIGATION_SHADE_ROUTE_LINE_STYLE.lineColor);
-      map.setPaintProperty(NAVIGATION_SHADE_ROUTE_HALO_LAYER_ID, 'line-width', NAVIGATION_SHADE_ROUTE_LINE_STYLE.lineWidth);
-      map.setPaintProperty(NAVIGATION_SHADE_ROUTE_HALO_LAYER_ID, 'line-opacity', NAVIGATION_SHADE_ROUTE_LINE_STYLE.lineOpacity);
-      map.setPaintProperty(NAVIGATION_SHADE_ROUTE_HALO_LAYER_ID, 'line-blur', NAVIGATION_SHADE_ROUTE_LINE_STYLE.lineBlur);
-
-      addLayerIfMissing(`${USER_LOCATION_LAYER_ID}-halo`, {
-        id: `${USER_LOCATION_LAYER_ID}-halo`,
-        type: 'circle',
-        source: USER_LOCATION_SOURCE_ID,
-        paint: {
-          'circle-color': white,
-          'circle-radius': 9,
-          'circle-opacity': 0.95,
-          'circle-stroke-color': primary,
-          'circle-stroke-width': 2,
-        },
-      });
-      addLayerIfMissing(USER_LOCATION_LAYER_ID, {
-        id: USER_LOCATION_LAYER_ID,
-        type: 'circle',
-        source: USER_LOCATION_SOURCE_ID,
-        paint: {
-          'circle-color': primary,
-          'circle-radius': 4,
-          'circle-opacity': 1,
-        },
-      });
-
-      addLayerIfMissing(`${TRANSIT_STOP_LAYER_ID}-halo`, {
-        id: `${TRANSIT_STOP_LAYER_ID}-halo`,
-        type: 'circle',
-        source: TRANSIT_STOP_SOURCE_ID,
-        paint: {
-          'circle-color': white,
-          'circle-radius': 5,
-          'circle-opacity': 0.76,
-        },
-      });
-      addLayerIfMissing(TRANSIT_STOP_LAYER_ID, {
-        id: TRANSIT_STOP_LAYER_ID,
-        type: 'circle',
-        source: TRANSIT_STOP_SOURCE_ID,
-        paint: {
-          'circle-color': ['get', 'color'],
-          'circle-radius': ['case', ['==', ['get', 'agencyKind'], 'transmetro'], 4.5, 3.6],
-          'circle-opacity': 0.95,
-          'circle-stroke-color': white,
-          'circle-stroke-width': 1,
-        },
-      });
-
-      addLayerIfMissing(`${NAVIGATION_ARROW_LAYER_ID}-halo`, {
-        id: `${NAVIGATION_ARROW_LAYER_ID}-halo`,
-        type: 'circle',
-        source: NAVIGATION_ARROW_SOURCE_ID,
-        paint: {
-          'circle-color': white,
-          'circle-radius': 18,
-          'circle-opacity': 0.96,
-          'circle-stroke-color': mapRoute,
-          'circle-stroke-width': 3,
-        },
-      });
-      addLayerIfMissing(NAVIGATION_ARROW_LAYER_ID, {
-        id: NAVIGATION_ARROW_LAYER_ID,
-        type: 'symbol',
-        source: NAVIGATION_ARROW_SOURCE_ID,
-        layout: {
-          'text-field': NAVIGATION_ARROW_MARKER,
-          'text-font': ['Open Sans Regular'],
-          'text-size': 25,
-          'text-allow-overlap': true,
-          'text-ignore-placement': true,
-          'text-pitch-alignment': 'map',
-          'text-rotation-alignment': 'map',
-          'text-rotate': ['get', 'bearing'],
-        },
-        paint: {
-          'text-color': mapRoute,
-          'text-halo-color': white,
-          'text-halo-width': 1,
-        },
-      });
-
-      addLayerIfMissing(`${NAVIGATION_DESTINATION_LAYER_ID}-halo`, {
-        id: `${NAVIGATION_DESTINATION_LAYER_ID}-halo`,
-        type: 'circle',
-        source: NAVIGATION_DESTINATION_SOURCE_ID,
-        paint: {
-          'circle-color': white,
-          'circle-radius': 18,
-          'circle-stroke-color': primary,
-          'circle-stroke-width': 3,
-        },
-      });
-      addLayerIfMissing(NAVIGATION_DESTINATION_LAYER_ID, {
-        id: NAVIGATION_DESTINATION_LAYER_ID,
-        type: 'symbol',
-        source: NAVIGATION_DESTINATION_SOURCE_ID,
-        layout: {
-          'text-field': DESTINATION_MARKER_EMOJI,
-          'text-font': ['Open Sans Regular'],
-          'text-size': 20,
-          'text-allow-overlap': true,
-          'text-ignore-placement': true,
-        },
-        paint: {
-          'text-color': primary,
-          'text-halo-color': white,
-          'text-halo-width': 1,
-        },
-      });
-
-      addLayerIfMissing('shade-zone-areas', {
-        id: 'shade-zone-areas',
-        type: 'fill',
-        source: 'shade-area-source',
-        paint: {
-          'fill-color': mapShade,
-          'fill-opacity': isPedestrian ? 0 : 0.22,
-        },
-      });
-      addLayerIfMissing('shade-zone-area-outline', {
-        id: 'shade-zone-area-outline',
-        type: 'line',
-        source: 'shade-area-source',
-        paint: {
-          'line-color': primary,
-          'line-width': 2,
-          'line-opacity': isPedestrian ? 0 : 0.9,
-        },
-      });
-      map.setPaintProperty('shade-zone-areas', 'fill-color', mapShade);
-      map.setPaintProperty('shade-zone-areas', 'fill-opacity', isPedestrian ? 0 : 0.22);
-      map.setPaintProperty('shade-zone-area-outline', 'line-color', primary);
-      map.setPaintProperty('shade-zone-area-outline', 'line-opacity', isPedestrian ? 0 : 0.9);
-
-      addLayerIfMissing('shade-zones', {
-        id: 'shade-zones',
-        type: 'circle',
-        source: 'shade-zones-source',
-        paint: {
-          'circle-color': white,
-          'circle-radius': 17,
-          'circle-stroke-color': shadeMarkerColor,
-          'circle-stroke-width': 2,
-        },
-      });
-      map.setPaintProperty('shade-zones', 'circle-stroke-color', shadeMarkerColor);
-
-      addLayerIfMissing('places-hitbox', {
-        id: 'places-hitbox',
-        type: 'circle',
-        source: 'places-source',
-        paint: {
-          'circle-color': white,
-          'circle-opacity': 0.01,
-          'circle-radius': 22,
-        },
-      });
-
-      addLayerIfMissing('places-marker-background', {
-        id: 'places-marker-background',
-        type: 'circle',
-        source: 'places-source',
-        paint: {
-          'circle-color': white,
-          'circle-radius': 15,
-          'circle-stroke-color': placeMarkerColor,
-          'circle-stroke-width': 2,
-        },
-      });
-
-      addLayerIfMissing('places-static-dots', {
-        id: 'places-static-dots',
-        type: 'symbol',
-        source: 'places-source',
-        layout: {
-          'text-field': ['get', 'icon'],
-          'text-font': ['Open Sans Regular'],
-          'text-size': 18,
-          'text-allow-overlap': true,
-          'text-ignore-placement': true,
-        },
-        paint: {
-          'text-color': placeMarkerColor,
-          'text-halo-color': '#ffffff',
-          'text-halo-width': 1,
-        },
-      });
-
-      addLayerIfMissing(THERMAL_COMFORT_SHADE_HALO_LAYER_ID, {
-        id: THERMAL_COMFORT_SHADE_HALO_LAYER_ID,
-        type: 'line',
-        source: THERMAL_COMFORT_SHADE_SOURCE_ID,
-        paint: {
-          'line-color': THERMAL_COMFORT_SHADE_LINE_STYLE.haloColor,
-          'line-width': THERMAL_COMFORT_SHADE_LINE_STYLE.haloWidth,
-          'line-opacity': THERMAL_COMFORT_SHADE_LINE_STYLE.haloOpacity,
-        },
-        layout: {
-          'line-cap': THERMAL_COMFORT_SHADE_LINE_STYLE.lineCap,
-          'line-join': THERMAL_COMFORT_SHADE_LINE_STYLE.lineJoin,
-        },
-      });
-      map.setPaintProperty(THERMAL_COMFORT_SHADE_HALO_LAYER_ID, 'line-color', THERMAL_COMFORT_SHADE_LINE_STYLE.haloColor);
-      map.setPaintProperty(THERMAL_COMFORT_SHADE_HALO_LAYER_ID, 'line-width', THERMAL_COMFORT_SHADE_LINE_STYLE.haloWidth);
-      map.setPaintProperty(THERMAL_COMFORT_SHADE_HALO_LAYER_ID, 'line-opacity', THERMAL_COMFORT_SHADE_LINE_STYLE.haloOpacity);
-
-      addLayerIfMissing(THERMAL_COMFORT_SHADE_LAYER_ID, {
-        id: THERMAL_COMFORT_SHADE_LAYER_ID,
-        type: 'line',
-        source: THERMAL_COMFORT_SHADE_SOURCE_ID,
-        paint: {
-          'line-color': THERMAL_COMFORT_SHADE_LINE_STYLE.lineColor,
-          'line-width': THERMAL_COMFORT_SHADE_LINE_STYLE.lineWidth,
-          'line-opacity': THERMAL_COMFORT_SHADE_LINE_STYLE.lineOpacity,
-          'line-blur': THERMAL_COMFORT_SHADE_LINE_STYLE.lineBlur,
-        },
-        layout: {
-          'line-cap': THERMAL_COMFORT_SHADE_LINE_STYLE.lineCap,
-          'line-join': THERMAL_COMFORT_SHADE_LINE_STYLE.lineJoin,
-        },
-      });
-      map.setPaintProperty(THERMAL_COMFORT_SHADE_LAYER_ID, 'line-color', THERMAL_COMFORT_SHADE_LINE_STYLE.lineColor);
-      map.setPaintProperty(THERMAL_COMFORT_SHADE_LAYER_ID, 'line-width', THERMAL_COMFORT_SHADE_LINE_STYLE.lineWidth);
-      map.setPaintProperty(THERMAL_COMFORT_SHADE_LAYER_ID, 'line-opacity', THERMAL_COMFORT_SHADE_LINE_STYLE.lineOpacity);
-      map.setPaintProperty(THERMAL_COMFORT_SHADE_LAYER_ID, 'line-blur', THERMAL_COMFORT_SHADE_LINE_STYLE.lineBlur);
     };
 
     if (map.isStyleLoaded()) {
@@ -796,7 +438,10 @@ const QuillaMapWebRenderer = ({
     mapStyle,
     navigationArrowFeatureCollection,
     placesFeatureCollection,
+    primary,
     routeFeature,
+    securityHeatmapFeatureCollection,
+    securityHeatmapMode,
     shadeRouteSegmentsFeatureCollection,
     shadeAreaFeatureCollection,
     shadeFeatureCollection,
@@ -897,11 +542,16 @@ const QuillaMapWebRenderer = ({
     });
 
     if (selectedCoordinate && shouldShowShadowZones) {
-      const element = createShadowMarkerElement(
-        'quillamap-web-shadow-draft-marker',
-        shadowMarkerColor,
-        'Nueva zona de sombra'
-      );
+      const element = draftMarkerKind === 'security'
+        ? createSecurityMarkerElement(
+          'quillamap-web-security-draft-marker',
+          'Nueva zona peligrosa'
+        )
+        : createShadowMarkerElement(
+          'quillamap-web-shadow-draft-marker',
+          shadowMarkerColor,
+          'Nueva zona de sombra'
+        );
       element.disabled = true;
       element.style.cursor = 'default';
 
@@ -911,6 +561,7 @@ const QuillaMapWebRenderer = ({
       shadowMarkerRefs.current.push(marker);
     }
   }, [
+    draftMarkerKind,
     mapStyle,
     onShadeZonePress,
     selectedCoordinate,
@@ -970,6 +621,16 @@ const QuillaMapWebRenderer = ({
           </Pressable>
         );
       })}
+      {securityHeatmap?.points.map((point) => (
+        <Pressable
+          key={point.clusterId}
+          testID={`quillamap-web-security-heatmap-point-${point.clusterId}`}
+          accessibilityRole="button"
+          accessibilityLabel="Punto de seguridad"
+          onPress={() => handleSecurityHeatmapPointPress(point)}
+          style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }}
+        />
+      ))}
       {zones.map((zone) => (
         <Pressable
           key={zone.id}
@@ -982,7 +643,9 @@ const QuillaMapWebRenderer = ({
       ))}
       {selectedCoordinate && shouldShowShadowZones ? (
         <View
-          testID="quillamap-web-shadow-draft-marker"
+          testID={draftMarkerKind === 'security'
+            ? 'quillamap-web-security-draft-marker'
+            : 'quillamap-web-shadow-draft-marker'}
           style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }}
         />
       ) : null}
@@ -1070,6 +733,15 @@ const QuillaMapWebRenderer = ({
         <View
           testID="quillamap-web-transit-stops"
           {...({ featuresCount: transitStopFeatureCollection.features.length } as Record<string, unknown>)}
+          style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }}
+        />
+        <View
+          testID="quillamap-web-security-heatmap"
+          {...({
+            featuresCount: securityHeatmapFeatureCollection.features.length,
+            mode: securityHeatmapMode,
+            heatmapColor: SECURITY_HEATMAP_STYLE.heatmapColor,
+          } as Record<string, unknown>)}
           style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }}
         />
         <View testID="quillamap-web-map-art" style={{ position: 'absolute', opacity: 0, width: 1, height: 1 }} />

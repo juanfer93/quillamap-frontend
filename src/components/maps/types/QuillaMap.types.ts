@@ -1,6 +1,10 @@
 import type { ReactNode } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import type { PlaceMapFeature } from '@/types/contracts/places.contract';
+import type {
+  SecurityHeatmapPointContract,
+  SecurityHeatmapResponseContract,
+} from '@/types/contracts/security.contract';
 import type { TransitMapResponse } from '@/types/contracts/transit.contract';
 
 export type QuillaMapMode = 'pedestrian' | 'tourist' | 'car' | 'motorcycle';
@@ -44,6 +48,8 @@ export interface QuillaMapThermalComfortRoute {
   destination?: QuillaMapCoordinate | null;
 }
 
+export type QuillaMapDraftMarkerKind = 'shadow' | 'security';
+
 export interface QuillaMapProps {
   mode: QuillaMapMode;
   themeMode?: 'light' | 'dark';
@@ -55,6 +61,9 @@ export interface QuillaMapProps {
   shadeRouteSegments?: QuillaMapShadeRouteSegment[];
   thermalComfortRoute?: QuillaMapThermalComfortRoute | null;
   transitMap?: TransitMapResponse | null;
+  securityHeatmap?: SecurityHeatmapResponseContract | null;
+  securityHeatmapMode?: 'heatmap' | 'driving-lock';
+  draftMarkerKind?: QuillaMapDraftMarkerKind;
   places?: PlaceMapFeature[];
   showUserLocation?: boolean;
   showCompassControl?: boolean;
@@ -64,6 +73,7 @@ export interface QuillaMapProps {
   profileTools?: ReactNode;
   onShadeZonePress?: (zone: QuillaMapShadeZone) => void;
   onPlacePress?: (place: PlaceMapFeature) => void;
+  onSecurityHeatmapPointPress?: (point: SecurityHeatmapPointContract) => void;
   onMapPress?: (coordinate: QuillaMapCoordinate) => void;
   selectedCoordinate?: QuillaMapCoordinate | null;
   destinationCoordinate?: QuillaMapCoordinate | null;

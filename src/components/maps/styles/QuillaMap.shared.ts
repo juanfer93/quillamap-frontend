@@ -10,11 +10,11 @@ import {
   canOpenPlaceDetails,
   toPlacesNavigationMode,
 } from '@/types/contracts/places.contract';
-import { defaultPedestrianRoute, defaultShadeZones } from '../types/QuillaMap.constants';
+import { defaultShadeZones } from '../types/QuillaMap.constants';
 
 export const getRouteCoordinates = (
   routePoints: QuillaMapRoutePoint[] | undefined,
-  center: QuillaMapCoordinate
+  _center: QuillaMapCoordinate
 ): QuillaMapCoordinate[] => {
   const points = routePoints && routePoints.length > 1 ? routePoints : [];
   return points.length > 1 ? points : [];

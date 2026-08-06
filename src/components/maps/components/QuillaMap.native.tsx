@@ -5,6 +5,7 @@ import {
   CircleLayer,
   FillExtrusionLayer,
   FillLayer,
+  HeatmapLayer,
   LineLayer,
   MapView,
   ShapeSource,
@@ -15,6 +16,7 @@ import {
 } from '@maplibre/maplibre-react-native';
 import tw from '@/lib/tailwind';
 import type { QuillaMapProps } from '../types/QuillaMap.types';
+import type { SecurityHeatmapPointContract } from '@/types/contracts/security.contract';
 import {
   PLACES_VISUAL_IDENTITY,
   type PlaceMapFeature,
@@ -37,11 +39,11 @@ import {
   getNavigationArrowFeatureCollection,
   getNavigationBearingDegrees,
   getPlacesFeatureCollection,
-  getReportMarkersFeatureCollection,
   getRouteFeatureCollection,
   getShadeRouteSegmentsFeatureCollection,
   getShadeZoneAreasFeatureCollection,
   getShadeZonesFeatureCollection,
+  getSecurityHeatmapFeatureCollection,
   getThermalComfortFocusCoordinates,
   getThermalComfortShadeFeatureCollection,
   getTransitMapBounds,
@@ -51,8 +53,11 @@ import {
   NAVIGATION_ARROW_LAYER_ID,
   NAVIGATION_ARROW_MARKER,
   NAVIGATION_ARROW_SOURCE_ID,
-  REPORT_MARKER_LAYER_ID,
-  REPORT_MARKER_SOURCE_ID,
+  SECURITY_HEATMAP_ALERT_LAYER_ID,
+  SECURITY_HEATMAP_ALERT_STYLE,
+  SECURITY_HEATMAP_LAYER_ID,
+  SECURITY_HEATMAP_SOURCE_ID,
+  SECURITY_HEATMAP_STYLE,
   SHADE_MARKER_EMOJI,
   DESTINATION_MARKER_EMOJI,
   NAVIGATION_DESTINATION_LAYER_ID,
@@ -77,37 +82,34 @@ import {
   USER_LOCATION_LAYER_ID,
   USER_LOCATION_SOURCE_ID,
 } from '../styles/QuillaMap.maplibre';
+import {
+  CAMERA_ANIMATION_DURATION_MS,
+  INITIAL_DEFAULT_ZOOM,
+  INITIAL_PEDESTRIAN_ZOOM,
+  PLACES_FULL_OPACITY_ZOOM,
+  PLACES_MIN_VISIBLE_ZOOM,
+  getCompassBearing,
+  getNextCardinalBearing,
+  normalizeBearing,
+} from '../utils/QuillaMap.camera';
 
-const INITIAL_PEDESTRIAN_ZOOM = 16;
-const INITIAL_DEFAULT_ZOOM = 15;
-const PLACES_MIN_VISIBLE_ZOOM = 14.75;
-const CAMERA_ANIMATION_DURATION_MS = 520;
-const CARDINAL_BEARINGS = [0, 90, 180, 270] as const;
-type CardinalBearing = typeof CARDINAL_BEARINGS[number];
-
-const normalizeBearing = (bearing: number): number => ((bearing % 360) + 360) % 360;
-
-const getCompassBearing = (cameraBearing: number): number => normalizeBearing(-cameraBearing);
-
-const getNextCardinalBearing = (cameraBearing: number): CardinalBearing => {
-  const normalizedBearing = normalizeBearing(cameraBearing);
-  const currentIndex = CARDINAL_BEARINGS.findIndex((bearing) => Math.abs(bearing - normalizedBearing) < 0.5);
-
-  return currentIndex >= 0 ? CARDINAL_BEARINGS[(currentIndex + 1) % CARDINAL_BEARINGS.length] : 0;
-};
+const fadePlacesOpacity = (baseOpacity: number) =>
+  ['interpolate', ['linear'], ['zoom'], PLACES_MIN_VISIBLE_ZOOM, 0, PLACES_FULL_OPACITY_ZOOM, baseOpacity] as never;
 
 const QuillaMap = ({
   mode,
   themeMode = 'light',
   center,
   shadeZones,
-  reportMarkers,
   places,
   showDefaultShadeZones,
   routePoints,
   shadeRouteSegments,
   thermalComfortRoute,
   transitMap,
+  securityHeatmap,
+  securityHeatmapMode = 'heatmap',
+  draftMarkerKind = 'shadow',
   showUserLocation = true,
   showCompassControl = true,
   showZoomControl = true,
@@ -115,6 +117,7 @@ const QuillaMap = ({
   profileTools,
   onShadeZonePress,
   onPlacePress,
+  onSecurityHeatmapPointPress,
   onMapPress,
   selectedCoordinate,
   destinationCoordinate,
@@ -139,9 +142,11 @@ const QuillaMap = ({
   const isDark = themeMode === 'dark';
   const mapStyle = getMapLibreStyle(themeMode);
   const shouldShowShadowZones = !(isPedestrian && isDark);
-  const zones = shouldShowShadowZones ? getVisibleShadeZones(shadeZones, showDefaultShadeZones) : [];
   const zoomLevelRef = useRef(isPedestrian ? INITIAL_PEDESTRIAN_ZOOM : INITIAL_DEFAULT_ZOOM);
   const [mapZoom, setMapZoom] = useState(zoomLevelRef.current);
+  const zones = shouldShowShadowZones && mapZoom >= PLACES_MIN_VISIBLE_ZOOM
+    ? getVisibleShadeZones(shadeZones, showDefaultShadeZones)
+    : [];
   const visiblePlaces = mapZoom >= PLACES_MIN_VISIBLE_ZOOM ? getVisiblePlaces(places) : [];
   const canOpenPlaces = canInteractWithPlaces(mode);
   const [selectedPlace, setSelectedPlace] = useState<PlaceMapFeature | null>(null);
@@ -174,6 +179,10 @@ const QuillaMap = ({
     [transitMap]
   );
   const transitMapBounds = useMemo(() => getTransitMapBounds(transitMap), [transitMap]);
+  const securityHeatmapFeatureCollection = useMemo(
+    () => getSecurityHeatmapFeatureCollection(securityHeatmap, securityHeatmapMode),
+    [securityHeatmap, securityHeatmapMode]
+  );
   const routeBearing = getNavigationBearingDegrees(route);
   const navigationArrowFeatureCollection = getNavigationArrowFeatureCollection(
     showUserLocation ? center : null,
@@ -183,7 +192,6 @@ const QuillaMap = ({
   const destinationFeatureCollection = getDestinationFeatureCollection(destinationCoordinate);
   const shadeFeatureCollection = getShadeZonesFeatureCollection(zones);
   const shadeAreaFeatureCollection = getShadeZoneAreasFeatureCollection(zones);
-  const reportMarkersFeatureCollection = getReportMarkersFeatureCollection(reportMarkers ?? []);
   const draftFeatureCollection = getCoordinateFeatureCollection(
     shouldShowShadowZones ? selectedCoordinate : null,
     'shadow-zone-draft'
@@ -201,6 +209,12 @@ const QuillaMap = ({
     setSelectedPlace(place);
     onPlacePress?.(place);
   };
+
+  const handleSecurityHeatmapPointPress = (point: SecurityHeatmapPointContract) => {
+    closeSelectedPlace();
+    onSecurityHeatmapPointPress?.(point);
+  };
+
   const closeSelectedPlace = () => {
     setSelectedPlace(null);
   };
@@ -362,6 +376,49 @@ const QuillaMap = ({
             zoomLevel={zoomLevelRef.current}
           />
           {showUserLocation ? <UserLocation /> : null}
+
+          <ShapeSource
+            id={SECURITY_HEATMAP_SOURCE_ID}
+            testID="quillamap-native-security-heatmap-source"
+            shape={securityHeatmapFeatureCollection}
+            hitbox={{ width: 52, height: 52 }}
+            onPress={(event) => {
+              const clusterId = event.features[0]?.properties?.clusterId;
+              const point = typeof clusterId === 'string'
+                ? securityHeatmap?.points.find((candidate) => candidate.clusterId === clusterId)
+                : undefined;
+
+              if (point) {
+                handleSecurityHeatmapPointPress(point);
+              }
+            }}
+          >
+            {securityHeatmapMode === 'heatmap' ? (
+              <HeatmapLayer
+                id={SECURITY_HEATMAP_LAYER_ID}
+                testID="quillamap-native-security-heatmap"
+                style={{
+                  heatmapWeight: SECURITY_HEATMAP_STYLE.heatmapWeight as never,
+                  heatmapIntensity: SECURITY_HEATMAP_STYLE.heatmapIntensity as never,
+                  heatmapRadius: SECURITY_HEATMAP_STYLE.heatmapRadius as never,
+                  heatmapColor: SECURITY_HEATMAP_STYLE.heatmapColor as never,
+                  heatmapOpacity: SECURITY_HEATMAP_STYLE.heatmapOpacity as never,
+                }}
+              />
+            ) : null}
+            <CircleLayer
+              id={SECURITY_HEATMAP_ALERT_LAYER_ID}
+              testID="quillamap-native-security-alerts"
+              filter={['in', ['get', 'riskLevel'], ['literal', ['medium', 'high', 'critical']]]}
+              style={{
+                circleColor: SECURITY_HEATMAP_ALERT_STYLE.circleColor as never,
+                circleOpacity: SECURITY_HEATMAP_ALERT_STYLE.circleOpacity as never,
+                circleRadius: SECURITY_HEATMAP_ALERT_STYLE.circleRadius as never,
+                circleStrokeColor: SECURITY_HEATMAP_ALERT_STYLE.circleStrokeColor,
+                circleStrokeWidth: SECURITY_HEATMAP_ALERT_STYLE.circleStrokeWidth as never,
+              }}
+            />
+          </ShapeSource>
 
           <ShapeSource
             id={TRANSIT_ROUTE_SOURCE_ID}
@@ -631,6 +688,7 @@ const QuillaMap = ({
                 circleRadius: 15,
                 circleStrokeColor: placeMarkerColor,
                 circleStrokeWidth: 2,
+                circleOpacity: fadePlacesOpacity(1),
               }}
             />
             <SymbolLayer
@@ -645,6 +703,7 @@ const QuillaMap = ({
                 textHaloWidth: 1,
                 textAllowOverlap: true,
                 textIgnorePlacement: true,
+                textOpacity: fadePlacesOpacity(1),
               }}
             />
           </ShapeSource>
@@ -657,7 +716,7 @@ const QuillaMap = ({
                   testID="quillamap-native-shade-areas"
                   style={{
                     fillColor: layerColor,
-                    fillOpacity: 0.22,
+                    fillOpacity: fadePlacesOpacity(0.22),
                   }}
                 />
                 <LineLayer
@@ -665,7 +724,7 @@ const QuillaMap = ({
                   style={{
                     lineColor: primary,
                     lineWidth: 2,
-                    lineOpacity: 0.9,
+                    lineOpacity: fadePlacesOpacity(0.9),
                   }}
                 />
               </>
@@ -693,6 +752,7 @@ const QuillaMap = ({
                 circleRadius: 17,
                 circleStrokeColor: shadeMarkerColor,
                 circleStrokeWidth: 2,
+                circleOpacity: fadePlacesOpacity(1),
               }}
             />
             <SymbolLayer
@@ -707,35 +767,62 @@ const QuillaMap = ({
                 textIgnorePlacement: true,
                 textPitchAlignment: 'viewport',
                 textRotationAlignment: 'viewport',
+                textOpacity: fadePlacesOpacity(1),
               }}
             />
           </ShapeSource>
 
           {selectedCoordinate && shouldShowShadowZones ? (
             <ShapeSource id="shade-draft-source" shape={draftFeatureCollection}>
-              <CircleLayer
-                id="shade-draft-outline"
-                style={{
-                  circleColor: white,
-                  circleRadius: 17,
-                  circleStrokeColor: shadowMarkerColor,
-                  circleStrokeWidth: 2,
-                }}
-              />
-              <SymbolLayer
-                id="shade-draft"
-                testID="quillamap-native-shadow-draft-marker"
-                style={{
-                  textField: SHADE_MARKER_EMOJI,
-                  textFont: ['sans-serif'],
-                  textSize: 21,
-                  textColor: shadowMarkerColor,
-                  textAllowOverlap: true,
-                  textIgnorePlacement: true,
-                  textPitchAlignment: 'viewport',
-                  textRotationAlignment: 'viewport',
-                }}
-              />
+              {draftMarkerKind === 'security' ? (
+                <>
+                  <CircleLayer
+                    id="shade-draft-security-outline"
+                    testID="quillamap-native-security-draft-marker"
+                    style={{
+                      circleColor: white,
+                      circleRadius: 20,
+                      circleOpacity: 1,
+                      circleStrokeColor: '#DC2626',
+                      circleStrokeWidth: 3,
+                    }}
+                  />
+                  <CircleLayer
+                    id="shade-draft-security-fill"
+                    style={{
+                      circleColor: '#DC2626',
+                      circleRadius: 13,
+                      circleOpacity: 0.95,
+                    }}
+                  />
+                </>
+              ) : (
+                <>
+                  <CircleLayer
+                    id="shade-draft-outline"
+                    style={{
+                      circleColor: white,
+                      circleRadius: 17,
+                      circleStrokeColor: shadowMarkerColor,
+                      circleStrokeWidth: 2,
+                    }}
+                  />
+                  <SymbolLayer
+                    id="shade-draft"
+                    testID="quillamap-native-shadow-draft-marker"
+                    style={{
+                      textField: SHADE_MARKER_EMOJI,
+                      textFont: ['sans-serif'],
+                      textSize: 21,
+                      textColor: shadowMarkerColor,
+                      textAllowOverlap: true,
+                      textIgnorePlacement: true,
+                      textPitchAlignment: 'viewport',
+                      textRotationAlignment: 'viewport',
+                    }}
+                  />
+                </>
+              )}
             </ShapeSource>
           ) : null}
 

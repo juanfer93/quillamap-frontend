@@ -18,6 +18,7 @@ import {
   type PlaceMapFeature,
 } from '@/types/contracts/places.contract';
 import { NAVIGATION_VISUAL_IDENTITY } from '@/types/contracts/navigation.contract';
+import type { SecurityHeatmapResponseContract } from '@/types/contracts/security.contract';
 import type { TransitMapResponse } from '@/types/contracts/transit.contract';
 
 jest.mock('maplibre-gl', () => {
@@ -34,6 +35,7 @@ jest.mock('maplibre-gl', () => {
     addLayer: jest.fn(),
     setLayoutProperty: jest.fn(),
     setPaintProperty: jest.fn(),
+    fitBounds: jest.fn(),
     easeTo: jest.fn(),
     getZoom: jest.fn(() => 15),
     getBearing: jest.fn(() => 0),
@@ -137,6 +139,7 @@ jest.mock('@maplibre/maplibre-react-native', () => {
     CircleLayer: passthrough,
     FillLayer: passthrough,
     FillExtrusionLayer: passthrough,
+    HeatmapLayer: passthrough,
     SymbolLayer: passthrough,
     MarkerView: ({ coordinate, children, ...props }: { coordinate: [number, number]; children?: React.ReactNode }) =>
       ReactMock.createElement(
@@ -209,6 +212,33 @@ const places: PlaceMapFeature[] = [
     },
   },
 ];
+
+const securityHeatmap: SecurityHeatmapResponseContract = {
+  generatedAt: '2026-08-04T12:00:00.000Z',
+  windowMinutes: 60,
+  dbscanRadiusMeters: 804.672,
+  minReportsPerCluster: 3,
+  metadata: {
+    primaryColor: '#004574',
+    touristSafetyMilestoneColor: '#D4AF37',
+  },
+  points: [
+    {
+      clusterId: 'security-cluster-1',
+      latitude: 10.9878,
+      longitude: -74.7889,
+      intensity: 0.92,
+      dangerLevel: 5,
+      veracityScore: 0.87,
+      reportCount: 8,
+      radiusMeters: 420,
+      riskLevel: 'critical',
+      hasVerifiedEvidence: true,
+      generatedFrom: '2026-08-04T11:00:00.000Z',
+      generatedTo: '2026-08-04T12:00:00.000Z',
+    },
+  ],
+};
 
 describe('QuillaMap', () => {
   it('renderiza la vista visual web del mapa peatonal', () => {
@@ -414,6 +444,59 @@ describe('QuillaMap', () => {
       center.latitude,
     ]);
     expect(native.getByTestId('quillamap-native-user-location-dot').props.style.circleRadius).toBe(4);
+  });
+
+  it('pinta el mapa de calor de seguridad con el mismo contrato en web y nativo', () => {
+    const web = render(
+      <WebQuillaMap
+        mode="pedestrian"
+        center={{ latitude: 10.9878, longitude: -74.7889 }}
+        showDefaultShadeZones={false}
+        securityHeatmap={securityHeatmap}
+      />
+    );
+    const native = render(
+      <NativeQuillaMap
+        mode="pedestrian"
+        center={{ latitude: 10.9878, longitude: -74.7889 }}
+        showDefaultShadeZones={false}
+        securityHeatmap={securityHeatmap}
+      />
+    );
+
+    expect(web.getByTestId('quillamap-web-security-heatmap').props.featuresCount).toBe(1);
+    expect(web.getByTestId('quillamap-web-security-heatmap').props.mode).toBe('heatmap');
+    expect(native.getByTestId('quillamap-native-security-heatmap-source').props.shape.features[0]).toMatchObject({
+      properties: expect.objectContaining({
+        clusterId: 'security-cluster-1',
+        dangerLevel: 5,
+        veracityScore: 0.87,
+      }),
+      geometry: expect.objectContaining({
+        coordinates: [-74.7889, 10.9878],
+      }),
+    });
+    expect(native.getByTestId('quillamap-native-security-heatmap-source').props.shape.features[0].properties.user_id).toBeUndefined();
+
+    expect(web.getByTestId('quillamap-web-security-heatmap').props.heatmapColor).toEqual(
+      expect.arrayContaining(['rgba(0, 69, 116, 0)', 'rgba(220, 38, 38, 0.94)'])
+    );
+  });
+
+  it('simplifica la seguridad en Driving Lock ocultando el heatmap denso en nativo', () => {
+    const { queryByTestId, getByTestId } = render(
+      <NativeQuillaMap
+        mode="car"
+        center={{ latitude: 10.9878, longitude: -74.7889 }}
+        showDefaultShadeZones={false}
+        securityHeatmap={securityHeatmap}
+        securityHeatmapMode="driving-lock"
+      />
+    );
+
+    expect(queryByTestId('quillamap-native-security-heatmap')).toBeNull();
+    expect(getByTestId('quillamap-native-security-alerts')).toBeTruthy();
+    expect(getByTestId('quillamap-native-security-heatmap-source').props.shape.features[0].properties.isDrivingLock).toBe(true);
   });
 
   it('aplica estilo oscuro al mapa nativo cuando el tema es oscuro', () => {
