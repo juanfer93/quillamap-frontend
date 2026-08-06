@@ -43,6 +43,9 @@ const PedestrianMapContainer = ({
   renderProfileTools,
   licensePlate,
   thermalComfortRoute,
+  securityHeatmap,
+  onSecurityHeatmapPointPress,
+  draftMarkerKind = 'shadow',
   suppressMapDecorations = false,
 }: PedestrianMapContainerProps) => {
   const { currentLocation, isRequestingPermission, errorMessage } = useLocationPermissions();
@@ -113,6 +116,9 @@ const PedestrianMapContainer = ({
           renderProfileTools={renderProfileTools}
           licensePlate={licensePlate}
           thermalComfortRoute={thermalComfortRoute}
+          securityHeatmap={securityHeatmap}
+          onSecurityHeatmapPointPress={onSecurityHeatmapPointPress}
+          draftMarkerKind={draftMarkerKind}
           showUserLocation={!suppressMapDecorations}
           onMapPress={shouldShowShadowZones ? onMapPress : undefined}
           onShadeZonePress={(zone) => {

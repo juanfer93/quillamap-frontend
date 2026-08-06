@@ -36,6 +36,7 @@ jest.mock('@/components/maps/QuillaMap', () => {
     navigationControl,
     profileTools,
     routePoints,
+    securityHeatmapMode,
     shadeRouteSegments,
   }: {
     children?: React.ReactNode;
@@ -48,6 +49,7 @@ jest.mock('@/components/maps/QuillaMap', () => {
     };
     profileTools?: React.ReactNode;
     routePoints?: unknown[];
+    securityHeatmapMode?: string;
     shadeRouteSegments?: unknown[];
   }) => ReactMock.createElement(
     MockView,
@@ -55,6 +57,7 @@ jest.mock('@/components/maps/QuillaMap', () => {
       testID: 'mock-quillamap',
       destinationCoordinate,
       routePoints,
+      securityHeatmapMode,
       shadeRouteSegments,
     },
     ReactMock.createElement(
@@ -189,6 +192,7 @@ describe('NavigationMapController', () => {
     await waitFor(() => {
       expect(getByTestId('mock-quillamap').props.routePoints).toHaveLength(2);
       expect(getByTestId('mock-quillamap').props.destinationCoordinate).toMatchObject(places[0].coordinate);
+      expect(getByTestId('mock-quillamap').props.securityHeatmapMode).toBe('driving-lock');
       expect(getByTestId('navigation-driving-lock')).toBeTruthy();
       expect(queryByTestId('navigation-search-panel')).toBeNull();
     });

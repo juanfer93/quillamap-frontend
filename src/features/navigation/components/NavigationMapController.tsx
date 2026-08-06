@@ -7,7 +7,7 @@ import { useNavigationStore } from '../store/useNavigationStore';
 import { useRouteNavigation } from '../hooks/useRouteNavigation';
 import { useVelocityGuard } from '../hooks/useVelocityGuard';
 import { getDestinationSuggestions, resolveDestination } from '../utils/destinationSearch';
-import { isNavigationUiLocked } from '../utils/drivingLock';
+import { DRIVING_LOCK_THRESHOLD_KMH, isNavigationUiLocked } from '../utils/drivingLock';
 import {
   getQueryLabel,
   toRoutePoints,
@@ -54,6 +54,7 @@ const NavigationMapController = ({
   const effectiveSpeedKmh = sensorSpeedKmh ?? speedKmh;
   const hasActiveRoute = Boolean(activeRoute);
   const isLocked = isNavigationUiLocked(effectiveSpeedKmh, isCopilot, hasActiveRoute);
+  const isSecurityHeatmapDrivingLock = effectiveSpeedKmh > DRIVING_LOCK_THRESHOLD_KMH;
   const routePoints = activeRoute ? toRoutePoints(activeRoute.geometry) : undefined;
   const suggestions = useMemo(
     () => getDestinationSuggestions(query, places),
@@ -99,6 +100,7 @@ const NavigationMapController = ({
       routePoints={routePoints}
       shadeRouteSegments={activeRoute?.shadeSegments}
       destinationCoordinate={destination}
+      securityHeatmapMode={isSecurityHeatmapDrivingLock ? 'driving-lock' : 'heatmap'}
       profileTools={resolvedProfileTools}
       navigationControl={{
         hasActiveRoute,

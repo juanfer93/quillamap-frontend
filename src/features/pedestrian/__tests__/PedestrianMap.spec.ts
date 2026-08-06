@@ -54,6 +54,7 @@ jest.mock('@maplibre/maplibre-react-native', () => {
     CircleLayer: passthrough,
     FillLayer: passthrough,
     FillExtrusionLayer: passthrough,
+    HeatmapLayer: passthrough,
     SymbolLayer: passthrough,
     MarkerView: ({ coordinate, children, ...props }: { coordinate: [number, number]; children?: React.ReactNode }) =>
       ReactMock.createElement(

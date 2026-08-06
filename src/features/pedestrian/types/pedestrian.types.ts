@@ -1,6 +1,10 @@
 import type { ReactNode } from 'react';
-import type { QuillaMapThermalComfortRoute } from '@/components/maps/QuillaMap.types';
+import type { QuillaMapDraftMarkerKind, QuillaMapThermalComfortRoute } from '@/components/maps/QuillaMap.types';
 import type { PlaceMapFeature } from '@/types/contracts/places.contract';
+import type {
+  SecurityHeatmapPointContract,
+  SecurityHeatmapResponseContract,
+} from '@/types/contracts/security.contract';
 import type { PedestrianCoordinates, ShadowZone } from '../schemas/pedestrian.schema';
 
 export interface PedestrianMapContainerProps {
@@ -16,5 +20,8 @@ export interface PedestrianMapContainerProps {
   renderProfileTools?: (transitRoutesSection: ReactNode | null) => ReactNode;
   licensePlate?: string | null;
   thermalComfortRoute?: QuillaMapThermalComfortRoute | null;
+  securityHeatmap?: SecurityHeatmapResponseContract | null;
+  onSecurityHeatmapPointPress?: (point: SecurityHeatmapPointContract) => void;
+  draftMarkerKind?: QuillaMapDraftMarkerKind;
   suppressMapDecorations?: boolean;
 }

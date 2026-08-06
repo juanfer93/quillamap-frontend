@@ -15,7 +15,14 @@ jest.mock('maplibre-gl', () => {
     addSource: jest.fn(),
     getLayer: jest.fn(),
     addLayer: jest.fn(),
+    setLayoutProperty: jest.fn(),
     setPaintProperty: jest.fn(),
+    fitBounds: jest.fn(),
+    easeTo: jest.fn(),
+    queryRenderedFeatures: jest.fn(),
+    getZoom: jest.fn(() => 16),
+    getBearing: jest.fn(() => 0),
+    upsertGeoJsonSource: jest.fn(),
   };
   const MapMock = jest.fn(() => mapInstance);
   const MarkerMock = jest.fn().mockImplementation(() => ({
